@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.roadrunner</groupId>
+        <artifactId>roadrunner</artifactId>
+        <version>0.0.2-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>roadrunner-app</artifactId>
+    <name>roadrunner-tools</name>
+    <packaging>jlink</packaging>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.moditect</groupId>
+                <artifactId>moditect-maven-plugin</artifactId>
+                <version>1.2.2.Final</version>
+                <executions>
+                    <execution>
+                        <id>add-module-infos</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>add-module-info</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/modules</outputDirectory>
+                            <modules>
+                                <module>
+                                    <artifact>
+                                            <groupId>org.hdrhistogram</groupId>
+                                            <artifactId>HdrHistogram</artifactId>
+                                            <version>2.2.2</version>
+                                    </artifact>
+                                    <moduleInfoSource>
+                                        module HdrHistogram {
+                                            exports org.HdrHistogram;
+                                        }
+                                    </moduleInfoSource>
+                                </module>
+                            </modules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jlink-plugin</artifactId>
+                <version>3.2.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <addModules>
+                        <addModule>pl.symentis.roadrunner.cli</addModule>
+                    </addModules>
+                    <modulePaths>
+                        <modulePath>${project.build.directory}/modules/HdrHistogram-2.2.2.jar</modulePath>
+                    </modulePaths>
+                    <launcher>roadrunner=pl.symentis.roadrunner.cli/io.roadrunner.cli.Main</launcher>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-cli</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-protocol-vm</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
+</project>
