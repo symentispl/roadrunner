@@ -96,6 +96,11 @@
                         <exclude>**/src/test/data/**</exclude>
                         <exclude>**/src/main/resources/archetype-resources/**</exclude>
                         <exclude>.idea/**</exclude>
+                        <exclude>.vscode/**</exclude>
+                        <exclude>.mvn/**</exclude>
+                        <exclude>mvnw</exclude>
+                        <exclude>mvnw.cmd</exclude>
+                        <exclude>.gitignore</exclude>
                     </excludes>
                 </configuration>
                 <executions>
