@@ -17,8 +17,10 @@ module pl.symentis.roadrunner.core {
     requires org.slf4j;
     requires io.roadrunner.protocols.spi;
     requires io.roadrunner.api;
+    requires org.apache.commons.cli;
+    requires org.apache.commons.lang3;
     requires HdrHistogram;
 
     exports io.roadrunner.core;
-    exports io.roadrunner.core.internal;
+    exports io.roadrunner.core.options;
 }

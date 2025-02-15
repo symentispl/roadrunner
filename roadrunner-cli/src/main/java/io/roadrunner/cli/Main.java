@@ -15,67 +15,54 @@
  */
 package io.roadrunner.cli;
 
-import static picocli.CommandLine.*;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 
 import io.roadrunner.core.Bootstrap;
-import io.roadrunner.core.internal.DefaultRoadrunner;
+import io.roadrunner.core.options.CliOptionsBuilder;
 import io.roadrunner.protocols.spi.ProtocolProvider;
-import picocli.CommandLine;
-
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Command()
 public class Main implements Callable<Integer> {
-
-    @Option(
-            names = {"-c"},
-            description = "Number of multiple requests to make at a time",
-            required = true)
-    private int concurrency;
-
-    @Option(
-            names = {"-n"},
-            description = "Number of requests to perform",
-            required = true)
-    private int requests;
 
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
-    public static void main(String[] args) {
-
-        var commandSpec = Model.CommandSpec.forAnnotatedObject(new RoadrunnerOptions());
-        
-        var bootstrap = new Bootstrap();
-        var roadrunner = new DefaultRoadrunner();
-        var commandLine = new CommandLine(new Main());
+    public static void main(String[] args) throws Exception {
 
         LOG.info("loading protocol providers");
-        ServiceLoader.load(ProtocolProvider.class).stream()
+        var protocols = ServiceLoader.load(ProtocolProvider.class).stream()
                 .map(ServiceLoader.Provider::get)
-                .map(p -> p.commandSpec())
-                .forEach(p -> commandSpec.addSubcommand("", p));
+                .peek(protocolProvider -> LOG.info("found protocol {}", protocolProvider.name()))
+                .collect(toMap(p -> p.name(), identity()));
 
-               //protocols.stream().forEach(commandLine::addSubcommand);
-        
-               try {
-                   var exit = commandLine.execute(args);
-        
-                   //            var roadrunner = bootstrap.build();
-                   //            roadrunner.
-                   System.exit(exit);
-               } finally {
-                   LOG.info("closing protocol providers");
-                //    protocols.stream().forEach(protocol -> {
-                //        try {
-                //            protocol.close();
-                //        } catch (Exception e) {
-                //            throw new RuntimeException(e);
-                //        }
-                //    });
-               }
+        var cliOptionsBuilder = new CliOptionsBuilder();
+        var optionsBinding = cliOptionsBuilder.build(RoadrunnerOptions.class);
+        var roadrunnerOptions = optionsBinding.newInstance(args);
+
+        var bootstrap = new Bootstrap();
+        var roadrunner =
+                bootstrap.withConcurrency(roadrunnerOptions.concurrency()).build();
+
+        try {
+
+            roadrunner.execute(() -> () -> {}, 100, 1000);
+
+            //            var roadrunner = bootstrap.build();
+            //            roadrunner.
+            // System.exit(exit);
+        } finally {
+            LOG.info("closing protocol providers");
+            //    protocols.stream().forEach(protocol -> {
+            //        try {
+            //            protocol.close();
+            //        } catch (Exception e) {
+            //            throw new RuntimeException(e);
+            //        }
+            //    });
+        }
     }
 
     @Override

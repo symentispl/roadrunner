@@ -15,12 +15,12 @@
  */
 package io.roadrunner.cli;
 
-import picocli.CommandLine;
+import io.roadrunner.core.options.CliOption;
 
-public final class RoadrunnerOptions {
-    @CommandLine.Option(
-            names = {"-c"},
-            description = "Number of multiple requests to make at a time",
-            required = true)
-    private int concurrency;
-}
+public record RoadrunnerOptions(
+        @CliOption(
+                        opt = "c",
+                        description = "Number of multiple requests to make at a time",
+                        required = true,
+                        hasArg = true)
+                Integer concurrency) {}

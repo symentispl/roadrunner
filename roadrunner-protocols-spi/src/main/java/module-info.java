@@ -15,7 +15,6 @@
  */
 module io.roadrunner.protocols.spi {
     requires io.roadrunner.api;
-    requires info.picocli;
 
     exports io.roadrunner.protocols.spi;
 }

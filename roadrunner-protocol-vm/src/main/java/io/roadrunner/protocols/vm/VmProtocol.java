@@ -17,18 +17,12 @@ package io.roadrunner.protocols.vm;
 
 import io.roadrunner.api.Roadrunner;
 import io.roadrunner.protocols.spi.Protocol;
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import picocli.CommandLine;
 
-@CommandLine.Command(name = "vm")
 public class VmProtocol implements Protocol {
-
-    @CommandLine.Option(names = "--sleep-time")
-    private Duration sleepTime;
 
     private final Roadrunner roadrunner;
     private final ExecutorService executorService;

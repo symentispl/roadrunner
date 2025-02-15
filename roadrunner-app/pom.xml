@@ -11,7 +11,7 @@
     </parent>
 
     <artifactId>roadrunner-app</artifactId>
-    <name>roadrunner-tools</name>
+    <name>roadrunner-app</name>
     <packaging>jlink</packaging>
 
     <build>
@@ -59,6 +59,7 @@
                     <modulePaths>
                         <modulePath>${project.build.directory}/modules/HdrHistogram-2.2.2.jar</modulePath>
                     </modulePaths>
+
                     <launcher>roadrunner=pl.symentis.roadrunner.cli/io.roadrunner.cli.Main</launcher>
                 </configuration>
             </plugin>

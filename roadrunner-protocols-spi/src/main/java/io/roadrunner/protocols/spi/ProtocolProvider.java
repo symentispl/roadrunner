@@ -15,10 +15,6 @@
  */
 package io.roadrunner.protocols.spi;
 
-import picocli.CommandLine;
-
 public interface ProtocolProvider {
-    // Protocol create(Roadrunner roadrunner);
-
-    CommandLine.Model.CommandSpec commandSpec();
+    String name();
 }

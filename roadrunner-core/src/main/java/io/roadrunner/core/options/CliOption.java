@@ -13,16 +13,31 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-import io.roadrunner.protocols.spi.ProtocolProvider;
+package io.roadrunner.core.options;
 
-module pl.symentis.roadrunner.cli {
-    requires org.slf4j;
-    requires pl.symentis.roadrunner.core;
-    requires io.roadrunner.protocols.spi;
-    requires io.roadrunner.api;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    uses ProtocolProvider;
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.PARAMETER)
+public @interface CliOption {
+    String description() default "";
 
-    opens io.roadrunner.cli to
-            io.roadrunner.core;
+    String longOpt() default "";
+
+    String opt() default "";
+
+    boolean required() default false;
+
+    boolean hasArg() default false;
+
+    int argCount() default -1;
+
+    String argName() default "";
+
+    char valueSeparator() default ' ';
+
+    boolean optionalArg() default false;
 }

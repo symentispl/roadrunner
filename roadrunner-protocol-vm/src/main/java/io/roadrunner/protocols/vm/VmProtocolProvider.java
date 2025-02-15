@@ -20,9 +20,13 @@ import picocli.CommandLine;
 
 @CommandLine.Command(name = "vm")
 public class VmProtocolProvider implements ProtocolProvider {
-
     @Override
+    public String name() {
+        return "vm";
+    }
+
+    //    @Override
     public CommandLine.Model.CommandSpec commandSpec() {
-        return CommandLine.Model.CommandSpec.forAnnotatedObject(this);
+        return CommandLine.Model.CommandSpec.forAnnotatedObject(new VmProtocolOptions());
     }
 }

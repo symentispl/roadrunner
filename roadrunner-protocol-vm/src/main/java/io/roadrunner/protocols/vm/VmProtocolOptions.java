@@ -13,16 +13,13 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-import io.roadrunner.protocols.spi.ProtocolProvider;
+package io.roadrunner.protocols.vm;
 
-module pl.symentis.roadrunner.cli {
-    requires org.slf4j;
-    requires pl.symentis.roadrunner.core;
-    requires io.roadrunner.protocols.spi;
-    requires io.roadrunner.api;
+import java.time.Duration;
+import picocli.CommandLine;
 
-    uses ProtocolProvider;
+public class VmProtocolOptions {
 
-    opens io.roadrunner.cli to
-            io.roadrunner.core;
+    @CommandLine.Option(names = "--sleep-time")
+    private Duration sleepTime;
 }
