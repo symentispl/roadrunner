@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.protocols.spi {
-    requires io.roadrunner.api;
+package io.roadrunner.protocols.spi;
 
-    exports io.roadrunner.protocols.spi;
+public interface ProtocolRequest {
+    void execute();
 }

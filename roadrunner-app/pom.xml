@@ -17,37 +17,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.moditect</groupId>
-                <artifactId>moditect-maven-plugin</artifactId>
-                <version>1.2.2.Final</version>
-                <executions>
-                    <execution>
-                        <id>add-module-infos</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>add-module-info</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/modules</outputDirectory>
-                            <modules>
-                                <module>
-                                    <artifact>
-                                            <groupId>org.hdrhistogram</groupId>
-                                            <artifactId>HdrHistogram</artifactId>
-                                            <version>2.2.2</version>
-                                    </artifact>
-                                    <moduleInfoSource>
-                                        module HdrHistogram {
-                                            exports org.HdrHistogram;
-                                        }
-                                    </moduleInfoSource>
-                                </module>
-                            </modules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jlink-plugin</artifactId>
                 <version>3.2.0</version>
@@ -56,10 +25,6 @@
                     <addModules>
                         <addModule>pl.symentis.roadrunner.cli</addModule>
                     </addModules>
-                    <modulePaths>
-                        <modulePath>${project.build.directory}/modules/HdrHistogram-2.2.2.jar</modulePath>
-                    </modulePaths>
-
                     <launcher>roadrunner=pl.symentis.roadrunner.cli/io.roadrunner.cli.Main</launcher>
                 </configuration>
             </plugin>
@@ -71,6 +36,12 @@
             <groupId>io.roadrunner</groupId>
             <artifactId>roadrunner-cli</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>HdrHistogram</artifactId>
+                    <groupId>org.hdrhistogram</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>

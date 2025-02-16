@@ -13,8 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.protocols.spi {
-    requires io.roadrunner.api;
+package io.roadrunner.api;
 
-    exports io.roadrunner.protocols.spi;
-}
+public record Measurements(
+        long totalCount,
+        double mean,
+        double maxValue,
+        double minValue,
+        double p50,
+        double p90,
+        double p99,
+        double p999) {}
