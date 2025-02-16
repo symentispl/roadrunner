@@ -15,6 +15,7 @@
  */
 package io.roadrunner.core.internal;
 
+import io.roadrunner.api.MeasurementProgress;
 import io.roadrunner.api.Measurements;
 import io.roadrunner.api.Roadrunner;
 import io.roadrunner.shaded.hdrhistogram.ConcurrentHistogram;
@@ -33,36 +34,40 @@ public class DefaultRoadrunner implements Roadrunner {
 
     private final int concurrentUsers;
     private final long requests;
+    private final MeasurementProgress measurementProgress;
 
-    public DefaultRoadrunner(int concurrentUsers, long requests) {
+    public DefaultRoadrunner(int concurrentUsers, long requests, MeasurementProgress measurementProgress) {
         this.concurrentUsers = concurrentUsers;
         this.requests = requests;
+        this.measurementProgress = measurementProgress;
     }
 
+    @Override
     public Measurements execute(Supplier<Runnable> roadrunner) {
 
         var histogram = new ConcurrentHistogram(2);
         LOG.info("Roadrunner started: {} concurrent users, {} total number of requests", concurrentUsers, requests);
         var currentTimeMillis = System.currentTimeMillis();
-        var executorService = Executors.newVirtualThreadPerTaskExecutor();
-        var latch = new CountDownLatch(concurrentUsers);
-        var measurementControl = new MeasurementControl(requests);
-        for (int i = 0; i < concurrentUsers; i++) {
-            executorService.submit(new RoadrunnerTask(histogram, latch, measurementControl, roadrunner.get()));
-        }
+        try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+            var latch = new CountDownLatch(concurrentUsers);
+            var measurementControl = new MeasurementControl(measurementProgress, requests);
+            for (int i = 0; i < concurrentUsers; i++) {
+                executorService.submit(new RoadrunnerTask(histogram, latch, measurementControl, roadrunner.get()));
+            }
 
-        try {
-            latch.await();
-            LOG.info("Roadrunner stopped, time {}ms", System.currentTimeMillis() - currentTimeMillis);
-            executorService.shutdown();
-            executorService.awaitTermination(10, TimeUnit.SECONDS);
-            return DefaultMeasurements.create(histogram);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            try {
+                latch.await();
+                LOG.info("Roadrunner stopped, time {}ms", System.currentTimeMillis() - currentTimeMillis);
+                executorService.shutdown();
+                executorService.awaitTermination(10, TimeUnit.SECONDS);
+                return DefaultMeasurements.create(histogram);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    private class RoadrunnerTask implements Runnable {
+    private static class RoadrunnerTask implements Runnable {
 
         private final Histogram histogram;
         private final CountDownLatch latch;
@@ -79,33 +84,38 @@ public class DefaultRoadrunner implements Roadrunner {
 
         @Override
         public void run() {
-            while (measurementControl.isRunning()) {
-                var scheduledTime = System.currentTimeMillis();
-                task.run();
-                var currentTime = System.currentTimeMillis();
-                histogram.recordValue(currentTime - scheduledTime);
+            try {
+                while (measurementControl.isRunning()) {
+                    var scheduledTime = System.currentTimeMillis();
+                    task.run();
+                    var currentTime = System.currentTimeMillis();
+                    histogram.recordValue(currentTime - scheduledTime);
+                    measurementControl.countDown();
+                }
+            } finally {
+                latch.countDown();
             }
-            latch.countDown();
         }
     }
 
     private static class MeasurementControl {
 
         private final AtomicLong counter;
+        private final MeasurementProgress measurementProgress;
         private final long requests;
 
-        MeasurementControl(long requests) {
+        MeasurementControl(MeasurementProgress measurementProgress, long requests) {
+            this.measurementProgress = measurementProgress;
             this.requests = requests;
             this.counter = new AtomicLong(requests);
         }
 
         boolean isRunning() {
-            var l = counter.decrementAndGet();
-            return l > 0;
+            return counter.get() > 0;
         }
 
-        long counter() {
-            return counter.get();
+        public void countDown() {
+            measurementProgress.update(requests - counter.decrementAndGet());
         }
     }
 }

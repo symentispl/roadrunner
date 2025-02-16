@@ -15,12 +15,14 @@
  */
 package io.roadrunner.core;
 
+import io.roadrunner.api.MeasurementProgress;
 import io.roadrunner.api.Roadrunner;
 import io.roadrunner.core.internal.DefaultRoadrunner;
 
 public class Bootstrap {
     private int concurrency;
     private int requests;
+    private MeasurementProgress measurementProgress = MeasurementProgress.NO_OP;
 
     public Bootstrap withConcurrency(int concurrency) {
         this.concurrency = concurrency;
@@ -32,7 +34,12 @@ public class Bootstrap {
         return this;
     }
 
+    public Bootstrap withMeasurementProgress(MeasurementProgress measurementProgress) {
+        this.measurementProgress = measurementProgress;
+        return this;
+    }
+
     public Roadrunner build() {
-        return new DefaultRoadrunner(concurrency, requests);
+        return new DefaultRoadrunner(concurrency, requests, measurementProgress);
     }
 }

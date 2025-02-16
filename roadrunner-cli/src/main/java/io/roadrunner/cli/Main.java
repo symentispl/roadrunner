@@ -19,8 +19,8 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
 import io.roadrunner.api.Measurements;
-import io.roadrunner.options.CliOptionsBuilder;
 import io.roadrunner.core.Bootstrap;
+import io.roadrunner.options.CliOptionsBuilder;
 import io.roadrunner.protocols.spi.ProtocolProvider;
 import io.roadrunner.protocols.spi.ProtocolRequest;
 import io.roadrunner.protocols.spi.ProtocolRequestOptions;
@@ -48,6 +48,7 @@ public class Main {
         var roadrunner = bootstrap
                 .withConcurrency(roadrunnerOptions.concurrency())
                 .withRequests(roadrunnerOptions.numberOfRequests())
+                .withMeasurementProgress(new ProgressBar(100, 0, roadrunnerOptions.numberOfRequests()))
                 .build();
 
         var remainingArgs = optionsBinding.args();
@@ -79,8 +80,8 @@ public class Main {
         System.out.println("HdrHistogram Summary:");
         System.out.println("=====================");
         System.out.printf("Total Count    : %d%n", measurements.totalCount());
-        System.out.printf("Min Value (ms) : %d ms%n", measurements.minValue());
-        System.out.printf("Max Value (ms) : %d ms%n", measurements.maxValue());
+        System.out.printf("Min Value (ms) : %.2f ms%n", measurements.minValue());
+        System.out.printf("Max Value (ms) : %.2f ms%n", measurements.maxValue());
         System.out.printf("Mean Value (ms): %.2f ms%n", measurements.mean());
         System.out.printf("50th Percentile: %.2f ms%n", measurements.p50());
         System.out.printf("90th Percentile: %.2f ms%n", measurements.p90());

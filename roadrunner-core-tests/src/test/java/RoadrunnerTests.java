@@ -30,7 +30,7 @@ public class RoadrunnerTests {
         var vmProtocol = new VmProtocolProvider();
         var request = vmProtocol.request(new VmProtocolOptions(Duration.ofMillis(100)));
         var measurements = roadrunner.execute(() -> request::execute);
-        // assertThat(measurements.totalCount()).isEqualTo(10);
+        assertThat(measurements.totalCount()).isEqualTo(10);
         assertThat(measurements)
                 .extracting(
                         Measurements::minValue,
