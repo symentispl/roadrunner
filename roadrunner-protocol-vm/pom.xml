@@ -14,7 +14,7 @@
     <dependencies>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-api</artifactId>
+            <artifactId>roadrunner-options</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

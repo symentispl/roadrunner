@@ -14,9 +14,5 @@
  * limitations under the License.
  */
 module io.roadrunner.api {
-    requires org.apache.commons.cli;
-    requires org.apache.commons.lang3;
-
     exports io.roadrunner.api;
-    exports io.roadrunner.api.options;
 }

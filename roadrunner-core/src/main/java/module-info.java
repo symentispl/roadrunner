@@ -15,9 +15,8 @@
  */
 module io.roadrunner.core {
     requires org.slf4j;
-    requires org.apache.commons.cli;
-    requires org.apache.commons.lang3;
     requires io.roadrunner.api;
+    requires io.roadrunner.options;
     requires io.roadrunner.protocols.spi;
     requires io.roadrunner.hdrhistogram;
 

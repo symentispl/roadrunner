@@ -223,6 +223,7 @@
     <module>roadrunner-api</module>
     <module>roadrunner-hdrhistogram</module>
     <module>roadrunner-microbenchmarks</module>
+    <module>roadrunner-options</module>
   </modules>
   <profiles>
     <profile>

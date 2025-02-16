@@ -20,6 +20,7 @@ module pl.symentis.roadrunner.cli {
     requires io.roadrunner.core;
     requires io.roadrunner.protocols.spi;
     requires io.roadrunner.api;
+    requires io.roadrunner.options;
     requires io.roadrunner.hdrhistogram;
 
     uses ProtocolProvider;

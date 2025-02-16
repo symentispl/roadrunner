@@ -19,7 +19,7 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
 import io.roadrunner.api.Measurements;
-import io.roadrunner.api.options.CliOptionsBuilder;
+import io.roadrunner.options.CliOptionsBuilder;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.protocols.spi.ProtocolProvider;
 import io.roadrunner.protocols.spi.ProtocolRequest;

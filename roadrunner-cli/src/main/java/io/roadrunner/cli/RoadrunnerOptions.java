@@ -15,7 +15,7 @@
  */
 package io.roadrunner.cli;
 
-import io.roadrunner.api.options.CliOption;
+import io.roadrunner.options.CliOption;
 
 public record RoadrunnerOptions(
         @CliOption(

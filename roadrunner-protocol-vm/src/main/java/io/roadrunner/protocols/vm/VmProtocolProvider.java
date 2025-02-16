@@ -15,7 +15,7 @@
  */
 package io.roadrunner.protocols.vm;
 
-import io.roadrunner.api.options.CliOptionsBuilder;
+import io.roadrunner.options.CliOptionsBuilder;
 import io.roadrunner.protocols.spi.ProtocolProvider;
 import io.roadrunner.protocols.spi.ProtocolRequest;
 import java.util.concurrent.CompletableFuture;
