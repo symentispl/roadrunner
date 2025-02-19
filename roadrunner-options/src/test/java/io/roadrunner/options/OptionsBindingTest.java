@@ -42,6 +42,19 @@ class OptionsBindingTest {
         }
     }
 
+    static class OptionsForClassWithStringArg {
+        final String param;
+        final String arg;
+
+        public OptionsForClassWithStringArg(
+                @CliOption(longOpt = "test-param", description = "Test parameter", required = true, hasArg = true)
+                        String param,
+                @CliArg String arg) {
+            this.param = param;
+            this.arg = arg;
+        }
+    }
+
     @Test
     void optionsForClassWithIntParameter() throws Exception {
         // given
@@ -73,6 +86,24 @@ class OptionsBindingTest {
                 .asInstanceOf(type(OptionsForClassWithStringParameter.class))
                 .satisfies(p -> {
                     assertThat(p.param).isEqualTo("1");
+                });
+    }
+
+    @Test
+    void optionsForClassWithStringArg() throws Exception {
+        // given
+        var cliOptionsBuilder = new CliOptionsBuilder();
+        var binding = cliOptionsBuilder.build(OptionsForClassWithStringArg.class);
+        var args = new String[] {"--test-param", "1", "argument"};
+        // when
+        var instance = binding.newInstance(args);
+
+        // then
+        assertThat(instance)
+                .asInstanceOf(type(OptionsForClassWithStringArg.class))
+                .satisfies(p -> {
+                    assertThat(p.param).isEqualTo("1");
+                    assertThat(p.arg).isEqualTo("argument");
                 });
     }
 }

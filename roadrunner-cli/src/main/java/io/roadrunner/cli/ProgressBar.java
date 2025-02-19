@@ -16,7 +16,6 @@
 package io.roadrunner.cli;
 
 import io.roadrunner.api.MeasurementProgress;
-
 import java.io.Console;
 
 class ProgressBar implements MeasurementProgress {
@@ -48,6 +47,7 @@ class ProgressBar implements MeasurementProgress {
         }
         int status = (int) (100 * (currentPosition - startPosition) / (finishPosition - startPosition));
         int move = (progressBarSize * status) / 100;
-        return "[" + bar.substring(0, move).replace(pb, stat) + status + "%" + bar.substring(move, bar.length()) + "]";
+        return "[" + bar.substring(0, move).replace(pb, stat) + status + "%" + bar.substring(move, bar.length()) + "] "
+                + currentPosition + "/" + finishPosition;
     }
 }

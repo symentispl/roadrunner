@@ -15,6 +15,8 @@
  */
 package io.roadrunner.options;
 
+import static io.roadrunner.options.ParameterBinding.forArg;
+import static io.roadrunner.options.ParameterBinding.forOption;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 import java.lang.reflect.Constructor;
@@ -24,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.cli.Converter;
 import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 
 public class CliOptionsBuilder {
     private static final String DEFAULT_DESCRIPTION = "";
@@ -32,33 +35,42 @@ public class CliOptionsBuilder {
         Constructor<?>[] constructors = clazz.getDeclaredConstructors();
         for (Constructor<?> constructor : constructors) {
             Parameter[] parameters = constructor.getParameters();
-            Map<String, Option> bindings = new HashMap<>();
+            Map<String, ParameterBinding> bindings = new HashMap<>();
+            Options options = new Options();
             for (Parameter param : parameters) {
-                CliOption annotation = param.getAnnotation(CliOption.class);
-                if (annotation != null) {
+                CliOption cliOption = param.getAnnotation(CliOption.class);
+                if (cliOption != null) {
                     Option.Builder optBuilder = Option.builder();
-                    if (isNotEmpty(annotation.opt())) {
-                        optBuilder.option(annotation.opt());
+                    if (isNotEmpty(cliOption.opt())) {
+                        optBuilder.option(cliOption.opt());
                     }
-                    if (isNotEmpty(annotation.longOpt())) {
-                        optBuilder.longOpt(annotation.longOpt());
+                    if (isNotEmpty(cliOption.longOpt())) {
+                        optBuilder.longOpt(cliOption.longOpt());
                     }
                     optBuilder
-                            .desc(annotation.description().isEmpty() ? DEFAULT_DESCRIPTION : annotation.description())
-                            .required(annotation.required())
+                            .desc(cliOption.description().isEmpty() ? DEFAULT_DESCRIPTION : cliOption.description())
+                            .required(cliOption.required())
                             .type(param.getType());
                     if (param.getType() == Duration.class) {
                         optBuilder.converter(
                                 (Converter<Duration, Throwable>) string -> Duration.ofMillis(Long.parseLong(string)));
                     }
-                    if (annotation.hasArg()) {
+                    if (cliOption.hasArg()) {
                         optBuilder.hasArg();
                     }
                     // binds constructor parameter by name to option
-                    bindings.put(param.getName(), optBuilder.build());
+                    var option = optBuilder.build();
+                    bindings.put(param.getName(), forOption(option));
+                    options.addOption(option);
+                    continue;
+                }
+
+                CliArg cliArg = param.getAnnotation(CliArg.class);
+                if (cliArg != null) {
+                    bindings.put(param.getName(), forArg());
                 }
             }
-            return new OptionsBinding(clazz, constructor, bindings);
+            return new OptionsBinding(clazz, constructor, bindings, options);
         }
 
         throw new IllegalArgumentException("Class %s doesn't have public constructor".formatted(clazz));

@@ -22,9 +22,9 @@ import io.roadrunner.api.Measurements;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.options.CliOptionsBuilder;
 import io.roadrunner.protocols.spi.ProtocolProvider;
-import io.roadrunner.protocols.spi.ProtocolRequest;
-import io.roadrunner.protocols.spi.ProtocolRequestOptions;
+
 import java.util.ServiceLoader;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,12 +33,11 @@ public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) throws Exception {
-
         LOG.info("loading protocol providers");
         var protocols = ServiceLoader.load(ProtocolProvider.class).stream()
                 .map(ServiceLoader.Provider::get)
                 .peek(protocolProvider -> LOG.info("found protocol {}", protocolProvider.name()))
-                .collect(toMap(p -> p.name(), identity()));
+                .collect(toMap(ProtocolProvider::name, identity()));
 
         var cliOptionsBuilder = new CliOptionsBuilder();
         var optionsBinding = cliOptionsBuilder.build(RoadrunnerOptions.class);
@@ -57,16 +56,14 @@ public class Main {
         System.arraycopy(remainingArgs, 1, protocolArgs, 0, protocolArgs.length);
 
         var protocol = protocols.get(protocolName);
-        ProtocolRequestOptions requestOptions = protocol.requestOptions(protocolArgs);
-        ProtocolRequest request = protocol.request(requestOptions);
-
+        var requestOptions = protocol.requestOptions(protocolArgs);
+        var request = protocol.request(requestOptions);
         try {
             var measurements = roadrunner.execute(() -> request::execute);
             prettyPrintHistogramSummary(measurements);
-
         } finally {
             LOG.info("closing protocol providers");
-            protocols.values().stream().forEach(p -> {
+            protocols.values().forEach(p -> {
                 try {
                     p.close();
                 } catch (Exception e) {

@@ -20,20 +20,22 @@ import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.Map;
 import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
 public class OptionsBinding<T> {
 
     private final Class<T> clazz;
     private final Constructor<T> constructor;
-    private final Map<String, Option> bindings;
+    private final Map<String, ParameterBinding> bindings;
+    private final Options options;
     private String[] args;
 
-    OptionsBinding(Class<T> clazz, Constructor<T> constructor, Map<String, Option> bindings) {
+    OptionsBinding(
+            Class<T> clazz, Constructor<T> constructor, Map<String, ParameterBinding> bindings, Options options) {
         this.clazz = clazz;
         this.constructor = constructor;
         this.bindings = bindings;
+        this.options = options;
     }
 
     public T newInstance(String[] args) throws Exception {
@@ -48,8 +50,8 @@ public class OptionsBinding<T> {
                 .toArray(String[]::new);
 
         for (int i = 0; i < parameterNames.length; i++) {
-            var option = bindings.get(parameterNames[i]);
-            constructorArgs[i] = cmd.getParsedOptionValue(option);
+            var parameterBinding = bindings.get(parameterNames[i]);
+            constructorArgs[i] = parameterBinding.bind(cmd);
         }
 
         this.args = cmd.getArgs();
@@ -61,8 +63,6 @@ public class OptionsBinding<T> {
     }
 
     Options options() {
-        var options = new Options();
-        bindings.values().forEach(options::addOption);
         return options;
     }
 }

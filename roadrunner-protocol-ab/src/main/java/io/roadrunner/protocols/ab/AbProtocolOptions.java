@@ -13,18 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.protocols.spi.ProtocolProvider;
+package io.roadrunner.protocols.ab;
 
-module pl.symentis.roadrunner.cli {
-    requires org.slf4j;
-    requires io.roadrunner.core;
-    requires io.roadrunner.protocols.spi;
-    requires io.roadrunner.api;
-    requires io.roadrunner.options;
-    requires io.roadrunner.hdrhistogram;
-    requires jdk.jfr;
+import io.roadrunner.options.CliArg;
+import io.roadrunner.protocols.spi.ProtocolRequestOptions;
 
-    uses ProtocolProvider;
-
-    opens io.roadrunner.cli;
-}
+public record AbProtocolOptions(@CliArg String uri) implements ProtocolRequestOptions {}

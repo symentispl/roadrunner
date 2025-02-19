@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import io.roadrunner.protocols.ab.AbProtocolProvider;
 import io.roadrunner.protocols.spi.ProtocolProvider;
 
-module pl.symentis.roadrunner.cli {
-    requires org.slf4j;
-    requires io.roadrunner.core;
-    requires io.roadrunner.protocols.spi;
-    requires io.roadrunner.api;
+module io.roadrunner.protocol.ab {
+    requires java.net.http;
     requires io.roadrunner.options;
-    requires io.roadrunner.hdrhistogram;
-    requires jdk.jfr;
+    requires io.roadrunner.protocols.spi;
+    requires org.apache.commons.statistics.distribution;
 
-    uses ProtocolProvider;
+    provides ProtocolProvider with
+            AbProtocolProvider;
 
-    opens io.roadrunner.cli;
+    opens io.roadrunner.protocols.ab;
 }

@@ -9,40 +9,24 @@
         <version>0.0.2-SNAPSHOT</version>
     </parent>
 
-    <artifactId>roadrunner-core-tests</artifactId>
+    <artifactId>roadrunner-protocol-ab</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-core</artifactId>
+            <artifactId>roadrunner-options</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocol-vm</artifactId>
+            <artifactId>roadrunner-protocols-spi</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocol-ab</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.assertj</groupId>
-            <artifactId>assertj-core</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-statistics-distribution</artifactId>
+            <version>1.1</version>
         </dependency>
     </dependencies>
+
 </project>

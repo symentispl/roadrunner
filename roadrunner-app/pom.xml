@@ -26,6 +26,9 @@
                         <addModule>pl.symentis.roadrunner.cli</addModule>
                     </addModules>
                     <launcher>roadrunner=pl.symentis.roadrunner.cli/io.roadrunner.cli.Main</launcher>
+                    <addOptions>
+                        <addOption>-Djdk.tracePinnedThreads=full</addOption>
+                    </addOptions>
                 </configuration>
             </plugin>
         </plugins>
@@ -46,6 +49,11 @@
         <dependency>
             <groupId>io.roadrunner</groupId>
             <artifactId>roadrunner-protocol-vm</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-protocol-ab</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
