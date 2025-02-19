@@ -14,11 +14,11 @@ on:
   pull_request:
     branches: [ "master" ]
 
-    permissions:
-      contents: write
-      dependency-graph: write
+permissions:
+  contents: write
+  dependency-graph: write
 
-    jobs:
+jobs:
   build:
 
     runs-on: ubuntu-latest
