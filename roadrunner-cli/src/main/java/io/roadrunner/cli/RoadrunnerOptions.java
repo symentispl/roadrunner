@@ -16,18 +16,15 @@
 package io.roadrunner.cli;
 
 import io.roadrunner.options.CliOption;
-
 import java.nio.file.Path;
 
 public record RoadrunnerOptions(
         @CliOption(
-                opt = "c",
-                description = "Number of multiple requests to make at a time",
-                required = true,
-                hasArg = true)
-        Integer concurrency,
+                        opt = "c",
+                        description = "Number of multiple requests to make at a time",
+                        required = true,
+                        hasArg = true)
+                Integer concurrency,
         @CliOption(opt = "n", description = "Total number of multiple requests to make", required = true, hasArg = true)
-        Integer numberOfRequests,
-        @CliOption(opt = "s", description = "Charts", hasArg = true)
-        Path chartsDir) {
-}
+                Integer numberOfRequests,
+        @CliOption(opt = "s", description = "Charts", hasArg = true) Path chartsDir) {}

@@ -23,7 +23,6 @@ import java.io.Reader;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -33,8 +32,7 @@ import org.apache.commons.text.io.StringSubstitutorReader;
 
 public class ChartGenerator {
 
-    public ChartGenerator() {
-    }
+    public ChartGenerator() {}
 
     public void generateChart(Path outputPath, Path responsesCsv) throws IOException {
         if (Files.exists(outputPath) || Files.isRegularFile(outputPath)) {
@@ -45,17 +43,14 @@ public class ChartGenerator {
         var datapointsJs = outputPath.resolve("data.js");
 
         try (Reader in = Files.newBufferedReader(responsesCsv);
-             PrintStream out = new PrintStream(datapointsJs.toFile())) {
+                PrintStream out = new PrintStream(datapointsJs.toFile())) {
             CSVParser records = CSVFormat.DEFAULT.parse(in);
             out.println("const datapoints = [");
             for (CSVRecord record : records) {
                 try {
                     var startTime = Long.parseLong(record.get(0));
                     var stopTime = Long.parseLong(record.get(1)) - startTime;
-                    out.println("\t{x : %d,y : %d},"
-                            .formatted(
-                                    startTime,
-                                    stopTime));
+                    out.println("\t{x : %d,y : %d},".formatted(startTime, stopTime));
                 } catch (NumberFormatException e) {
                     System.out.println("invalid line");
                 }
@@ -64,9 +59,9 @@ public class ChartGenerator {
         }
 
         try (var reader = new StringSubstitutorReader(
-                new InputStreamReader(ChartGenerator.class.getResourceAsStream("/templates/index.html.tmpl")),
-                StringSubstitutor.createInterpolator());
-             var writer = new FileWriter(indexHtml.toFile())) {
+                        new InputStreamReader(ChartGenerator.class.getResourceAsStream("/templates/index.html.tmpl")),
+                        StringSubstitutor.createInterpolator());
+                var writer = new FileWriter(indexHtml.toFile())) {
             IOUtils.copy(reader, writer);
         }
     }

@@ -7,7 +7,6 @@
         <groupId>io.roadrunner</groupId>
         <artifactId>roadrunner</artifactId>
         <version>0.0.2-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>roadrunner-protocols-spi</artifactId>
@@ -19,6 +18,5 @@
             <version>${project.version}</version>
         </dependency>
     </dependencies>
-
 
 </project>

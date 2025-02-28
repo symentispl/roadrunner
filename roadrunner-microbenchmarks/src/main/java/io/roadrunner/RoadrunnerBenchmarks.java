@@ -43,7 +43,7 @@ public class RoadrunnerBenchmarks {
 
     @Benchmark
     @Fork(value = 1, warmups = 1, jvmArgsAppend = "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn")
-    public void testMethod() {
+    public void executeRoadrunnerVmProtocol() {
         roadrunner.execute(() -> request::execute);
     }
 }

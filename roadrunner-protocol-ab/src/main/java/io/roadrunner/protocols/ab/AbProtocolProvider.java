@@ -19,13 +19,11 @@ import io.roadrunner.api.protocol.ProtocolRequest;
 import io.roadrunner.api.protocol.ProtocolResponse;
 import io.roadrunner.options.CliOptionsBuilder;
 import io.roadrunner.protocols.spi.ProtocolProvider;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Clock;
 
 public class AbProtocolProvider implements ProtocolProvider<AbProtocolOptions> {
 

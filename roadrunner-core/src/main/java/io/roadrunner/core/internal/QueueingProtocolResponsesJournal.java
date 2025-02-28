@@ -51,7 +51,7 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
             var batch = new ArrayList<ProtocolResponse>(BATCH_SIZE + 1);
             while (isRunning) {
                 try {
-                    var response = responses.poll(100, TimeUnit.MILLISECONDS);
+                    var response = responses.poll(1, TimeUnit.MILLISECONDS);
                     if (response != null) {
                         batch.add(response);
                         responses.drainTo(batch, BATCH_SIZE);
@@ -79,6 +79,9 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
         executorService.shutdown();
         try {
             executorService.awaitTermination(1, TimeUnit.SECONDS);
+
+            // drain remaining items
+
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

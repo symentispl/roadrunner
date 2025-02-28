@@ -16,11 +16,9 @@
 package io.roadrunner.protocols.vm;
 
 import io.roadrunner.api.protocol.ProtocolRequest;
-import io.roadrunner.api.protocol.ProtocolResponse;
 import io.roadrunner.api.protocol.Response;
 import io.roadrunner.options.CliOptionsBuilder;
 import io.roadrunner.protocols.spi.ProtocolProvider;
-
 import java.util.concurrent.CompletableFuture;
 
 public class VmProtocolProvider implements ProtocolProvider<VmProtocolOptions> {
@@ -56,6 +54,5 @@ public class VmProtocolProvider implements ProtocolProvider<VmProtocolOptions> {
     }
 
     @Override
-    public void close() {
-    }
+    public void close() {}
 }

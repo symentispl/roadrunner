@@ -22,10 +22,9 @@ import io.roadrunner.api.measurments.Measurements;
 import io.roadrunner.charts.ChartGenerator;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.options.CliOptionsBuilder;
+import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.file.Paths;
 
 public class Main {
 

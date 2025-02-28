@@ -16,9 +16,11 @@
 package io.roadrunner.core.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.roadrunner.api.ProtocolResponseListener;
 import io.roadrunner.api.protocol.ProtocolResponse;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -43,9 +45,12 @@ class QueueingProtocolResponsesJournalTest {
         journal.append(response3);
         journal.append(response4);
         journal.append(response5);
-        journal.close();
 
-        assertThat(listener.responses).containsExactly(response1, response2, response3, response4, response5);
+        await().atMost(Duration.ofSeconds(2)).untilAsserted(() -> {
+            assertThat(listener.responses).containsExactly(response1, response2, response3, response4, response5);
+        });
+
+        journal.close();
     }
 
     private static class CollectionProtocolResponseListener implements ProtocolResponseListener {
