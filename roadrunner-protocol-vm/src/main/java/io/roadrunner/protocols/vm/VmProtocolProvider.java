@@ -16,9 +16,11 @@
 package io.roadrunner.protocols.vm;
 
 import io.roadrunner.api.protocol.ProtocolRequest;
+import io.roadrunner.api.protocol.ProtocolResponse;
 import io.roadrunner.api.protocol.Response;
 import io.roadrunner.options.CliOptionsBuilder;
 import io.roadrunner.protocols.spi.ProtocolProvider;
+
 import java.util.concurrent.CompletableFuture;
 
 public class VmProtocolProvider implements ProtocolProvider<VmProtocolOptions> {
@@ -40,21 +42,20 @@ public class VmProtocolProvider implements ProtocolProvider<VmProtocolOptions> {
 
     @Override
     public ProtocolRequest request(VmProtocolOptions requestOptions) {
-        return () -> {
-            var startTime = System.nanoTime();
-            CompletableFuture.runAsync(() -> {
-                        try {
-                            Thread.sleep(requestOptions.sleepTime());
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-                    .join();
-            var stopTime = System.nanoTime();
-            return Response.empty(startTime, stopTime);
-        };
+        return () -> CompletableFuture.supplyAsync(() -> {
+                    var startTime = System.nanoTime();
+                    try {
+                        Thread.sleep(requestOptions.sleepTime());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    var stopTime = System.nanoTime();
+                    return Response.empty(startTime, stopTime);
+                })
+                .join();
     }
 
     @Override
-    public void close() {}
+    public void close() {
+    }
 }
