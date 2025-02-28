@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api;
+package io.roadrunner.api.protocol;
 
-public record Measurements(
-        long totalCount,
-        double mean,
-        double maxValue,
-        double minValue,
-        double p50,
-        double p90,
-        double p99,
-        double p999) {}
+public final class Error extends ProtocolResponse {
+
+    private final String message;
+
+    public Error(long startTime, long stopTime, String message) {
+        super(startTime, stopTime);
+        this.message = message;
+    }
+}

@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api;
+package io.roadrunner.charts;
 
-public interface MeasurementProgress {
+import java.util.List;
 
-    MeasurementProgress NO_OP = r -> {};
-
-    void update(long request);
+public record ChartData(List<Long> timestamps, List<Long> executionTimes) {
+    public static ChartData of(List<Long> timestamps, List<Long> executionTimes) {
+        return new ChartData(timestamps, executionTimes);
+    }
 }

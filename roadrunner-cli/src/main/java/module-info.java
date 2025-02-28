@@ -22,7 +22,9 @@ module pl.symentis.roadrunner.cli {
     requires io.roadrunner.api;
     requires io.roadrunner.options;
     requires io.roadrunner.hdrhistogram;
+    requires io.roadrunner.charts;
     requires jdk.jfr;
+    requires org.apache.commons.io;
 
     uses ProtocolProvider;
 

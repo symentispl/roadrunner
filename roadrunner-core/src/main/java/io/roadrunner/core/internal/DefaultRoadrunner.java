@@ -15,12 +15,18 @@
  */
 package io.roadrunner.core.internal;
 
-import io.roadrunner.api.MeasurementProgress;
-import io.roadrunner.api.Measurements;
+import io.roadrunner.api.ProtocolResponseListener;
 import io.roadrunner.api.Roadrunner;
+import io.roadrunner.api.measurments.MeasurementProgress;
+import io.roadrunner.api.measurments.Measurements;
+import io.roadrunner.api.protocol.ProtocolRequest;
+import io.roadrunner.api.protocol.ProtocolResponse;
 import io.roadrunner.shaded.hdrhistogram.ConcurrentHistogram;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -43,23 +49,30 @@ public class DefaultRoadrunner implements Roadrunner {
     }
 
     @Override
-    public Measurements execute(Supplier<Runnable> roadrunner) {
+    public Measurements execute(Supplier<ProtocolRequest> requestsFactory) {
 
-        var histogram = new ConcurrentHistogram(2);
+        var histogram = new ConcurrentHistogram(3);
         LOG.info("Roadrunner started: {} concurrent users, {} total number of requests", concurrentUsers, requests);
         var currentTimeMillis = System.currentTimeMillis();
-        try (var executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+        var delayedSupplier = new DelayedSupplier<>(requestsFactory, () -> 20L);
+        try (var usersExecutor = Executors.newThreadPerTaskExecutor(
+                        Thread.ofVirtual().name("roadrunner-users-").factory());
+                var requestsExecutor = Executors.newCachedThreadPool(
+                        Thread.ofVirtual().name("roadrunner-requests-").factory());
+                var responsesJournal = new QueueingProtocolResponsesJournal(new CsvOutputProtocolResponseListener())) {
             var latch = new CountDownLatch(concurrentUsers);
-            var measurementControl = new MeasurementControl(measurementProgress, requests);
+            var measurementControl =
+                    new MeasurementControl(measurementProgress, requests, histogram, responsesJournal, latch);
+            responsesJournal.start();
             for (int i = 0; i < concurrentUsers; i++) {
-                executorService.submit(new RoadrunnerTask(histogram, latch, measurementControl, roadrunner.get()));
+                usersExecutor.submit(new RoadrunnerUser(measurementControl, delayedSupplier.get(), requestsExecutor));
             }
 
             try {
                 latch.await();
                 LOG.info("Roadrunner stopped, time {}ms", System.currentTimeMillis() - currentTimeMillis);
-                executorService.shutdown();
-                executorService.awaitTermination(10, TimeUnit.SECONDS);
+                usersExecutor.shutdown();
+                usersExecutor.awaitTermination(10, TimeUnit.SECONDS);
                 return DefaultMeasurements.create(histogram);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -67,33 +80,37 @@ public class DefaultRoadrunner implements Roadrunner {
         }
     }
 
-    private static class RoadrunnerTask implements Runnable {
-
-        private final Histogram histogram;
-        private final CountDownLatch latch;
+    private static class RoadrunnerUser implements Runnable {
         private final MeasurementControl measurementControl;
-        private final Runnable task;
+        private final ProtocolRequest protocolRequest;
+        private final ExecutorService requestsExecutor;
 
-        private RoadrunnerTask(
-                Histogram histogram, CountDownLatch latch, MeasurementControl measurementControl, Runnable task) {
-            this.histogram = histogram;
-            this.latch = latch;
+        private RoadrunnerUser(
+                MeasurementControl measurementControl,
+                ProtocolRequest protocolRequest,
+                ExecutorService requestsExecutor) {
             this.measurementControl = measurementControl;
-            this.task = task;
+            this.protocolRequest = protocolRequest;
+            this.requestsExecutor = requestsExecutor;
         }
 
         @Override
         public void run() {
+            measurementControl.userEnter();
             try {
                 while (measurementControl.isRunning()) {
-                    var scheduledTime = System.currentTimeMillis();
-                    task.run();
-                    var currentTime = System.currentTimeMillis();
-                    histogram.recordValue(currentTime - scheduledTime);
-                    measurementControl.countDown();
+                    try {
+                        //                        var scheduledTime = System.nanoTime();
+                        var response = requestsExecutor
+                                .submit(protocolRequest::execute)
+                                .get();
+                        measurementControl.request(response);
+                    } catch (InterruptedException | ExecutionException e) {
+                        System.out.println("<<>>");
+                    }
                 }
             } finally {
-                latch.countDown();
+                measurementControl.userExit();
             }
         }
     }
@@ -101,21 +118,51 @@ public class DefaultRoadrunner implements Roadrunner {
     private static class MeasurementControl {
 
         private final AtomicLong counter;
+        private final Histogram histogram;
+        private final QueueingProtocolResponsesJournal responsesJournal;
+        private final CountDownLatch latch;
         private final MeasurementProgress measurementProgress;
         private final long requests;
 
-        MeasurementControl(MeasurementProgress measurementProgress, long requests) {
+        MeasurementControl(
+                MeasurementProgress measurementProgress,
+                long requests,
+                Histogram histogram,
+                QueueingProtocolResponsesJournal responsesJournal,
+                CountDownLatch latch) {
             this.measurementProgress = measurementProgress;
             this.requests = requests;
             this.counter = new AtomicLong(requests);
+            this.histogram = histogram;
+            this.responsesJournal = responsesJournal;
+            this.latch = latch;
         }
 
         boolean isRunning() {
             return counter.get() > 0;
         }
 
-        public void countDown() {
+        public void userEnter() {}
+
+        public void request(ProtocolResponse response) {
             measurementProgress.update(requests - counter.decrementAndGet());
+            histogram.recordValue(response.stopTime() - response.startTime());
+            responsesJournal.append(response);
         }
+
+        public void userExit() {
+            latch.countDown();
+        }
+    }
+
+    private static class NoopProtocolResponseListener implements ProtocolResponseListener {
+        @Override
+        public void onStart() {}
+
+        @Override
+        public void onResponses(Collection<? extends ProtocolResponse> batch) {}
+
+        @Override
+        public void onStop() {}
     }
 }

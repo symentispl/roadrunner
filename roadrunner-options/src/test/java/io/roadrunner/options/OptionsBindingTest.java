@@ -59,7 +59,7 @@ class OptionsBindingTest {
     void optionsForClassWithIntParameter() throws Exception {
         // given
         var cliOptionsBuilder = new CliOptionsBuilder();
-        var binding = cliOptionsBuilder.build(OptionsForClassWithIntParameter.class);
+        var binding = cliOptionsBuilder.from(OptionsForClassWithIntParameter.class);
         var args = new String[] {"--test-param", "1"};
         // when
         var instance = binding.newInstance(args);
@@ -76,7 +76,7 @@ class OptionsBindingTest {
     void optionsForClassWithStringParameter() throws Exception {
         // given
         var cliOptionsBuilder = new CliOptionsBuilder();
-        var binding = cliOptionsBuilder.build(OptionsForClassWithStringParameter.class);
+        var binding = cliOptionsBuilder.from(OptionsForClassWithStringParameter.class);
         var args = new String[] {"--test-param", "1"};
         // when
         var instance = binding.newInstance(args);
@@ -93,7 +93,7 @@ class OptionsBindingTest {
     void optionsForClassWithStringArg() throws Exception {
         // given
         var cliOptionsBuilder = new CliOptionsBuilder();
-        var binding = cliOptionsBuilder.build(OptionsForClassWithStringArg.class);
+        var binding = cliOptionsBuilder.from(OptionsForClassWithStringArg.class);
         var args = new String[] {"--test-param", "1", "argument"};
         // when
         var instance = binding.newInstance(args);

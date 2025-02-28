@@ -28,12 +28,12 @@ class CliOptionsBuilderTest {
     }
 
     @Test
-    void shouldBuildOptionsForClassWithOneConstructorParameter() {
+    void shouldFromOptionsForClassWithOneConstructorParameter() {
         // given
         var builder = new CliOptionsBuilder();
 
         // when
-        var optionsBinding = builder.build(OptionsForClassWithOneConstructorParameter.class);
+        var optionsBinding = builder.from(OptionsForClassWithOneConstructorParameter.class);
         var options = optionsBinding.options();
         // then
         assertThat(options.getOptions()).hasSize(1);

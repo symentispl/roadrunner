@@ -20,6 +20,7 @@ module io.roadrunner.protocol.ab {
     requires java.net.http;
     requires io.roadrunner.options;
     requires io.roadrunner.protocols.spi;
+    requires io.roadrunner.api;
     requires org.apache.commons.statistics.distribution;
 
     provides ProtocolProvider with

@@ -15,10 +15,10 @@
  */
 package io.roadrunner.cli;
 
-import io.roadrunner.api.MeasurementProgress;
+import io.roadrunner.api.measurments.MeasurementProgress;
 import java.io.Console;
 
-class ProgressBar implements MeasurementProgress {
+final class ProgressBar implements MeasurementProgress {
     private final int progressBarSize;
     private final long startPosition;
     private final long finishPosition;

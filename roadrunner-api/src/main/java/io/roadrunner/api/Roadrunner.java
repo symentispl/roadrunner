@@ -15,8 +15,10 @@
  */
 package io.roadrunner.api;
 
+import io.roadrunner.api.measurments.Measurements;
+import io.roadrunner.api.protocol.ProtocolRequest;
 import java.util.function.Supplier;
 
 public interface Roadrunner {
-    Measurements execute(Supplier<Runnable> roadrunner);
+    Measurements execute(Supplier<ProtocolRequest> requestsFactory);
 }

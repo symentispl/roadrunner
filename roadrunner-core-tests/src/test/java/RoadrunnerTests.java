@@ -15,7 +15,7 @@
  */
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.roadrunner.api.Measurements;
+import io.roadrunner.api.measurments.Measurements;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.protocols.vm.VmProtocolOptions;
 import io.roadrunner.protocols.vm.VmProtocolProvider;

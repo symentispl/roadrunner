@@ -26,8 +26,7 @@ import java.util.concurrent.Flow;
 
 final class CustomBodyHandlers {
 
-    public record HttpResponseData(long bytesConsumed, double speedMbps) {
-    }
+    public record HttpResponseData(long bytesConsumed, double speedMbps) {}
 
     public static HttpResponse.BodyHandler<HttpResponseData> ofByteCounting() {
         return responseInfo -> new ByteCountingSubscriber();

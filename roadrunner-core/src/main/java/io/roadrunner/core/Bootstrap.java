@@ -15,8 +15,8 @@
  */
 package io.roadrunner.core;
 
-import io.roadrunner.api.MeasurementProgress;
 import io.roadrunner.api.Roadrunner;
+import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.core.internal.DefaultRoadrunner;
 
 public class Bootstrap {

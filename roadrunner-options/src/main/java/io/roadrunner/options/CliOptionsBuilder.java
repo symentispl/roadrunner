@@ -31,7 +31,7 @@ import org.apache.commons.cli.Options;
 public class CliOptionsBuilder {
     private static final String DEFAULT_DESCRIPTION = "";
 
-    public <T> OptionsBinding<T> build(Class<T> clazz) {
+    public <T> OptionsBinding<T> from(Class<T> clazz) {
         Constructor<?>[] constructors = clazz.getDeclaredConstructors();
         for (Constructor<?> constructor : constructors) {
             Parameter[] parameters = constructor.getParameters();

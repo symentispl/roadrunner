@@ -16,8 +16,8 @@
 package io.roadrunner;
 
 import io.roadrunner.api.Roadrunner;
+import io.roadrunner.api.protocol.ProtocolRequest;
 import io.roadrunner.core.Bootstrap;
-import io.roadrunner.protocols.spi.ProtocolRequest;
 import io.roadrunner.protocols.vm.VmProtocolOptions;
 import io.roadrunner.protocols.vm.VmProtocolProvider;
 import java.time.Duration;

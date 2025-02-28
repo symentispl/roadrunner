@@ -15,9 +15,10 @@
  */
 package io.roadrunner.protocols.vm;
 
+import io.roadrunner.api.protocol.ProtocolRequest;
+import io.roadrunner.api.protocol.Response;
 import io.roadrunner.options.CliOptionsBuilder;
 import io.roadrunner.protocols.spi.ProtocolProvider;
-import io.roadrunner.protocols.spi.ProtocolRequest;
 import java.util.concurrent.CompletableFuture;
 
 public class VmProtocolProvider implements ProtocolProvider<VmProtocolOptions> {
@@ -29,10 +30,9 @@ public class VmProtocolProvider implements ProtocolProvider<VmProtocolOptions> {
     @Override
     public VmProtocolOptions requestOptions(String[] protocolArgs) {
         var optionsBuilder = new CliOptionsBuilder();
-        var optionsBinding = optionsBuilder.build(VmProtocolOptions.class);
+        var optionsBinding = optionsBuilder.from(VmProtocolOptions.class);
         try {
-            var vmProtocolOptions = optionsBinding.newInstance(protocolArgs);
-            return vmProtocolOptions;
+            return optionsBinding.newInstance(protocolArgs);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -41,6 +41,7 @@ public class VmProtocolProvider implements ProtocolProvider<VmProtocolOptions> {
     @Override
     public ProtocolRequest request(VmProtocolOptions requestOptions) {
         return () -> {
+            var startTime = System.nanoTime();
             CompletableFuture.runAsync(() -> {
                         try {
                             Thread.sleep(requestOptions.sleepTime());
@@ -49,9 +50,11 @@ public class VmProtocolProvider implements ProtocolProvider<VmProtocolOptions> {
                         }
                     })
                     .join();
+            var stopTime = System.nanoTime();
+            return Response.empty(startTime, stopTime);
         };
     }
 
     @Override
-    public void close() throws Exception {}
+    public void close() {}
 }

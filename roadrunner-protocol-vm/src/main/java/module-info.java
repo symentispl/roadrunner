@@ -17,9 +17,11 @@ import io.roadrunner.protocols.spi.ProtocolProvider;
 import io.roadrunner.protocols.vm.VmProtocolProvider;
 
 module io.roadrunner.protocol.vm {
-    requires io.roadrunner.options;
+    requires io.roadrunner.api;
     requires io.roadrunner.protocols.spi;
+    requires io.roadrunner.options;
     requires org.apache.commons.statistics.distribution;
+    requires java.desktop;
 
     provides ProtocolProvider with
             VmProtocolProvider;

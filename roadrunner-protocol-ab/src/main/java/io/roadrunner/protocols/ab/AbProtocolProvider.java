@@ -15,27 +15,24 @@
  */
 package io.roadrunner.protocols.ab;
 
+import io.roadrunner.api.protocol.ProtocolRequest;
+import io.roadrunner.api.protocol.ProtocolResponse;
 import io.roadrunner.options.CliOptionsBuilder;
 import io.roadrunner.protocols.spi.ProtocolProvider;
-import io.roadrunner.protocols.spi.ProtocolRequest;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class AbProtocolProvider implements ProtocolProvider<AbProtocolOptions> {
 
     private final HttpClient httpClient;
-    private final ExecutorService cachedThreadPool;
 
     public AbProtocolProvider() {
-        httpClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build();
-        cachedThreadPool = Executors.newCachedThreadPool();
+        httpClient = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .build();
     }
 
     @Override
@@ -46,10 +43,9 @@ public class AbProtocolProvider implements ProtocolProvider<AbProtocolOptions> {
     @Override
     public AbProtocolOptions requestOptions(String[] protocolArgs) {
         var optionsBuilder = new CliOptionsBuilder();
-        var optionsBinding = optionsBuilder.build(AbProtocolOptions.class);
+        var optionsBinding = optionsBuilder.from(AbProtocolOptions.class);
         try {
-            var vmProtocolOptions = optionsBinding.newInstance(protocolArgs);
-            return vmProtocolOptions;
+            return optionsBinding.newInstance(protocolArgs);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -57,26 +53,28 @@ public class AbProtocolProvider implements ProtocolProvider<AbProtocolOptions> {
 
     @Override
     public ProtocolRequest request(AbProtocolOptions requestOptions) {
-        var httpRequest = HttpRequest.newBuilder(URI.create(requestOptions.uri())).GET().build();
-        var bodyHandler = HttpResponse.BodyHandlers.discarding();
-        return () -> CompletableFuture.runAsync(() -> {
-                    try {
-                        var httpResponse = httpClient.send(httpRequest, bodyHandler);
-                        if (httpResponse.statusCode() != 200) {
-                            System.out.println("error");
-                        }
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }, cachedThreadPool)
-                .join();
+        return () -> {
+            try {
+                var httpRequest = HttpRequest.newBuilder(URI.create(requestOptions.uri()))
+                        .GET()
+                        .build();
+                var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
+                var startTime = System.nanoTime();
+                var httpResponse = httpClient.send(httpRequest, bodyHandler);
+                var stopTime = System.nanoTime();
+                if (httpResponse.statusCode() == 200) {
+                    return ProtocolResponse.response(startTime, stopTime, httpResponse);
+                } else {
+                    return ProtocolResponse.error(startTime, stopTime, "");
+                }
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     @Override
     public void close() {
         httpClient.close();
-        cachedThreadPool.close();
     }
 }

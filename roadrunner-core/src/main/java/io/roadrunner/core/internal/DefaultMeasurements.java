@@ -15,7 +15,7 @@
  */
 package io.roadrunner.core.internal;
 
-import io.roadrunner.api.Measurements;
+import io.roadrunner.api.measurments.Measurements;
 import io.roadrunner.shaded.hdrhistogram.ConcurrentHistogram;
 
 final class DefaultMeasurements {

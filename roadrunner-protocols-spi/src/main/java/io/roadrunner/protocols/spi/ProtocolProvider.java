@@ -15,6 +15,8 @@
  */
 package io.roadrunner.protocols.spi;
 
+import io.roadrunner.api.protocol.ProtocolRequest;
+
 public interface ProtocolProvider<R extends ProtocolRequestOptions> extends AutoCloseable {
     String name();
 

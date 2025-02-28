@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.protocols.spi;
+module io.roadrunner.charts {
+    requires org.apache.commons.text;
+    requires org.apache.commons.csv;
+    requires org.apache.commons.io;
 
-public interface ProtocolRequest {
-    void execute();
+    exports io.roadrunner.charts;
 }

@@ -25,6 +25,16 @@
             <artifactId>roadrunner-protocols-spi</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-charts</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>

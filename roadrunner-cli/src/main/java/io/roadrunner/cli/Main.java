@@ -15,18 +15,17 @@
  */
 package io.roadrunner.cli;
 
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toMap;
+import static java.lang.Math.round;
+import static java.time.Duration.ofNanos;
 
-import io.roadrunner.api.Measurements;
+import io.roadrunner.api.measurments.Measurements;
+import io.roadrunner.charts.ChartGenerator;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.options.CliOptionsBuilder;
-import io.roadrunner.protocols.spi.ProtocolProvider;
-
-import java.util.ServiceLoader;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.file.Paths;
 
 public class Main {
 
@@ -34,13 +33,9 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         LOG.info("loading protocol providers");
-        var protocols = ServiceLoader.load(ProtocolProvider.class).stream()
-                .map(ServiceLoader.Provider::get)
-                .peek(protocolProvider -> LOG.info("found protocol {}", protocolProvider.name()))
-                .collect(toMap(ProtocolProvider::name, identity()));
 
         var cliOptionsBuilder = new CliOptionsBuilder();
-        var optionsBinding = cliOptionsBuilder.build(RoadrunnerOptions.class);
+        var optionsBinding = cliOptionsBuilder.from(RoadrunnerOptions.class);
         var roadrunnerOptions = optionsBinding.newInstance(args);
 
         var bootstrap = new Bootstrap();
@@ -55,21 +50,20 @@ public class Main {
         var protocolArgs = new String[remainingArgs.length - 1];
         System.arraycopy(remainingArgs, 1, protocolArgs, 0, protocolArgs.length);
 
-        var protocol = protocols.get(protocolName);
+        var protocolProviders = ProtocolProviders.load();
+
+        var protocol = protocolProviders.get(protocolName);
         var requestOptions = protocol.requestOptions(protocolArgs);
         var request = protocol.request(requestOptions);
         try {
             var measurements = roadrunner.execute(() -> request::execute);
             prettyPrintHistogramSummary(measurements);
+
+            if (roadrunnerOptions.chartsDir() != null) {
+                new ChartGenerator().generateChart(roadrunnerOptions.chartsDir(), Paths.get("output.csv"));
+            }
         } finally {
-            LOG.info("closing protocol providers");
-            protocols.values().forEach(p -> {
-                try {
-                    p.close();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            protocolProviders.close();
         }
     }
 
@@ -77,13 +71,17 @@ public class Main {
         System.out.println("HdrHistogram Summary:");
         System.out.println("=====================");
         System.out.printf("Total Count    : %d%n", measurements.totalCount());
-        System.out.printf("Min Value (ms) : %.2f ms%n", measurements.minValue());
-        System.out.printf("Max Value (ms) : %.2f ms%n", measurements.maxValue());
-        System.out.printf("Mean Value (ms): %.2f ms%n", measurements.mean());
-        System.out.printf("50th Percentile: %.2f ms%n", measurements.p50());
-        System.out.printf("90th Percentile: %.2f ms%n", measurements.p90());
-        System.out.printf("99th Percentile: %.2f ms%n", measurements.p99());
-        System.out.printf("99.9th Percentile: %.2f ms%n", measurements.p999());
+        System.out.printf("Min Value (ms) : %d ms%n", getMillis(measurements.minValue()));
+        System.out.printf("Max Value (ms) : %d ms%n", getMillis(measurements.maxValue()));
+        System.out.printf("Mean Value (ms): %d ms%n", getMillis(measurements.mean()));
+        System.out.printf("50th Percentile: %d ms%n", getMillis(measurements.p50()));
+        System.out.printf("90th Percentile: %d ms%n", getMillis(measurements.p90()));
+        System.out.printf("99th Percentile: %d ms%n", getMillis(measurements.p99()));
+        System.out.printf("99.9th Percentile: %d ms%n", getMillis(measurements.p999()));
         System.out.println("=====================");
+    }
+
+    private static long getMillis(double value) {
+        return ofNanos(round(value)).toMillis();
     }
 }
