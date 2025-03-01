@@ -15,42 +15,38 @@
  */
 package io.roadrunner.charts;
 
+import io.roadrunner.api.measurments.Measurement;
+import io.roadrunner.api.measurments.MeasurementsReader;
+import io.roadrunner.shaded.hdrhistogram.Histogram;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.Reader;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
+import java.time.Duration;
+import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.apache.commons.text.io.StringSubstitutorReader;
+import org.apache.commons.text.lookup.StringLookupFactory;
 
 public class ChartGenerator {
 
     public ChartGenerator() {}
 
-    public void generateChart(Path outputPath, Path responsesCsv) throws IOException {
-        if (Files.exists(outputPath) || Files.isRegularFile(outputPath)) {
-            throw new FileAlreadyExistsException("");
-        }
-
-        var indexHtml = Files.createDirectory(outputPath).resolve("index.html");
+    public void generateChart(Path outputPath, MeasurementsReader measurementsReader) throws IOException {
+        var indexHtml = outputPath.resolve("index.html");
         var datapointsJs = outputPath.resolve("data.js");
 
-        try (Reader in = Files.newBufferedReader(responsesCsv);
-                PrintStream out = new PrintStream(datapointsJs.toFile())) {
-            CSVParser records = CSVFormat.DEFAULT.parse(in);
+        var histogram = new Histogram(3);
+
+        try (PrintStream out = new PrintStream(datapointsJs.toFile())) {
             out.println("const datapoints = [");
-            for (CSVRecord record : records) {
+            for (Measurement measurement : measurementsReader) {
                 try {
-                    var startTime = Long.parseLong(record.get(0));
-                    var stopTime = Long.parseLong(record.get(1)) - startTime;
-                    out.println("\t{x : %d,y : %d},".formatted(startTime, stopTime));
+                    var responseTime = measurement.stopTime() - measurement.startTime();
+                    histogram.recordValue(responseTime);
+                    out.println("\t{x : %d,y : %d},".formatted(measurement.startTime(), responseTime));
                 } catch (NumberFormatException e) {
                     System.out.println("invalid line");
                 }
@@ -58,9 +54,20 @@ public class ChartGenerator {
             out.println("];");
         }
 
+        var map = Map.of(
+                "max",
+                Duration.ofNanos(histogram.getMaxValue()).toMillis(),
+                "min",
+                Duration.ofNanos(histogram.getMinValue()).toMillis(),
+                "mean",
+                Duration.ofNanos(Double.valueOf(histogram.getMean()).longValue())
+                        .toMillis());
+
+        var stringSubstitutor = new StringSubstitutor(StringLookupFactory.INSTANCE.interpolatorStringLookup(map));
+
         try (var reader = new StringSubstitutorReader(
                         new InputStreamReader(ChartGenerator.class.getResourceAsStream("/templates/index.html.tmpl")),
-                        StringSubstitutor.createInterpolator());
+                        stringSubstitutor);
                 var writer = new FileWriter(indexHtml.toFile())) {
             IOUtils.copy(reader, writer);
         }

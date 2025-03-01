@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.charts {
-    requires io.roadrunner.api;
-    requires io.roadrunner.hdrhistogram;
-    requires org.apache.commons.text;
-    requires org.apache.commons.io;
+package io.roadrunner.api.measurments;
 
-    exports io.roadrunner.charts;
+public record Measurement(long startTime, long stopTime, Status status) {
+    public enum Status {
+        OK,
+        ERROR;
+    }
 }

@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.charts {
+module io.roadrunner.output.csv {
     requires io.roadrunner.api;
-    requires io.roadrunner.hdrhistogram;
-    requires org.apache.commons.text;
-    requires org.apache.commons.io;
+    requires org.apache.commons.csv;
+    requires org.slf4j;
 
-    exports io.roadrunner.charts;
+    exports io.roadrunner.output.csv;
 }

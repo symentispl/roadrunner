@@ -19,10 +19,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import io.roadrunner.api.ProtocolResponseListener;
+import io.roadrunner.api.measurments.Measurement;
+import io.roadrunner.api.measurments.MeasurementsReader;
 import io.roadrunner.api.protocol.ProtocolResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -67,5 +70,17 @@ class QueueingProtocolResponsesJournalTest {
 
         @Override
         public void onStop() {}
+
+        @Override
+        public MeasurementsReader measurementsReader() {
+            return new MeasurementsReader() {
+                @Override
+                public Iterator<Measurement> iterator() {
+                    return responses.stream()
+                            .map(r -> new Measurement(r.startTime(), r.stopTime(), Measurement.Status.OK))
+                            .iterator();
+                }
+            };
+        }
     }
 }

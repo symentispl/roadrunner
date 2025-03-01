@@ -249,6 +249,7 @@
     <module>roadrunner-microbenchmarks</module>
     <module>roadrunner-options</module>
     <module>roadrunner-charts</module>
+      <module>roadrunner-csv-output</module>
   </modules>
   <profiles>
     <profile>

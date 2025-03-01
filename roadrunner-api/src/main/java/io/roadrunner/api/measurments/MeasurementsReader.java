@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.charts {
-    requires io.roadrunner.api;
-    requires io.roadrunner.hdrhistogram;
-    requires org.apache.commons.text;
-    requires org.apache.commons.io;
+package io.roadrunner.api.measurments;
 
-    exports io.roadrunner.charts;
+import java.util.Iterator;
+
+public interface MeasurementsReader extends Iterable<Measurement> {
+
+    Iterator<Measurement> iterator();
 }

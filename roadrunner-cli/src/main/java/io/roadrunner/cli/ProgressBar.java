@@ -19,6 +19,9 @@ import io.roadrunner.api.measurments.MeasurementProgress;
 import java.io.Console;
 
 final class ProgressBar implements MeasurementProgress {
+    private static final char EMPTY = '░';
+    private static final char FULL = '█';
+
     private final int progressBarSize;
     private final long startPosition;
     private final long finishPosition;
@@ -34,20 +37,20 @@ final class ProgressBar implements MeasurementProgress {
     @Override
     public void update(long currentPosition) {
         if (console != null) {
-            System.out.print("\r" + createProgressBar(currentPosition));
-        }
-    }
+            var status = (int) (100 * (currentPosition - startPosition) / (finishPosition - startPosition));
+            var move = (progressBarSize * status) / 100;
 
-    private String createProgressBar(long currentPosition) {
-        String bar = "";
-        char pb = '░';
-        char stat = '█';
-        for (int p = 0; p < progressBarSize; p++) {
-            bar += pb;
+            System.out.print(new StringBuilder(progressBarSize + 20)
+                    .append("\r")
+                    .append('[')
+                    .repeat(FULL, move)
+                    .append(status)
+                    .append('%')
+                    .repeat(EMPTY, progressBarSize - move)
+                    .append("] ")
+                    .append(currentPosition)
+                    .append('/')
+                    .append(finishPosition));
         }
-        int status = (int) (100 * (currentPosition - startPosition) / (finishPosition - startPosition));
-        int move = (progressBarSize * status) / 100;
-        return "[" + bar.substring(0, move).replace(pb, stat) + status + "%" + bar.substring(move, bar.length()) + "] "
-                + currentPosition + "/" + finishPosition;
     }
 }

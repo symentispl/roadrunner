@@ -23,6 +23,23 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+<div style="border: 1px solid #ccc; padding: 20px; margin: 20px auto; width: 80%; font-family: 'Arial', sans-serif; background-color: #f9f9f9; border-radius: 4px;">
+    <h2>Summary</h2>
+    <table style="width: 15%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px; font-weight: bold;">Max:</td>
+            <td style="padding: 8px;">${max}ms</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; font-weight: bold;">Min:</td>
+            <td style="padding: 8px;">${min}ms</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px; font-weight: bold;">Mean:</td>
+            <td style="padding: 8px;">${mean}ms</td>
+        </tr>
+    </table>
+</div>
 <div style="width: 80%; margin: auto;">
     <canvas id="performanceChart"></canvas>
 </div>

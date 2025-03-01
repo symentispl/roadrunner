@@ -13,32 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.core.internal;
+package io.roadrunner.output.csv;
 
 import io.roadrunner.api.ProtocolResponseListener;
+import io.roadrunner.api.measurments.MeasurementsReader;
 import io.roadrunner.api.protocol.Error;
 import io.roadrunner.api.protocol.ProtocolResponse;
 import io.roadrunner.api.protocol.Response;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class CsvOutputProtocolResponseListener implements ProtocolResponseListener {
+public class CsvOutputProtocolResponseListener implements ProtocolResponseListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(CsvOutputProtocolResponseListener.class);
 
+    private final Path csvOutputFile;
     private BufferedWriter bufferedWriter;
+
+    public CsvOutputProtocolResponseListener(Path csvOutputFile) {
+        this.csvOutputFile = csvOutputFile;
+    }
 
     @Override
     public void onStart() {
         try {
-            bufferedWriter = Files.newBufferedWriter(
-                    Paths.get("output.csv"), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+
+            bufferedWriter =
+                    Files.newBufferedWriter(csvOutputFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
         } catch (IOException e) {
             LOG.error("cannot open csv output", e);
             throw new RuntimeException(e);
@@ -71,5 +78,10 @@ class CsvOutputProtocolResponseListener implements ProtocolResponseListener {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public MeasurementsReader measurementsReader() {
+        return new CsvOutputMeasurementsReader(csvOutputFile);
     }
 }
