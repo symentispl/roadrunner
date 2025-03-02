@@ -9,7 +9,7 @@
         <version>0.0.2-SNAPSHOT</version>
     </parent>
 
-    <artifactId>roadrunner-charts</artifactId>
+    <artifactId>roadrunner-charts-html</artifactId>
 
     <dependencies>
         <dependency>

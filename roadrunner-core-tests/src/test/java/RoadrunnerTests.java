@@ -13,27 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.roadrunner.api.measurments.Measurement;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.protocols.vm.VmProtocolOptions;
 import io.roadrunner.protocols.vm.VmProtocolProvider;
-
 import java.nio.file.Path;
 import java.time.Duration;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 public class RoadrunnerTests {
     @Test
     void generateLoad(@TempDir Path tempDir) throws Exception {
-        var roadrunner = new Bootstrap().withConcurrency(1).withRequests(10).withOutputDir(tempDir).build();
+        var roadrunner = new Bootstrap()
+                .withConcurrency(1)
+                .withRequests(10)
+                .withOutputDir(tempDir)
+                .build();
         var vmProtocol = new VmProtocolProvider();
         var request = vmProtocol.request(new VmProtocolOptions(Duration.ofMillis(100)));
         var measurements = roadrunner.execute(() -> request::execute);
         var measurementsReader = measurements.measurementsReader();
-        assertThat(measurementsReader).hasSize(10);
+        assertThat(measurementsReader).hasSize(10).allSatisfy(m -> {
+            assertThat(m.startTime()).isGreaterThan(0);
+            assertThat(m.stopTime()).isGreaterThan(m.startTime());
+            assertThat(m.status()).isEqualTo(Measurement.Status.OK);
+        });
     }
 }

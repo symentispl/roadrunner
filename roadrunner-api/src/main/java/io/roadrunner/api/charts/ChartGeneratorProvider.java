@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.api {
-    exports io.roadrunner.api;
-    exports io.roadrunner.api.protocol;
-    exports io.roadrunner.api.metrics;
-    exports io.roadrunner.api.measurments;
-    exports io.roadrunner.api.charts;
+package io.roadrunner.api.charts;
+
+import java.util.Properties;
+
+public interface ChartGeneratorProvider {
+
+    String name();
+
+    ChartGenerator create(Properties properties);
 }

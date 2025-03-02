@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.charts;
+package io.roadrunner.charts.html;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,17 +21,19 @@ import io.roadrunner.output.csv.CsvOutputMeasurementsReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Properties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class ChartGeneratorTest {
+class HtmlChartGeneratorTest {
 
     @Test
     void generatePerformanceChartHtml(@TempDir Path tempDir) throws Exception {
         var chartDir = Files.createDirectory(tempDir.resolve("report"));
-        var chartGenerator = new ChartGenerator();
-        chartGenerator.generateChart(
-                chartDir, new CsvOutputMeasurementsReader(Paths.get("src/test/resources/output.csv")));
+        var properties = new Properties();
+        properties.put("outputPath", chartDir);
+        var chartGenerator = new HtmlChartGenerator(properties);
+        chartGenerator.generateChart(new CsvOutputMeasurementsReader(Paths.get("src/test/resources/output.csv")));
         assertThat(chartDir.resolve("index.html")).isNotEmptyFile();
         assertThat(chartDir.resolve("data.js")).isNotEmptyFile();
     }

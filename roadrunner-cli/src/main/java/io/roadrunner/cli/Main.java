@@ -15,9 +15,9 @@
  */
 package io.roadrunner.cli;
 
-import io.roadrunner.charts.ChartGenerator;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.options.CliOptionsBuilder;
+import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,18 +49,23 @@ public class Main {
 
         var protocol = protocolProviders.get(protocolName);
         var requestOptions = protocol.requestOptions(protocolArgs);
-        var request = protocol.request(requestOptions);
         try {
-            var measurements = roadrunner.execute(() -> request);
+            var measurements = roadrunner.execute(() -> protocol.request(requestOptions));
 
-            new ChartGenerator().generateChart(bootstrap.outputDir(), measurements.measurementsReader());
-            LOG.info(
-                    "results at {}",
-                    bootstrap.outputDir().resolve("index.html").toAbsolutePath().toUri());
+            var chartGeneratorProviders = ChartGeneratorProviders.load();
+
+            var chartGeneratorProvider = chartGeneratorProviders.get("console");
+            var chartGenerator = chartGeneratorProvider.create(new Properties());
+
+            chartGenerator.generateChart(measurements.measurementsReader());
+            //
+            //            new HtmlChartGenerator().generateChart(measurements.measurementsReader());
+            //            LOG.info(
+            //                    "results at {}",
+            //                    bootstrap.outputDir().resolve("index.html").toAbsolutePath().toUri());
+            //            new ConsoleChartGenerator().generateChart(measurements.measurementsReader());
         } finally {
             protocolProviders.close();
         }
     }
-
-
 }

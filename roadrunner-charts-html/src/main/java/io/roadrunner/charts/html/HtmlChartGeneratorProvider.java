@@ -13,11 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.charts {
-    requires io.roadrunner.api;
-    requires io.roadrunner.hdrhistogram;
-    requires org.apache.commons.text;
-    requires org.apache.commons.io;
+package io.roadrunner.charts.html;
 
-    exports io.roadrunner.charts;
+import io.roadrunner.api.charts.ChartGenerator;
+import io.roadrunner.api.charts.ChartGeneratorProvider;
+import java.util.Properties;
+
+public class HtmlChartGeneratorProvider implements ChartGeneratorProvider {
+    @Override
+    public String name() {
+        return "html";
+    }
+
+    @Override
+    public ChartGenerator create(Properties properties) {
+        return new HtmlChartGenerator(properties);
+    }
 }

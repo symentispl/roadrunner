@@ -13,10 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.api {
-    exports io.roadrunner.api;
-    exports io.roadrunner.api.protocol;
-    exports io.roadrunner.api.metrics;
-    exports io.roadrunner.api.measurments;
-    exports io.roadrunner.api.charts;
+import io.roadrunner.api.charts.ChartGeneratorProvider;
+import io.roadrunner.charts.html.HtmlChartGeneratorProvider;
+
+module io.roadrunner.charts.html {
+    requires io.roadrunner.api;
+    requires io.roadrunner.hdrhistogram;
+    requires org.apache.commons.text;
+    requires org.apache.commons.io;
+
+    exports io.roadrunner.charts.html;
+
+    provides ChartGeneratorProvider with
+            HtmlChartGeneratorProvider;
 }

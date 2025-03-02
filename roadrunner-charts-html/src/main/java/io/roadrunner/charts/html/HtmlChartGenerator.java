@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.charts;
+package io.roadrunner.charts.html;
 
+import io.roadrunner.api.charts.ChartGenerator;
 import io.roadrunner.api.measurments.Measurement;
 import io.roadrunner.api.measurments.MeasurementsReader;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
@@ -23,18 +24,25 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Properties;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.apache.commons.text.io.StringSubstitutorReader;
 import org.apache.commons.text.lookup.StringLookupFactory;
 
-public class ChartGenerator {
+public class HtmlChartGenerator implements ChartGenerator {
 
-    public ChartGenerator() {}
+    private final Path outputPath;
 
-    public void generateChart(Path outputPath, MeasurementsReader measurementsReader) throws IOException {
+    public HtmlChartGenerator(Properties properties) {
+        outputPath = Paths.get(properties.get("outputPath").toString());
+    }
+
+    @Override
+    public void generateChart(MeasurementsReader measurementsReader) throws IOException {
         var indexHtml = outputPath.resolve("index.html");
         var datapointsJs = outputPath.resolve("data.js");
 
@@ -66,7 +74,8 @@ public class ChartGenerator {
         var stringSubstitutor = new StringSubstitutor(StringLookupFactory.INSTANCE.interpolatorStringLookup(map));
 
         try (var reader = new StringSubstitutorReader(
-                        new InputStreamReader(ChartGenerator.class.getResourceAsStream("/templates/index.html.tmpl")),
+                        new InputStreamReader(
+                                HtmlChartGenerator.class.getResourceAsStream("/templates/index.html.tmpl")),
                         stringSubstitutor);
                 var writer = new FileWriter(indexHtml.toFile())) {
             IOUtils.copy(reader, writer);
