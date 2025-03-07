@@ -1,127 +1,67 @@
-Roadrunner introduction
-=======================
+# Roadrunner: introduction
 
-Roadrunner is (or rather at the moment, will be) yet another Java performance testing framework/library/tool, this time using internal DSLs for building scenarios, with low-overhead, fine grained reporting 
-and another lovely things that might come in the future (like distributed load testing, trend analisys, web app for tracing execution and so on).
+Roadrunner is (or rather at the moment, will be) yet another load generator tool, this time using Java with
+low-overhead, fine grained reporting and another lovely things that might come in the future
+(like distributed load testing, trend analysis, web app for tracing execution and so on).
 
-Basically the idea is to build something fast to learn and work with but packed with "power features" and easy to extend. 
+Basically the idea is to build something that is fast to learn and work with but packed with "power features"
+and easy to extend.
 
-At the moment I am struggling with building internal API and support basic cases like HTTP GET, HTML assertions. I am more focused on building 
-basic framework than on providing support for more sophisticated cases.
+# Motivation
 
-NOTE:
-I am strongly inspired by funkload, locust.io and mechanize from Python universe. Still none of them provide all the futures I need when I am testing performance of
-applications. I am writing my thoughts and ideas for Roadrunner at [this page](task/wiki/Ideas)
+Why not [JMeter](https://jmeter.apache.org/), [Gatling](https://gatling.io/),[locust.io](https://locust.io/) or [k6s](https://k6.io/)?
 
-How to get started?
--------------------
-Since this is still "ideas under construction" phase, there is no stable release. There are two ways to give it a try, you can either use snapshot version or build project from scratch.
-Snapshot versions tend to be more stable, and better tested then latest code. I don't have any schedule to deploy snapshots, I do it whenever I feel they provide value.
+* because sometimes you need something that is really simple, that can generate load, and you don't need fancy scenarios and write code to generate load
+* because most of load generation tools target HTTP protocol, and are build around HTTP protocol semantics, I wanted (and need something) that can test any protocol, so adding protocol implementations should be trivial
+* in a continuous performance management it is crucial to make it easy to work with performance tests results, so reporting and processing of load generator results is key
+* low-overhead, that doesn't need explanation
+* as always it is opportunity to learn, this implementation is heavily using Java virtual threads, so expect some bumps down the road
 
-You can find latest version at [this link](https://oss.sonatype.org/content/repositories/snapshots/pl/symentis/task/task-tools/0.0.1-SNAPSHOT/task-tools-0.0.1-20140125.202418-8-bin.zip).
+# How to get started?
 
+Build from source (you will need [JDK 23](https://adoptium.net/temurin/releases/?version=23)).
+Build project with:
 
-If you choose to build if from source,you need to clone this repo, get Maven 3.x and JDK 7. Once you will have it on your hard drive, do simple mvn install, and you are "ready to rock".
+    ./mvnw verify
 
-NOTE:
-API can change with each commit, until it reaches state of beauty I am looking for. I am giving you this framework so early to see if it catches your attention and of course
-to get your feedback as soon as possible
+NOTICE: I am at the moment only running and testing on Linux.
 
+NOTICE: Binary builds will come, someday.
 
-How to write performance test scenario?
----------------------------------------
+# How to run it
 
-Create new project and import just single dependency, dependency to task-framework artifact (if you don't want to build it from source, don't forget to include SNAPSHOT repository):
+First let's use a simple protocol called `vm`. This is a testing/baseline protocol, which sleeps X ms per each request. I use it mostly for testing overhead of Roadrunner.
 
-	:::xml
-	<dependencies>
-		<dependency>
-			<groupId>pl.symentis.task</groupId>
-			<artifactId>task-framework</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
-	</dependencies>
-	
-	<repositories>
-		<repository>
-			<id>oss-sonatype-snapshots</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
-	</repositories>
-	
+    ./roadrunner-app/target/maven-jlink/default/bin/roadrunner -c 50 -n 500 vm -sleep-time 10
 
+This will execute 500 requests using 50 concurrent users, and each user will sleep for 10 ms per each request.
 
-Once you have task on your classpath, you can try to create your first scenario:
+Now something more handy:
 
-	:::java
-	import static pl.symentis.task.http.api.HTTPEntities.form;
-	import static pl.symentis.task.http.api.HTTPEntities.text;
-	import static pl.symentis.task.http.api.HTTPEntities.parameter;
-	import pl.symentis.task.BaseScenario;
-	
-	public class ExampleScenario extends BaseScenario {
-	
-		public ExampleScenario() {
-			super("example");
-		}
-	
-		@Override
-		public void run() {
-	
-			http.path("/").get();
-	
-			http.path("/services/rest/").header("username", "someusername").get();
-	
-			http.path("/services/rest/").post(form(parameter("somefield", "somevalue")));
-	
-			http.path("/services/rest/").put(text("some text"));
-			
-		}	
-	}
-	
-As you can see API is rather limited, but I am justing "planting seeds" :). I hope it is self explanatory :). If not it means I have failed.
+    ./roadrunner-app/target/maven-jlink/default/bin/roadrunner -c 50 -n 500 ab http://google.com/
 
-How to run performance test scenario?
--------------------------------------
+This will execute 500 requests using 50 concurrent users, using HTTP protocol against provided URL.
 
-Once you have your scenario you can run it and check results.
+Why it is called `ab`? Because in a first iteration I want to provide same command line syntax and behaviour as [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html)
+So this isn't going to be full blown HTTP load test. Rather drop in replacement for `ab` command (and I will use `ab` as baseline)
 
-Basically all is hidden in task/task-tools/target/appassembler/bin if you build from sources or in bin directory of tools zip which you downloaded from snapshot repository. 
-Once you have Roadrunner, in this directory you will find two scripts, one named rr-run-test and second named rr-run-bench.
+# Protocols
 
-**rr-run-test**
+By now, you should grab the idea. Roadrunner is a framework for executing requests and simulating users distribution. It will not (at the moment, and probably never will) allow you to run complex load generation scenarios.
+Just grab URL, query, request and allow Roadrunner to flood your system under test with requests.
 
-You can use this script to test your scenario, it doesn't run performance tests, it is rather single pass of your scenario to check if it works.
+NOTICE: At some point in future, you will be able to provide list of urls, queries and sets of parameters.
 
-	:::bash
-	rr-run-test -cp [classpath with your test scenario] -l debug:summary -b http://google.com/ PerfTest
+# Reporting
 
-What are these mysterious switches?
+At the moment Roadrunner prints out summary to console and generates basic HTML report (there is still work to be done).
 
-* -cp, is a classpath where task will be looking for your performance test class
-* -b, sets base URL you are going to use during test
-* -l debug:summary, means that you want two listeners for this test, one which will output execution of the test to console (debug), and second which will print short summary after test, with min, max and average execution time
-* PerfTest, is a name of you performance test class, you don't have to put here fully qualified name with package, task will scan your classpath to find class which matches name you passed as argument
+# Limitations
 
-Hey, why don't you give it a try?
+* it only supports close-world model at the moment, you can read more about it at [Open Versus Closed: A Cautionary Tale](https://www.usenix.org/legacy/event/nsdi06/tech/full_papers/schroeder/schroeder.pdf)
+* work on coordinated omission is still in progress, if you are not familiar, this is nice introduction, [On Coordinated Omission](https://www.scylladb.com/2021/04/22/on-coordinated-omission/)
+* all of the API is experimental, anything can change
 
-**rr-run-bench**
+# Roadmap
 
-This is where you can specify number of concurrent users and for how long you want to run your test.
-
-	:::bash
-	rr-run-bench -cp [classpath with your test scenario] -l xml(output.xml):summary -b http://google.com/ -C 20 -D 60 PerfTest
-	
-And we have here new options available:
-
-* -C, sets concurrency level, in other words number of concurrent users
-* -D, sets duriation of test case run
-* -l xml(output.xml):summary, sets two listeners, one which writes execution of the scenario to output.xml file, and second which prints short summary on console after test execution
-
-Remember to run both commands without options, to see usage details.
-
-task bench http https://onet.pl
-
+I am the moment building roadmap for [first release](https://github.com/orgs/symentispl/projects/1). So if you are looking to contribute, feel free to take a look at list of tasks.
