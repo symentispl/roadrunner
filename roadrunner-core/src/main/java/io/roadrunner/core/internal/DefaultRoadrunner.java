@@ -24,8 +24,6 @@ import io.roadrunner.api.measurments.MeasurementsReader;
 import io.roadrunner.api.protocol.ProtocolRequest;
 import io.roadrunner.api.protocol.ProtocolResponse;
 import io.roadrunner.output.csv.CsvOutputProtocolResponseListener;
-import io.roadrunner.shaded.hdrhistogram.ConcurrentHistogram;
-import io.roadrunner.shaded.hdrhistogram.Histogram;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Iterator;
@@ -64,7 +62,6 @@ public class DefaultRoadrunner implements Roadrunner {
     @Override
     public Measurements execute(Supplier<ProtocolRequest> requestsFactory) {
 
-        var histogram = new ConcurrentHistogram(3);
         LOG.info("Roadrunner started: {} concurrent users, {} total number of requests", concurrentUsers, requests);
         var currentTimeMillis = System.currentTimeMillis();
         var delayedSupplier = new DelayedSupplier<>(requestsFactory, () -> 20L);
@@ -80,8 +77,7 @@ public class DefaultRoadrunner implements Roadrunner {
                     var requestsExecutor = Executors.newCachedThreadPool(
                             Thread.ofVirtual().name("roadrunner-requests-").factory())) {
                 var latch = new CountDownLatch(concurrentUsers);
-                var measurementControl =
-                        new MeasurementControl(measurementProgress, requests, histogram, responsesJournal, latch);
+                var measurementControl = new MeasurementControl(measurementProgress, requests, responsesJournal, latch);
                 for (int i = 0; i < concurrentUsers; i++) {
                     usersExecutor.submit(
                             new RoadrunnerUser(measurementControl, delayedSupplier.get(), requestsExecutor));
@@ -141,7 +137,6 @@ public class DefaultRoadrunner implements Roadrunner {
     private static class MeasurementControl {
 
         private final AtomicLong counter;
-        private final Histogram histogram;
         private final QueueingProtocolResponsesJournal responsesJournal;
         private final CountDownLatch latch;
         private final MeasurementProgress measurementProgress;
@@ -150,13 +145,11 @@ public class DefaultRoadrunner implements Roadrunner {
         MeasurementControl(
                 MeasurementProgress measurementProgress,
                 long requests,
-                Histogram histogram,
                 QueueingProtocolResponsesJournal responsesJournal,
                 CountDownLatch latch) {
             this.measurementProgress = measurementProgress;
             this.requests = requests;
             this.counter = new AtomicLong(requests);
-            this.histogram = histogram;
             this.responsesJournal = responsesJournal;
             this.latch = latch;
         }
@@ -169,7 +162,6 @@ public class DefaultRoadrunner implements Roadrunner {
 
         public void request(ProtocolResponse response) {
             measurementProgress.update(requests - counter.decrementAndGet());
-            histogram.recordValue(response.stopTime() - response.startTime());
             responsesJournal.append(response);
         }
 

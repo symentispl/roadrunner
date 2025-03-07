@@ -18,30 +18,35 @@ package io.roadrunner.cli;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
-import io.roadrunner.api.charts.ChartGeneratorProvider;
+import io.roadrunner.api.reports.ReportGeneratorProvider;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 final class ChartGeneratorProviders {
 
     private static final Logger LOG = LoggerFactory.getLogger(ChartGeneratorProviders.class);
-    private final Map<String, ChartGeneratorProvider> chartGeneratorProviders;
+    private final Map<String, ReportGeneratorProvider> chartGeneratorProviders;
 
-    ChartGeneratorProviders(Map<String, ChartGeneratorProvider> chartGeneratorProviders) {
+    ChartGeneratorProviders(Map<String, ReportGeneratorProvider> chartGeneratorProviders) {
         this.chartGeneratorProviders = chartGeneratorProviders;
     }
 
     static ChartGeneratorProviders load() {
-        var protocols = ServiceLoader.load(ChartGeneratorProvider.class).stream()
+        var protocols = ServiceLoader.load(ReportGeneratorProvider.class).stream()
                 .map(ServiceLoader.Provider::get)
                 .peek(protocolProvider -> LOG.info("found chart generator {}", protocolProvider.name()))
-                .collect(toMap(ChartGeneratorProvider::name, identity()));
+                .collect(toMap(ReportGeneratorProvider::name, identity()));
         return new ChartGeneratorProviders(protocols);
     }
 
-    public ChartGeneratorProvider get(String protocolName) {
+    public ReportGeneratorProvider get(String protocolName) {
         return chartGeneratorProviders.get(protocolName);
+    }
+
+    public Set<String> supportedReportFormats() {
+        return chartGeneratorProviders.keySet();
     }
 }

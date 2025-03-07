@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.roadrunner.reports.html;
+
+import io.roadrunner.api.reports.ReportGenerator;
 import io.roadrunner.api.reports.ReportGeneratorProvider;
-import io.roadrunner.protocols.spi.ProtocolProvider;
+import java.util.Map;
 
-module pl.symentis.roadrunner.cli {
-    requires io.roadrunner.api;
-    requires io.roadrunner.protocols.spi;
-    requires io.roadrunner.core;
-    requires io.roadrunner.options;
-    requires org.slf4j;
-    requires org.apache.commons.io;
-    requires org.apache.commons.lang3;
+public class HtmlReportGeneratorProvider implements ReportGeneratorProvider {
+    @Override
+    public String name() {
+        return "html";
+    }
 
-    uses ProtocolProvider;
-    uses ReportGeneratorProvider;
-
-    opens io.roadrunner.cli;
+    @Override
+    public ReportGenerator create(Map<String, String> properties) {
+        return new HtmlReportGenerator(properties);
+    }
 }

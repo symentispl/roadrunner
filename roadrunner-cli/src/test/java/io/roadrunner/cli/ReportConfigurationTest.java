@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.api.reports.ReportGeneratorProvider;
-import io.roadrunner.protocols.spi.ProtocolProvider;
+package io.roadrunner.cli;
 
-module pl.symentis.roadrunner.cli {
-    requires io.roadrunner.api;
-    requires io.roadrunner.protocols.spi;
-    requires io.roadrunner.core;
-    requires io.roadrunner.options;
-    requires org.slf4j;
-    requires org.apache.commons.io;
-    requires org.apache.commons.lang3;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
-    uses ProtocolProvider;
-    uses ReportGeneratorProvider;
+import org.junit.jupiter.api.Test;
 
-    opens io.roadrunner.cli;
+class ReportConfigurationTest {
+
+    @Test
+    void parseCommandLineOptions() {
+        var reportConfig = ReportConfiguration.parse("html:outputDir=report");
+        assertThat(reportConfig.reportFormat()).isEqualTo("html");
+        assertThat(reportConfig.configuration()).containsOnly(entry("outputDir", "report"));
+    }
 }

@@ -1,41 +1,42 @@
-<?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>io.roadrunner</groupId>
         <artifactId>roadrunner</artifactId>
         <version>0.0.2-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>roadrunner-cli</artifactId>
-    <name>roadrunner-cli</name>
+    <artifactId>roadrunner-reports-console</artifactId>
 
     <dependencies>
-
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-core</artifactId>
+            <artifactId>roadrunner-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocols-spi</artifactId>
+            <artifactId>roadrunner-hdrhistogram</artifactId>
             <version>${project.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+        </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
+            <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-csv-output</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -46,7 +47,5 @@
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
-
 </project>

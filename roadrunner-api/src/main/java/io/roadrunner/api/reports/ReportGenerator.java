@@ -13,20 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.api.reports.ReportGeneratorProvider;
-import io.roadrunner.protocols.spi.ProtocolProvider;
+package io.roadrunner.api.reports;
 
-module pl.symentis.roadrunner.cli {
-    requires io.roadrunner.api;
-    requires io.roadrunner.protocols.spi;
-    requires io.roadrunner.core;
-    requires io.roadrunner.options;
-    requires org.slf4j;
-    requires org.apache.commons.io;
-    requires org.apache.commons.lang3;
+import io.roadrunner.api.measurments.MeasurementsReader;
+import java.io.IOException;
 
-    uses ProtocolProvider;
-    uses ReportGeneratorProvider;
-
-    opens io.roadrunner.cli;
+public interface ReportGenerator {
+    void generateChart(MeasurementsReader measurementsReader) throws IOException;
 }

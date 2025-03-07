@@ -43,7 +43,6 @@ public class CsvOutputProtocolResponseListener implements ProtocolResponseListen
     @Override
     public void onStart() {
         try {
-
             bufferedWriter =
                     Files.newBufferedWriter(csvOutputFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
         } catch (IOException e) {
