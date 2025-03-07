@@ -15,12 +15,6 @@
  */
 package io.roadrunner.api.measurments;
 
-public record Measurements(
-        long totalCount,
-        double mean,
-        double maxValue,
-        double minValue,
-        double p50,
-        double p90,
-        double p99,
-        double p999) {}
+public interface Measurements {
+    MeasurementsReader measurementsReader();
+}

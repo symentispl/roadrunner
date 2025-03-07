@@ -27,4 +27,5 @@ public record RoadrunnerOptions(
                 Integer concurrency,
         @CliOption(opt = "n", description = "Total number of multiple requests to make", required = true, hasArg = true)
                 Integer numberOfRequests,
-        @CliOption(opt = "s", description = "Charts", hasArg = true) Path chartsDir) {}
+        @CliOption(opt = "s", description = "Output dir", hasArg = true) Path outputDir,
+        @CliOption(opt = "r", description = "Report", hasArg = true) String report) {}

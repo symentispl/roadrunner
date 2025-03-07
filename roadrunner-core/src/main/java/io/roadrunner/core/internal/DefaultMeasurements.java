@@ -16,19 +16,21 @@
 package io.roadrunner.core.internal;
 
 import io.roadrunner.api.measurments.Measurements;
-import io.roadrunner.shaded.hdrhistogram.ConcurrentHistogram;
+import io.roadrunner.api.measurments.MeasurementsReader;
 
-final class DefaultMeasurements {
+final class DefaultMeasurements implements Measurements {
+    private final MeasurementsReader measurementsReader;
 
-    static Measurements create(ConcurrentHistogram histogram) {
-        long totalCount = histogram.getTotalCount();
-        double mean = histogram.getMean();
-        long maxValue = histogram.getMaxValue();
-        long minValue = histogram.getMinValue();
-        double p50 = histogram.getValueAtPercentile(50.0);
-        double p90 = histogram.getValueAtPercentile(90.0);
-        double p99 = histogram.getValueAtPercentile(99.0);
-        double p999 = histogram.getValueAtPercentile(99.9);
-        return new Measurements(totalCount, mean, maxValue, minValue, p50, p90, p99, p999);
+    static Measurements from(MeasurementsReader measurementsReader) {
+        return new DefaultMeasurements(measurementsReader);
+    }
+
+    private DefaultMeasurements(MeasurementsReader measurementsReader) {
+        this.measurementsReader = measurementsReader;
+    }
+
+    @Override
+    public MeasurementsReader measurementsReader() {
+        return measurementsReader;
     }
 }

@@ -15,6 +15,7 @@
  */
 package io.roadrunner.api;
 
+import io.roadrunner.api.measurments.MeasurementsReader;
 import io.roadrunner.api.protocol.ProtocolResponse;
 import java.util.Collection;
 
@@ -24,4 +25,6 @@ public interface ProtocolResponseListener {
     void onResponses(Collection<? extends ProtocolResponse> batch);
 
     void onStop();
+
+    MeasurementsReader measurementsReader();
 }

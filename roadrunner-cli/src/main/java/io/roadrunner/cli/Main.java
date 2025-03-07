@@ -15,14 +15,8 @@
  */
 package io.roadrunner.cli;
 
-import static java.lang.Math.round;
-import static java.time.Duration.ofNanos;
-
-import io.roadrunner.api.measurments.Measurements;
-import io.roadrunner.charts.ChartGenerator;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.options.CliOptionsBuilder;
-import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +25,6 @@ public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) throws Exception {
-        LOG.info("loading protocol providers");
 
         var cliOptionsBuilder = new CliOptionsBuilder();
         var optionsBinding = cliOptionsBuilder.from(RoadrunnerOptions.class);
@@ -42,6 +35,7 @@ public class Main {
                 .withConcurrency(roadrunnerOptions.concurrency())
                 .withRequests(roadrunnerOptions.numberOfRequests())
                 .withMeasurementProgress(new ProgressBar(100, 0, roadrunnerOptions.numberOfRequests()))
+                .withOutputDir(roadrunnerOptions.outputDir())
                 .build();
 
         var remainingArgs = optionsBinding.args();
@@ -49,38 +43,30 @@ public class Main {
         var protocolArgs = new String[remainingArgs.length - 1];
         System.arraycopy(remainingArgs, 1, protocolArgs, 0, protocolArgs.length);
 
+        LOG.info("loading report generators");
+        var reportOpts = roadrunnerOptions.report();
+        if (reportOpts == null) {
+            reportOpts = "console";
+        }
+        var reportConfiguration = ReportConfiguration.parse(reportOpts);
+        var chartGeneratorProviders = ChartGeneratorProviders.load();
+        var reportGeneratorProvider = chartGeneratorProviders.get(reportConfiguration.reportFormat());
+        if (reportGeneratorProvider == null) {
+            throw new IllegalArgumentException("report generator %s unknown, supported report formats %s"
+                    .formatted(reportConfiguration.reportFormat(), chartGeneratorProviders.supportedReportFormats()));
+        }
+        var chartGenerator = reportGeneratorProvider.create(reportConfiguration.configuration());
+
+        LOG.info("loading protocol providers");
         var protocolProviders = ProtocolProviders.load();
 
         var protocol = protocolProviders.get(protocolName);
         var requestOptions = protocol.requestOptions(protocolArgs);
-        var request = protocol.request(requestOptions);
         try {
-            var measurements = roadrunner.execute(() -> request::execute);
-            prettyPrintHistogramSummary(measurements);
-
-            if (roadrunnerOptions.chartsDir() != null) {
-                new ChartGenerator().generateChart(roadrunnerOptions.chartsDir(), Paths.get("output.csv"));
-            }
+            var measurements = roadrunner.execute(() -> protocol.request(requestOptions));
+            chartGenerator.generateChart(measurements.measurementsReader());
         } finally {
             protocolProviders.close();
         }
-    }
-
-    public static void prettyPrintHistogramSummary(Measurements measurements) {
-        System.out.println("HdrHistogram Summary:");
-        System.out.println("=====================");
-        System.out.printf("Total Count    : %d%n", measurements.totalCount());
-        System.out.printf("Min Value (ms) : %d ms%n", getMillis(measurements.minValue()));
-        System.out.printf("Max Value (ms) : %d ms%n", getMillis(measurements.maxValue()));
-        System.out.printf("Mean Value (ms): %d ms%n", getMillis(measurements.mean()));
-        System.out.printf("50th Percentile: %d ms%n", getMillis(measurements.p50()));
-        System.out.printf("90th Percentile: %d ms%n", getMillis(measurements.p90()));
-        System.out.printf("99th Percentile: %d ms%n", getMillis(measurements.p99()));
-        System.out.printf("99.9th Percentile: %d ms%n", getMillis(measurements.p999()));
-        System.out.println("=====================");
-    }
-
-    private static long getMillis(double value) {
-        return ofNanos(round(value)).toMillis();
     }
 }

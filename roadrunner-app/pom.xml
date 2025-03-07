@@ -57,6 +57,28 @@
             <artifactId>roadrunner-protocol-ab</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-reports-console</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>HdrHistogram</artifactId>
+                    <groupId>org.hdrhistogram</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-reports-html</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>HdrHistogram</artifactId>
+                    <groupId>org.hdrhistogram</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
 </project>

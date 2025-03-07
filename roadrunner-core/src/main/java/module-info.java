@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 module io.roadrunner.core {
-    requires org.slf4j;
-    requires io.roadrunner.api;
     requires io.roadrunner.options;
     requires io.roadrunner.protocols.spi;
     requires io.roadrunner.hdrhistogram;
+    requires io.roadrunner.output.csv;
+    requires io.roadrunner.api;
+    requires org.slf4j;
 
     exports io.roadrunner.core;
 }

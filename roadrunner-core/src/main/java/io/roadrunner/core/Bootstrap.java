@@ -18,11 +18,21 @@ package io.roadrunner.core;
 import io.roadrunner.api.Roadrunner;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.core.internal.DefaultRoadrunner;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Bootstrap {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
+
     private int concurrency;
     private int requests;
     private MeasurementProgress measurementProgress = MeasurementProgress.NO_OP;
+    private Path outputDir;
 
     public Bootstrap withConcurrency(int concurrency) {
         this.concurrency = concurrency;
@@ -39,7 +49,20 @@ public class Bootstrap {
         return this;
     }
 
-    public Roadrunner build() {
-        return new DefaultRoadrunner(concurrency, requests, measurementProgress);
+    public Bootstrap withOutputDir(Path outputDir) {
+        this.outputDir = outputDir;
+        return this;
+    }
+
+    public Path outputDir() {
+        return outputDir;
+    }
+
+    public Roadrunner build() throws IOException {
+        if (outputDir == null) {
+            outputDir = Files.createTempDirectory(Paths.get("."), "roadrunner-");
+            LOG.warn("setting output directory to {}", outputDir);
+        }
+        return new DefaultRoadrunner(concurrency, requests, measurementProgress, outputDir);
     }
 }

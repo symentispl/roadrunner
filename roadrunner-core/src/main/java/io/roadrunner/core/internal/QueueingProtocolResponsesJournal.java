@@ -16,6 +16,7 @@
 package io.roadrunner.core.internal;
 
 import io.roadrunner.api.ProtocolResponseListener;
+import io.roadrunner.api.measurments.MeasurementsReader;
 import io.roadrunner.api.protocol.ProtocolResponse;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
@@ -80,10 +81,14 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
         try {
             executorService.awaitTermination(1, TimeUnit.SECONDS);
 
-            // drain remaining items
+            // TODO drain remaining items
 
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public MeasurementsReader measurementsReader() {
+        return listener.measurementsReader();
     }
 }

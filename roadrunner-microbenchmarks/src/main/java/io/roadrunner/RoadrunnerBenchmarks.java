@@ -20,6 +20,7 @@ import io.roadrunner.api.protocol.ProtocolRequest;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.protocols.vm.VmProtocolOptions;
 import io.roadrunner.protocols.vm.VmProtocolProvider;
+import java.io.IOException;
 import java.time.Duration;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
@@ -35,7 +36,7 @@ public class RoadrunnerBenchmarks {
     private ProtocolRequest request;
 
     @Setup(Level.Trial)
-    public void setUp() {
+    public void setUp() throws IOException {
         roadrunner = new Bootstrap().withConcurrency(1).withRequests(10).build();
         var vmProtocol = new VmProtocolProvider();
         request = vmProtocol.request(new VmProtocolOptions(Duration.ofMillis(100)));

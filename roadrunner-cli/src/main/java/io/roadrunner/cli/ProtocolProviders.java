@@ -29,7 +29,7 @@ final class ProtocolProviders implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(ProtocolProviders.class);
     private final Map<String, ProtocolProvider> protocolProviders;
 
-    public ProtocolProviders(Map<String, ProtocolProvider> protocolProviders) {
+    ProtocolProviders(Map<String, ProtocolProvider> protocolProviders) {
         this.protocolProviders = protocolProviders;
     }
 

@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import io.roadrunner.api.reports.ReportGeneratorProvider;
 import io.roadrunner.protocols.spi.ProtocolProvider;
 
 module pl.symentis.roadrunner.cli {
-    requires org.slf4j;
-    requires io.roadrunner.core;
-    requires io.roadrunner.protocols.spi;
     requires io.roadrunner.api;
+    requires io.roadrunner.protocols.spi;
+    requires io.roadrunner.core;
     requires io.roadrunner.options;
-    requires io.roadrunner.hdrhistogram;
-    requires io.roadrunner.charts;
-    requires jdk.jfr;
+    requires org.slf4j;
     requires org.apache.commons.io;
+    requires org.apache.commons.lang3;
 
     uses ProtocolProvider;
+    uses ReportGeneratorProvider;
 
     opens io.roadrunner.cli;
 }
