@@ -35,15 +35,12 @@ final class ProtocolProviders implements AutoCloseable {
     }
 
     static ProtocolProviders load() {
+        LOG.debug("loading protocol providers");
         var protocols = ServiceLoader.load(ProtocolProvider.class).stream()
                 .map(ServiceLoader.Provider::get)
-                .peek(protocolProvider -> LOG.info("found protocol {}", protocolProvider.name()))
+                .peek(protocolProvider -> LOG.debug("found protocol {}", protocolProvider.name()))
                 .collect(toMap(ProtocolProvider::name, identity()));
         return new ProtocolProviders(protocols);
-    }
-
-    public ProtocolProvider get(String protocolName) {
-        return protocolProviders.get(protocolName);
     }
 
     @Override

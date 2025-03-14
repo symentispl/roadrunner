@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 module io.roadrunner.core {
-    requires io.roadrunner.options;
     requires io.roadrunner.protocols.spi;
     requires io.roadrunner.hdrhistogram;
     requires io.roadrunner.output.csv;

@@ -19,11 +19,6 @@
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-options</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.roadrunner</groupId>
             <artifactId>roadrunner-protocols-spi</artifactId>
             <version>${project.version}</version>
         </dependency>

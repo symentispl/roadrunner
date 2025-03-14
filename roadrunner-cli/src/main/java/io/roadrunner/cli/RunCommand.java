@@ -37,7 +37,7 @@ class RunCommand {
     @Option(names = "-s", description = "Output dir")
     Path outputDir;
 
-    @Option(names = "-r", description = "Report")
+    @Option(names = "-r", description = "Report format")
     String report;
 
     public void run(ProtocolProvider protocolProvider) throws Exception {

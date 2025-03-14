@@ -28,10 +28,34 @@ public class Main {
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) throws Exception {
+        try (var protocolProviders = ProtocolProviders.load()) {
 
-        LOG.info("loading protocol providers");
-        var protocolProviders = ProtocolProviders.load();
+            var commandSpec = createCommandSpec(protocolProviders);
 
+            var commandLine = new CommandLine(commandSpec);
+            var parseResult = commandLine.parseArgs(args);
+
+            if (parseResult.isUsageHelpRequested()) {
+                commandLine.usage(System.out);
+                return;
+            }
+
+            var subcommand = parseResult.subcommand();
+            if (subcommand.isUsageHelpRequested()) {
+                subcommand.commandSpec().commandLine().usage(System.out);
+                return;
+            }
+
+            if (subcommand.commandSpec().userObject() instanceof RunCommand runCommand) {
+                var protocolSubCmd = subcommand.subcommand();
+                if (protocolSubCmd.commandSpec().userObject() instanceof ProtocolProvider protocolProvider) {
+                    runCommand.run(protocolProvider);
+                }
+            }
+        }
+    }
+
+    private static CommandSpec createCommandSpec(ProtocolProviders protocolProviders) {
         var commandSpec = CommandSpec.create();
 
         var runCommand = forAnnotatedObject(new RunCommand()).mixinStandardHelpOptions(true);
@@ -44,24 +68,6 @@ public class Main {
 
         commandSpec.mixinStandardHelpOptions(true);
         commandSpec.addSubcommand("run", runCommand);
-
-        var commandLine = new CommandLine(commandSpec);
-        var parseResult = commandLine.parseArgs(args);
-
-        if (parseResult.isUsageHelpRequested()) {
-            commandLine.usage(System.out);
-        }
-
-        var subcommand = parseResult.subcommand();
-        if (subcommand.isUsageHelpRequested()) {
-            subcommand.commandSpec().commandLine().usage(System.out);
-        }
-
-        if (subcommand.commandSpec().userObject() instanceof RunCommand r) {
-            var protocolSubCmd = subcommand.subcommand();
-            if (protocolSubCmd.commandSpec().userObject() instanceof ProtocolProvider protocolProvider) {
-                r.run(protocolProvider);
-            }
-        }
+        return commandSpec;
     }
 }
