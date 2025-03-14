@@ -24,9 +24,11 @@ module pl.symentis.roadrunner.cli {
     requires org.slf4j;
     requires org.apache.commons.io;
     requires org.apache.commons.lang3;
+    requires info.picocli;
 
     uses ProtocolProvider;
     uses ReportGeneratorProvider;
 
-    opens io.roadrunner.cli;
+    opens io.roadrunner.cli to
+            info.picocli;
 }

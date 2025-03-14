@@ -15,10 +15,13 @@
  */
 package io.roadrunner.cli;
 
-import io.roadrunner.core.Bootstrap;
-import io.roadrunner.options.CliOptionsBuilder;
+import static picocli.CommandLine.Model.CommandSpec;
+import static picocli.CommandLine.Model.CommandSpec.forAnnotatedObject;
+
+import io.roadrunner.protocols.spi.ProtocolProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import picocli.CommandLine;
 
 public class Main {
 
@@ -26,47 +29,39 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        var cliOptionsBuilder = new CliOptionsBuilder();
-        var optionsBinding = cliOptionsBuilder.from(RoadrunnerOptions.class);
-        var roadrunnerOptions = optionsBinding.newInstance(args);
-
-        var bootstrap = new Bootstrap();
-        var roadrunner = bootstrap
-                .withConcurrency(roadrunnerOptions.concurrency())
-                .withRequests(roadrunnerOptions.numberOfRequests())
-                .withMeasurementProgress(new ProgressBar(100, 0, roadrunnerOptions.numberOfRequests()))
-                .withOutputDir(roadrunnerOptions.outputDir())
-                .build();
-
-        var remainingArgs = optionsBinding.args();
-        var protocolName = remainingArgs[0];
-        var protocolArgs = new String[remainingArgs.length - 1];
-        System.arraycopy(remainingArgs, 1, protocolArgs, 0, protocolArgs.length);
-
-        LOG.info("loading report generators");
-        var reportOpts = roadrunnerOptions.report();
-        if (reportOpts == null) {
-            reportOpts = "console";
-        }
-        var reportConfiguration = ReportConfiguration.parse(reportOpts);
-        var chartGeneratorProviders = ChartGeneratorProviders.load();
-        var reportGeneratorProvider = chartGeneratorProviders.get(reportConfiguration.reportFormat());
-        if (reportGeneratorProvider == null) {
-            throw new IllegalArgumentException("report generator %s unknown, supported report formats %s"
-                    .formatted(reportConfiguration.reportFormat(), chartGeneratorProviders.supportedReportFormats()));
-        }
-        var chartGenerator = reportGeneratorProvider.create(reportConfiguration.configuration());
-
         LOG.info("loading protocol providers");
         var protocolProviders = ProtocolProviders.load();
 
-        var protocol = protocolProviders.get(protocolName);
-        var requestOptions = protocol.requestOptions(protocolArgs);
-        try {
-            var measurements = roadrunner.execute(() -> protocol.request(requestOptions));
-            chartGenerator.generateChart(measurements.measurementsReader());
-        } finally {
-            protocolProviders.close();
+        var commandSpec = CommandSpec.create();
+
+        var runCommand = forAnnotatedObject(new RunCommand()).mixinStandardHelpOptions(true);
+
+        for (var protocolProvider : protocolProviders.all()) {
+            runCommand
+                    .addSubcommand(protocolProvider.name(), forAnnotatedObject(protocolProvider))
+                    .mixinStandardHelpOptions(true);
+        }
+
+        commandSpec.mixinStandardHelpOptions(true);
+        commandSpec.addSubcommand("run", runCommand);
+
+        var commandLine = new CommandLine(commandSpec);
+        var parseResult = commandLine.parseArgs(args);
+
+        if (parseResult.isUsageHelpRequested()) {
+            commandLine.usage(System.out);
+        }
+
+        var subcommand = parseResult.subcommand();
+        if (subcommand.isUsageHelpRequested()) {
+            subcommand.commandSpec().commandLine().usage(System.out);
+        }
+
+        if (subcommand.commandSpec().userObject() instanceof RunCommand r) {
+            var protocolSubCmd = subcommand.subcommand();
+            if (protocolSubCmd.commandSpec().userObject() instanceof ProtocolProvider protocolProvider) {
+                r.run(protocolProvider);
+            }
         }
     }
 }

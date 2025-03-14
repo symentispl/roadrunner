@@ -13,11 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.protocols.vm;
+package io.roadrunner.api.protocol;
 
-import io.roadrunner.options.CliOption;
-import io.roadrunner.protocols.spi.ProtocolRequestOptions;
-import java.time.Duration;
-
-public record VmProtocolOptions(@CliOption(longOpt = "sleep-time", required = true, hasArg = true) Duration sleepTime)
-        implements ProtocolRequestOptions {}
+public interface Protocol {
+    ProtocolResponse execute();
+}

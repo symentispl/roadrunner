@@ -21,7 +21,7 @@ import io.roadrunner.api.measurments.Measurement;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
 import io.roadrunner.api.measurments.MeasurementsReader;
-import io.roadrunner.api.protocol.ProtocolRequest;
+import io.roadrunner.api.protocol.Protocol;
 import io.roadrunner.api.protocol.ProtocolResponse;
 import io.roadrunner.output.csv.CsvOutputProtocolResponseListener;
 import java.nio.file.Path;
@@ -60,7 +60,7 @@ public class DefaultRoadrunner implements Roadrunner {
     }
 
     @Override
-    public Measurements execute(Supplier<ProtocolRequest> requestsFactory) {
+    public Measurements execute(Supplier<Protocol> requestsFactory) {
 
         LOG.info("Roadrunner started: {} concurrent users, {} total number of requests", concurrentUsers, requests);
         var currentTimeMillis = System.currentTimeMillis();
@@ -96,17 +96,18 @@ public class DefaultRoadrunner implements Roadrunner {
         }
     }
 
+    @Override
+    public void close() throws Exception {}
+
     private static class RoadrunnerUser implements Runnable {
         private final MeasurementControl measurementControl;
-        private final ProtocolRequest protocolRequest;
+        private final Protocol protocol;
         private final ExecutorService requestsExecutor;
 
         private RoadrunnerUser(
-                MeasurementControl measurementControl,
-                ProtocolRequest protocolRequest,
-                ExecutorService requestsExecutor) {
+                MeasurementControl measurementControl, Protocol protocol, ExecutorService requestsExecutor) {
             this.measurementControl = measurementControl;
-            this.protocolRequest = protocolRequest;
+            this.protocol = protocol;
             this.requestsExecutor = requestsExecutor;
         }
 
@@ -117,9 +118,8 @@ public class DefaultRoadrunner implements Roadrunner {
                 while (measurementControl.isRunning()) {
                     try {
                         //                        var scheduledTime = System.nanoTime();
-                        var response = requestsExecutor
-                                .submit(protocolRequest::execute)
-                                .get();
+                        var response =
+                                requestsExecutor.submit(protocol::execute).get();
                         //                        var timeInQueue = (response.startTime() - scheduledTime);
                         //                        var serviceTime = System.nanoTime()-response.stopTime();
                         //                        Request latency = (now() – intended_time) + service_time

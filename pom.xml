@@ -249,7 +249,6 @@
         <module>roadrunner-api</module>
         <module>roadrunner-hdrhistogram</module>
         <module>roadrunner-microbenchmarks</module>
-        <module>roadrunner-options</module>
         <module>roadrunner-reports-html</module>
         <module>roadrunner-reports-console</module>
         <module>roadrunner-csv-output</module>

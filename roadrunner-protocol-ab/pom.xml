@@ -14,13 +14,13 @@
     <dependencies>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-options</artifactId>
+            <artifactId>roadrunner-protocols-spi</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocols-spi</artifactId>
-            <version>${project.version}</version>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>4.7.6</version>
         </dependency>
     </dependencies>
 
