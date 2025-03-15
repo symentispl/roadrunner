@@ -97,7 +97,7 @@ public class DefaultRoadrunner implements Roadrunner {
     }
 
     @Override
-    public void close() throws Exception {}
+    public void close() {}
 
     private static class RoadrunnerUser implements Runnable {
         private final MeasurementControl measurementControl;

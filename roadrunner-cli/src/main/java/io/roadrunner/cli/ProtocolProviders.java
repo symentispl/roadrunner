@@ -19,9 +19,11 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
 import io.roadrunner.protocols.spi.ProtocolProvider;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.ServiceLoader;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +47,7 @@ final class ProtocolProviders implements AutoCloseable {
 
     @Override
     public void close() {
-        LOG.info("closing protocol providers");
+        LOG.debug("closing protocol providers");
         for (ProtocolProvider protocolProvider : protocolProviders.values()) {
             try {
                 protocolProvider.close();

@@ -34,10 +34,10 @@ class RunCommand {
     @Option(names = "-n", description = "Total number of multiple requests to make", required = true)
     int numberOfRequests;
 
-    @Option(names = "-s", description = "Output dir")
+    @Option(names = "-s", description = "Loadtests results output directory")
     Path outputDir;
 
-    @Option(names = "-r", description = "Report format")
+    @Option(names = "-r", description = "Report format type")
     String report;
 
     public void run(ProtocolProvider protocolProvider) throws Exception {
@@ -48,7 +48,7 @@ class RunCommand {
                 .withMeasurementProgress(new ProgressBar(100, 0, numberOfRequests))
                 .withOutputDir(outputDir)
                 .build()) {
-            LOG.info("loading report generators");
+            LOG.debug("loading report generators");
             var reportOpts = report;
             if (reportOpts == null) {
                 reportOpts = "console";

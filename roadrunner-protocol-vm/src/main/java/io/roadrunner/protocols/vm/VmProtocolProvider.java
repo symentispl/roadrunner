@@ -23,7 +23,9 @@ import java.util.concurrent.CompletableFuture;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-@Command(description = "in-VM")
+@Command(
+        description = "In-VM protocol, used as baseline to calculate roadrunner overhead",
+        mixinStandardHelpOptions = true)
 public class VmProtocolProvider implements ProtocolProvider {
 
     @Option(names = "--sleep-time", description = "sleep time in ms", required = true)

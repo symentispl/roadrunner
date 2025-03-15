@@ -26,10 +26,10 @@ import java.net.http.HttpResponse;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-@Command(description = "Apache Bench")
+@Command(description = "Apache HTTP server benchmarking tool implementation")
 public class AbProtocolProvider implements ProtocolProvider {
 
-    @CommandLine.Parameters(paramLabel = "url", description = "hostname")
+    @CommandLine.Parameters(paramLabel = "url", description = "HTTP server URL")
     URI uri;
 
     private final HttpClient httpClient;
