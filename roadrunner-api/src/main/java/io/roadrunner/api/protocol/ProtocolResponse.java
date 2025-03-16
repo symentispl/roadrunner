@@ -15,10 +15,11 @@
  */
 package io.roadrunner.api.protocol;
 
-public sealed class ProtocolResponse permits Response, Error {
-
+public abstract sealed class ProtocolResponse<SELF extends ProtocolResponse<SELF>> permits Response, Error {
     private final long starTime;
     private final long stopTime;
+    private long scheduledStartTime;
+    private long latency;
 
     ProtocolResponse(long starTime, long stopTime) {
         this.starTime = starTime;
@@ -26,7 +27,7 @@ public sealed class ProtocolResponse permits Response, Error {
     }
 
     public static <T> Response<T> response(long startTime, long stopTime, T body) {
-        return new Response<T>(startTime, stopTime, body);
+        return new Response<>(startTime, stopTime, body);
     }
 
     public static Error error(long startTime, long stopTime, String message) {
@@ -40,4 +41,24 @@ public sealed class ProtocolResponse permits Response, Error {
     public long stopTime() {
         return stopTime;
     }
+
+    public long scheduledStartTime() {
+        return scheduledStartTime;
+    }
+
+    public long latency() {
+        return latency;
+    }
+
+    public SELF withScheduledStartTime(long scheduledStartTime) {
+        this.scheduledStartTime = scheduledStartTime;
+        return self();
+    }
+
+    public SELF withLatency(long latency) {
+        this.latency = latency;
+        return self();
+    }
+
+    abstract SELF self();
 }

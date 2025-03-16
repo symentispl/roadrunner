@@ -23,22 +23,16 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Parameters;
 
 @Command(description = "Apache HTTP server benchmarking tool implementation")
 public class AbProtocolProvider implements ProtocolProvider {
 
-    @CommandLine.Parameters(paramLabel = "url", description = "HTTP server URL")
+    @Parameters(paramLabel = "url", description = "HTTP server URL")
     URI uri;
 
-    private final HttpClient httpClient;
-
-    public AbProtocolProvider() {
-        httpClient = HttpClient.newBuilder()
-                .followRedirects(HttpClient.Redirect.ALWAYS)
-                .build();
-    }
+    public AbProtocolProvider() {}
 
     @Override
     public String name() {
@@ -47,6 +41,9 @@ public class AbProtocolProvider implements ProtocolProvider {
 
     @Override
     public Protocol newProtocol() {
+        var httpClient = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .build();
         return () -> {
             try {
                 var httpRequest = HttpRequest.newBuilder(uri).GET().build();
@@ -66,7 +63,5 @@ public class AbProtocolProvider implements ProtocolProvider {
     }
 
     @Override
-    public void close() {
-        httpClient.close();
-    }
+    public void close() {}
 }

@@ -55,9 +55,8 @@ public class HtmlReportGenerator implements ReportGenerator {
             out.println("const datapoints = [");
             for (Measurement measurement : measurementsReader) {
                 try {
-                    var responseTime = measurement.stopTime() - measurement.startTime();
-                    histogram.recordValue(responseTime);
-                    out.println("\t{x : %d,y : %d},".formatted(measurement.startTime(), responseTime));
+                    histogram.recordValue(measurement.latency());
+                    out.println("\t{x : %d,y : %d},".formatted(measurement.startTime(), measurement.latency()));
                 } catch (NumberFormatException e) {
                     System.out.println("invalid line");
                 }

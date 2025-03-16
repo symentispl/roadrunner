@@ -15,12 +15,17 @@
  */
 package io.roadrunner.api.protocol;
 
-public final class Error extends ProtocolResponse {
+public final class Error extends ProtocolResponse<Error> {
 
     private final String message;
 
     public Error(long startTime, long stopTime, String message) {
         super(startTime, stopTime);
         this.message = message;
+    }
+
+    @Override
+    Error self() {
+        return this;
     }
 }

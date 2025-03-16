@@ -77,7 +77,12 @@ class QueueingProtocolResponsesJournalTest {
                 @Override
                 public Iterator<Measurement> iterator() {
                     return responses.stream()
-                            .map(r -> new Measurement(r.startTime(), r.stopTime(), Measurement.Status.OK))
+                            .map(r -> new Measurement(
+                                    r.scheduledStartTime(),
+                                    r.startTime(),
+                                    r.stopTime(),
+                                    r.latency(),
+                                    Measurement.Status.OK))
                             .iterator();
                 }
             };
