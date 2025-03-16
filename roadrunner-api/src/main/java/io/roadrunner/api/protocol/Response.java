@@ -16,7 +16,6 @@
 package io.roadrunner.api.protocol;
 
 public final class Response<T> extends ProtocolResponse {
-
     private final T body;
 
     public static ProtocolResponse empty(long startTime, long stopTime) {
@@ -26,5 +25,10 @@ public final class Response<T> extends ProtocolResponse {
     Response(long startTime, long stopTime, T body) {
         super(startTime, stopTime);
         this.body = body;
+    }
+
+    @Override
+    Response<T> self() {
+        return this;
     }
 }

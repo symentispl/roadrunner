@@ -53,21 +53,31 @@ public class CsvOutputProtocolResponseListener implements ProtocolResponseListen
 
     @Override
     public void onResponses(Collection<? extends ProtocolResponse> batch) {
-        for (ProtocolResponse response : batch) {
-            var s =
+        for (ProtocolResponse<?> response : batch) {
+            var row =
                     switch (response) {
-                        case Error r -> "%d,%d,KO".formatted(r.startTime(), r.stopTime());
-                        case Response<?> r -> "%d,%d,OK".formatted(r.startTime(), r.stopTime());
-                        default -> throw new IllegalStateException("Unexpected value: " + response);
+                        case Error r -> toRow(r, "KO");
+                        case Response<?> r -> toRow(r, "OK");
                     };
             try {
-                bufferedWriter.write(s);
+                bufferedWriter.write(row);
                 bufferedWriter.newLine();
+                bufferedWriter.flush();
             } catch (IOException e) {
                 LOG.error("cannot write csv output", e);
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private String toRow(ProtocolResponse<?> response, String status) {
+        return "%d,%d,%d,%d,%s"
+                .formatted(
+                        response.scheduledStartTime(),
+                        response.startTime(),
+                        response.stopTime(),
+                        response.latency(),
+                        status);
     }
 
     @Override

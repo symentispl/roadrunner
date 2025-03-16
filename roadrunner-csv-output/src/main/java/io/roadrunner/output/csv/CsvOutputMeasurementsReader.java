@@ -19,7 +19,6 @@ import static java.lang.Long.parseLong;
 
 import io.roadrunner.api.measurments.Measurement;
 import io.roadrunner.api.measurments.MeasurementsReader;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -37,10 +36,14 @@ public class CsvOutputMeasurementsReader implements MeasurementsReader {
     @Override
     public Iterator<Measurement> iterator() {
         try {
-            BufferedReader in = Files.newBufferedReader(csvOutputFile);
+            var in = Files.newBufferedReader(csvOutputFile);
             return CSVFormat.DEFAULT.parse(in).stream()
                     .map(row -> new Measurement(
-                            parseLong(row.get(0)), parseLong(row.get(1)), Measurement.Status.valueOf(row.get(2))))
+                            parseLong(row.get(0)),
+                            parseLong(row.get(1)),
+                            parseLong(row.get(2)),
+                            parseLong(row.get(3)),
+                            Measurement.Status.valueOf(row.get(4))))
                     .iterator();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

@@ -19,11 +19,9 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
 import io.roadrunner.protocols.spi.ProtocolProvider;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.ServiceLoader;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
