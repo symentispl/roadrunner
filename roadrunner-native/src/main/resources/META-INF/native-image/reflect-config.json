@@ -1,0 +1,11 @@
+[
+  {
+    "name": "io.roadrunner.cli.RoadrunnerOptions",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true,
+    "allPublicFields": true
+  }
+]
