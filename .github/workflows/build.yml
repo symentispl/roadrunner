@@ -33,6 +33,17 @@ jobs:
       - name: Build with Maven
         run: ./mvnw -B verify --file pom.xml
 
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '23'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      - name: Build Native Image
+        run: ./mvnw -B clean package -Pnative -pl roadrunner-native
+
       # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
       - name: Update dependency graph
         uses: advanced-security/maven-dependency-submission-action@v4.1.1
