@@ -19,8 +19,11 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
 import io.roadrunner.protocols.spi.ProtocolProvider;
+
+import java.util.Collection;
 import java.util.Map;
 import java.util.ServiceLoader;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,20 +37,17 @@ final class ProtocolProviders implements AutoCloseable {
     }
 
     static ProtocolProviders load() {
+        LOG.debug("loading protocol providers");
         var protocols = ServiceLoader.load(ProtocolProvider.class).stream()
                 .map(ServiceLoader.Provider::get)
-                .peek(protocolProvider -> LOG.info("found protocol {}", protocolProvider.name()))
+                .peek(protocolProvider -> LOG.debug("found protocol {}", protocolProvider.name()))
                 .collect(toMap(ProtocolProvider::name, identity()));
         return new ProtocolProviders(protocols);
     }
 
-    public ProtocolProvider get(String protocolName) {
-        return protocolProviders.get(protocolName);
-    }
-
     @Override
     public void close() {
-        LOG.info("closing protocol providers");
+        LOG.debug("closing protocol providers");
         for (ProtocolProvider protocolProvider : protocolProviders.values()) {
             try {
                 protocolProvider.close();
@@ -55,5 +55,9 @@ final class ProtocolProviders implements AutoCloseable {
                 LOG.error("cannot close protocol provider {}", protocolProvider.name());
             }
         }
+    }
+
+    public Collection<ProtocolProvider> all() {
+        return protocolProviders.values();
     }
 }

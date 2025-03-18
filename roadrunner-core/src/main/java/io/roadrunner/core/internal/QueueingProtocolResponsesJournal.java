@@ -45,7 +45,7 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
     }
 
     void start() {
-        LOG.info("starting responses journaling");
+        LOG.debug("starting responses journaling");
         isRunning = true;
         executorService.submit(() -> {
             listener.onStart();

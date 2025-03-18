@@ -19,10 +19,11 @@ import io.roadrunner.protocols.vm.VmProtocolProvider;
 module io.roadrunner.protocol.vm {
     requires io.roadrunner.api;
     requires io.roadrunner.protocols.spi;
-    requires io.roadrunner.options;
+    requires info.picocli;
 
     provides ProtocolProvider with
             VmProtocolProvider;
 
-    opens io.roadrunner.protocols.vm;
+    opens io.roadrunner.protocols.vm to
+            info.picocli;
 }

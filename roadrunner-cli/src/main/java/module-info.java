@@ -20,13 +20,14 @@ module pl.symentis.roadrunner.cli {
     requires io.roadrunner.api;
     requires io.roadrunner.protocols.spi;
     requires io.roadrunner.core;
-    requires io.roadrunner.options;
     requires org.slf4j;
     requires org.apache.commons.io;
     requires org.apache.commons.lang3;
+    requires info.picocli;
 
     uses ProtocolProvider;
     uses ReportGeneratorProvider;
 
-    opens io.roadrunner.cli;
+    opens io.roadrunner.cli to
+            info.picocli;
 }

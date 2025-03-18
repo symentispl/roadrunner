@@ -15,17 +15,22 @@
  */
 package io.roadrunner.protocols.ab;
 
-import io.roadrunner.api.protocol.ProtocolRequest;
+import io.roadrunner.api.protocol.Protocol;
 import io.roadrunner.api.protocol.ProtocolResponse;
-import io.roadrunner.options.CliOptionsBuilder;
 import io.roadrunner.protocols.spi.ProtocolProvider;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
 
-public class AbProtocolProvider implements ProtocolProvider<AbProtocolOptions> {
+@Command(description = "Apache HTTP server benchmarking tool implementation")
+public class AbProtocolProvider implements ProtocolProvider {
+
+    @CommandLine.Parameters(paramLabel = "url", description = "HTTP server URL")
+    URI uri;
 
     private final HttpClient httpClient;
 
@@ -41,23 +46,10 @@ public class AbProtocolProvider implements ProtocolProvider<AbProtocolOptions> {
     }
 
     @Override
-    public AbProtocolOptions requestOptions(String[] protocolArgs) {
-        var optionsBuilder = new CliOptionsBuilder();
-        var optionsBinding = optionsBuilder.from(AbProtocolOptions.class);
-        try {
-            return optionsBinding.newInstance(protocolArgs);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public ProtocolRequest request(AbProtocolOptions requestOptions) {
+    public Protocol newProtocol() {
         return () -> {
             try {
-                var httpRequest = HttpRequest.newBuilder(URI.create(requestOptions.uri()))
-                        .GET()
-                        .build();
+                var httpRequest = HttpRequest.newBuilder(uri).GET().build();
                 var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
                 var startTime = System.nanoTime();
                 var httpResponse = httpClient.send(httpRequest, bodyHandler);

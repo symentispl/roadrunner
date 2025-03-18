@@ -15,35 +15,40 @@
  */
 package io.roadrunner.protocols.vm;
 
-import io.roadrunner.api.protocol.ProtocolRequest;
+import io.roadrunner.api.protocol.Protocol;
 import io.roadrunner.api.protocol.Response;
-import io.roadrunner.options.CliOptionsBuilder;
 import io.roadrunner.protocols.spi.ProtocolProvider;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
-public class VmProtocolProvider implements ProtocolProvider<VmProtocolOptions> {
+@Command(
+        description = "In-VM protocol, used as baseline to calculate roadrunner overhead",
+        mixinStandardHelpOptions = true)
+public class VmProtocolProvider implements ProtocolProvider {
+
+    @Option(names = "--sleep-time", description = "sleep time in ms", required = true)
+    long sleepTime;
+
+    // provided for testing
+    public static VmProtocolProvider from(Duration sleepTime) {
+        var vmProtocolProvider = new VmProtocolProvider();
+        vmProtocolProvider.sleepTime = sleepTime.toMillis();
+        return vmProtocolProvider;
+    }
+
     @Override
     public String name() {
         return "vm";
     }
 
     @Override
-    public VmProtocolOptions requestOptions(String[] protocolArgs) {
-        var optionsBuilder = new CliOptionsBuilder();
-        var optionsBinding = optionsBuilder.from(VmProtocolOptions.class);
-        try {
-            return optionsBinding.newInstance(protocolArgs);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public ProtocolRequest request(VmProtocolOptions requestOptions) {
+    public Protocol newProtocol() {
         return () -> CompletableFuture.supplyAsync(() -> {
                     var startTime = System.nanoTime();
                     try {
-                        Thread.sleep(requestOptions.sleepTime());
+                        Thread.sleep(sleepTime);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }

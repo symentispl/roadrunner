@@ -20,10 +20,11 @@ module io.roadrunner.protocol.ab {
     requires java.net.http;
     requires io.roadrunner.api;
     requires io.roadrunner.protocols.spi;
-    requires io.roadrunner.options;
+    requires info.picocli;
 
     provides ProtocolProvider with
             AbProtocolProvider;
 
-    opens io.roadrunner.protocols.ab;
+    opens io.roadrunner.protocols.ab to
+            info.picocli;
 }
