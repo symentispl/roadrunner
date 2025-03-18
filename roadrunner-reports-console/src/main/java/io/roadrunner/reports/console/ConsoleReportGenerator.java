@@ -15,8 +15,8 @@
  */
 package io.roadrunner.reports.console;
 
-import io.roadrunner.api.measurments.Measurement;
-import io.roadrunner.api.measurments.MeasurementsReader;
+import io.roadrunner.api.measurments.Sample;
+import io.roadrunner.api.measurments.SamplesReader;
 import io.roadrunner.api.reports.ReportGenerator;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
 import java.io.BufferedReader;
@@ -38,7 +38,7 @@ final class ConsoleReportGenerator implements ReportGenerator {
     }
 
     @Override
-    public void generateChart(MeasurementsReader measurementsReader) throws IOException {
+    public void generateChart(SamplesReader samplesReader) throws IOException {
         var histogram = new Histogram(3);
 
         // Track the first and last measurement timestamps to calculate total duration
@@ -49,20 +49,20 @@ final class ConsoleReportGenerator implements ReportGenerator {
         var totalRequests = 0L;
         var errorRequests = 0L;
 
-        for (Measurement measurement : measurementsReader) {
+        for (Sample sample : samplesReader) {
             try {
                 totalRequests++;
-                var responseTime = measurement.stopTime() - measurement.startTime();
+                var responseTime = sample.stopTime() - sample.startTime();
                 histogram.recordValue(responseTime);
 
                 // Check if this is an error response
-                if (measurement.status() == Measurement.Status.KO) {
+                if (sample.status() == Sample.Status.KO) {
                     errorRequests++;
                 }
 
                 // Update first start time and last stop time
-                firstStartTime = Math.min(firstStartTime, measurement.startTime());
-                lastStopTime = Math.max(lastStopTime, measurement.stopTime());
+                firstStartTime = Math.min(firstStartTime, sample.startTime());
+                lastStopTime = Math.max(lastStopTime, sample.stopTime());
             } catch (NumberFormatException e) {
                 System.out.println("invalid line");
             }

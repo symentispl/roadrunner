@@ -17,7 +17,6 @@ package io.roadrunner.api.measurments;
 
 import java.util.Iterator;
 
-public interface MeasurementsReader extends Iterable<Measurement> {
-
-    Iterator<Measurement> iterator();
+public interface SamplesReader extends Iterable<Sample> {
+    Iterator<Sample> iterator();
 }

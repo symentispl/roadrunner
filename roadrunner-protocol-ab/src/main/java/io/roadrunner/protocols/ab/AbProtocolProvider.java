@@ -15,8 +15,8 @@
  */
 package io.roadrunner.protocols.ab;
 
+import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.protocol.Protocol;
-import io.roadrunner.api.protocol.ProtocolResponse;
 import io.roadrunner.protocols.spi.ProtocolProvider;
 import java.io.IOException;
 import java.net.URI;

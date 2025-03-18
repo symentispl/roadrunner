@@ -17,8 +17,8 @@ package io.roadrunner.output.csv;
 
 import static java.lang.Long.parseLong;
 
-import io.roadrunner.api.measurments.Measurement;
-import io.roadrunner.api.measurments.MeasurementsReader;
+import io.roadrunner.api.measurments.Sample;
+import io.roadrunner.api.measurments.SamplesReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -26,24 +26,25 @@ import java.nio.file.Path;
 import java.util.Iterator;
 import org.apache.commons.csv.CSVFormat;
 
-public class CsvOutputMeasurementsReader implements MeasurementsReader {
+public class CsvOutputSamplesReader implements SamplesReader {
     private final Path csvOutputFile;
 
-    public CsvOutputMeasurementsReader(Path csvOutputFile) {
+    public CsvOutputSamplesReader(Path csvOutputFile) {
         this.csvOutputFile = csvOutputFile;
     }
 
     @Override
-    public Iterator<Measurement> iterator() {
+    public Iterator<Sample> iterator() {
         try {
             var in = Files.newBufferedReader(csvOutputFile);
             return CSVFormat.DEFAULT.parse(in).stream()
-                    .map(row -> new Measurement(
-                            parseLong(row.get(0)),
+                    .filter(row -> "REQ".equals(row.get(0)))
+                    .map(row -> new Sample(
                             parseLong(row.get(1)),
                             parseLong(row.get(2)),
                             parseLong(row.get(3)),
-                            Measurement.Status.valueOf(row.get(4))))
+                            parseLong(row.get(4)),
+                            Sample.Status.valueOf(row.get(5))))
                     .iterator();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

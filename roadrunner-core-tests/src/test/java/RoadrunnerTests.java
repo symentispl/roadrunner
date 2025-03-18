@@ -15,7 +15,7 @@
  */
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.roadrunner.api.measurments.Measurement;
+import io.roadrunner.api.measurments.Sample;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.protocols.vm.VmProtocolProvider;
 import java.nio.file.Path;
@@ -36,11 +36,11 @@ public class RoadrunnerTests {
             var protocol = protocolProvider.newProtocol();
             measurements = roadrunner.execute(() -> protocol::execute);
         }
-        var measurementsReader = measurements.measurementsReader();
-        assertThat(measurementsReader).hasSize(10).allSatisfy(m -> {
+        var samplesReader = measurements.samplesReader();
+        assertThat(samplesReader).hasSize(10).allSatisfy(m -> {
             assertThat(m.startTime()).isGreaterThan(0);
             assertThat(m.stopTime()).isGreaterThan(m.startTime());
-            assertThat(m.status()).isEqualTo(Measurement.Status.OK);
+            assertThat(m.status()).isEqualTo(Sample.Status.OK);
         });
     }
 }

@@ -13,22 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api.protocol;
+package io.roadrunner.api.measurments;
 
-public final class Response<T> extends ProtocolResponse {
-    private final T body;
-
-    public static ProtocolResponse empty(long startTime, long stopTime) {
-        return new Response(startTime, stopTime, null);
-    }
-
-    Response(long startTime, long stopTime, T body) {
-        super(startTime, stopTime);
-        this.body = body;
-    }
-
-    @Override
-    Response<T> self() {
-        return this;
+public record Sample(long scheduleStartTime, long startTime, long stopTime, long latency, Status status) {
+    public enum Status {
+        OK,
+        KO;
     }
 }

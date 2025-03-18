@@ -17,8 +17,8 @@ package io.roadrunner.reports.html;
 
 import static java.util.Objects.requireNonNull;
 
-import io.roadrunner.api.measurments.Measurement;
-import io.roadrunner.api.measurments.MeasurementsReader;
+import io.roadrunner.api.measurments.Sample;
+import io.roadrunner.api.measurments.SamplesReader;
 import io.roadrunner.api.reports.ReportGenerator;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
 import java.io.FileWriter;
@@ -45,7 +45,7 @@ public class HtmlReportGenerator implements ReportGenerator {
     }
 
     @Override
-    public void generateChart(MeasurementsReader measurementsReader) throws IOException {
+    public void generateChart(SamplesReader samplesReader) throws IOException {
         var indexHtml = outputPath.resolve("index.html");
         var datapointsJs = outputPath.resolve("data.js");
 
@@ -53,10 +53,11 @@ public class HtmlReportGenerator implements ReportGenerator {
 
         try (PrintStream out = new PrintStream(datapointsJs.toFile())) {
             out.println("const datapoints = [");
-            for (Measurement measurement : measurementsReader) {
+            for (Sample sample : samplesReader) {
                 try {
-                    histogram.recordValue(measurement.latency());
-                    out.println("\t{x : %d,y : %d},".formatted(measurement.startTime(), measurement.latency()));
+                    var responseTime = sample.stopTime() - sample.startTime();
+                    histogram.recordValue(responseTime);
+                    out.println("\t{x : %d,y : %d},".formatted(sample.startTime(), responseTime));
                 } catch (NumberFormatException e) {
                     System.out.println("invalid line");
                 }

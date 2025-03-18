@@ -15,11 +15,11 @@
  */
 package io.roadrunner.output.csv;
 
-import io.roadrunner.api.ProtocolResponseListener;
-import io.roadrunner.api.measurments.MeasurementsReader;
-import io.roadrunner.api.protocol.Error;
-import io.roadrunner.api.protocol.ProtocolResponse;
-import io.roadrunner.api.protocol.Response;
+import io.roadrunner.api.events.Event;
+import io.roadrunner.api.events.EventListener;
+import io.roadrunner.api.events.ProtocolResponse;
+import io.roadrunner.api.events.UserEvent;
+import io.roadrunner.api.measurments.SamplesReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,14 +29,14 @@ import java.util.Collection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CsvOutputProtocolResponseListener implements ProtocolResponseListener {
+public class CsvOutputEventListener implements EventListener {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CsvOutputProtocolResponseListener.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CsvOutputEventListener.class);
 
     private final Path csvOutputFile;
     private BufferedWriter bufferedWriter;
 
-    public CsvOutputProtocolResponseListener(Path csvOutputFile) {
+    public CsvOutputEventListener(Path csvOutputFile) {
         this.csvOutputFile = csvOutputFile;
     }
 
@@ -52,12 +52,15 @@ public class CsvOutputProtocolResponseListener implements ProtocolResponseListen
     }
 
     @Override
-    public void onResponses(Collection<? extends ProtocolResponse> batch) {
-        for (ProtocolResponse<?> response : batch) {
+    public void onEvent(Collection<? extends Event> batch) {
+        for (var response : batch) {
             var row =
                     switch (response) {
-                        case Error r -> toRow(r, "KO");
-                        case Response<?> r -> toRow(r, "OK");
+                        case ProtocolResponse.Error e -> toRow(e, "KO");
+                        case ProtocolResponse.Response<?> e -> toRow(e, "OK");
+                        case UserEvent.Enter e -> "USER,%d,ENTER".formatted(e.timestamp());
+                        case UserEvent.Exit e -> "USER,%d,EXIT".formatted(e.timestamp());
+                        default -> throw new IllegalStateException("Unexpected value: " + response);
                     };
             try {
                 bufferedWriter.write(row);
@@ -71,10 +74,10 @@ public class CsvOutputProtocolResponseListener implements ProtocolResponseListen
     }
 
     private String toRow(ProtocolResponse<?> response, String status) {
-        return "%d,%d,%d,%d,%s"
+        return "REQ,%d,%d,%d,%d,%s"
                 .formatted(
                         response.scheduledStartTime(),
-                        response.startTime(),
+                        response.timestamp(),
                         response.stopTime(),
                         response.latency(),
                         status);
@@ -90,7 +93,7 @@ public class CsvOutputProtocolResponseListener implements ProtocolResponseListen
     }
 
     @Override
-    public MeasurementsReader measurementsReader() {
-        return new CsvOutputMeasurementsReader(csvOutputFile);
+    public SamplesReader samplesReader() {
+        return new CsvOutputSamplesReader(csvOutputFile);
     }
 }

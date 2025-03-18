@@ -1,4 +1,10 @@
 /**
+ * Represents an event listener for processing measurements and samples.
+ *
+ * This interface defines methods for handling measurements and samples
+ * in the RoadRunner API event processing system.
+ */
+/**
  * Copyright 2024 Symentis.pl
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,11 +19,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api.measurments;
+package io.roadrunner.api.events;
 
-public record Measurement(long scheduleStartTime, long startTime, long stopTime, long latency, Status status) {
-    public enum Status {
-        OK,
-        KO;
-    }
+import io.roadrunner.api.measurments.SamplesReader;
+import java.util.Collection;
+
+public interface EventListener {
+    void onStart();
+
+    void onEvent(Collection<? extends Event> batch);
+
+    void onStop();
+
+    SamplesReader samplesReader();
 }

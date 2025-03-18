@@ -15,8 +15,8 @@
  */
 package io.roadrunner.protocols.vm;
 
+import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.protocol.Protocol;
-import io.roadrunner.api.protocol.Response;
 import io.roadrunner.protocols.spi.ProtocolProvider;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -62,7 +62,7 @@ public class VmProtocolProvider implements ProtocolProvider {
                                 throw new RuntimeException(e);
                             }
                             var stopTime = System.nanoTime();
-                            return Response.empty(startTime, stopTime);
+                            return ProtocolResponse.empty(startTime, stopTime);
                         },
                         executorService)
                 .join();

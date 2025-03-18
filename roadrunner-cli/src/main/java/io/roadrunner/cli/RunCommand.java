@@ -63,7 +63,7 @@ class RunCommand {
             }
             var chartGenerator = reportGeneratorProvider.create(reportConfiguration.configuration());
             var measurements = roadrunner.execute(() -> protocolProvider.newProtocol());
-            chartGenerator.generateChart(measurements.measurementsReader());
+            chartGenerator.generateChart(measurements.samplesReader());
         }
     }
 }

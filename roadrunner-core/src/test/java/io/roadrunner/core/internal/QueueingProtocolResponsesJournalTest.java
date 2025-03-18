@@ -18,10 +18,11 @@ package io.roadrunner.core.internal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-import io.roadrunner.api.ProtocolResponseListener;
-import io.roadrunner.api.measurments.Measurement;
-import io.roadrunner.api.measurments.MeasurementsReader;
-import io.roadrunner.api.protocol.ProtocolResponse;
+import io.roadrunner.api.events.Event;
+import io.roadrunner.api.events.EventListener;
+import io.roadrunner.api.events.ProtocolResponse;
+import io.roadrunner.api.measurments.Sample;
+import io.roadrunner.api.measurments.SamplesReader;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,7 +34,7 @@ class QueueingProtocolResponsesJournalTest {
 
     @Test
     void drainResponseJournal() {
-        var listener = new CollectionProtocolResponseListener();
+        var listener = new CollectionEventListener();
         var journal = new QueueingProtocolResponsesJournal(listener);
 
         var response1 = ProtocolResponse.response(0, 0, "1");
@@ -43,11 +44,11 @@ class QueueingProtocolResponsesJournalTest {
         var response5 = ProtocolResponse.response(0, 0, "5");
 
         journal.start();
-        journal.append(response1);
-        journal.append(response2);
-        journal.append(response3);
-        journal.append(response4);
-        journal.append(response5);
+        journal.response(response1);
+        journal.response(response2);
+        journal.response(response3);
+        journal.response(response4);
+        journal.response(response5);
 
         await().atMost(Duration.ofSeconds(2)).untilAsserted(() -> {
             assertThat(listener.responses).containsExactly(response1, response2, response3, response4, response5);
@@ -56,15 +57,15 @@ class QueueingProtocolResponsesJournalTest {
         journal.close();
     }
 
-    private static class CollectionProtocolResponseListener implements ProtocolResponseListener {
+    private static class CollectionEventListener implements EventListener {
 
-        List<ProtocolResponse> responses = new ArrayList<>();
+        List<Event> responses = new ArrayList<>();
 
         @Override
         public void onStart() {}
 
         @Override
-        public void onResponses(Collection<? extends ProtocolResponse> batch) {
+        public void onEvent(Collection<? extends Event> batch) {
             responses.addAll(batch);
         }
 
@@ -72,17 +73,15 @@ class QueueingProtocolResponsesJournalTest {
         public void onStop() {}
 
         @Override
-        public MeasurementsReader measurementsReader() {
-            return new MeasurementsReader() {
+        public SamplesReader samplesReader() {
+            return new SamplesReader() {
                 @Override
-                public Iterator<Measurement> iterator() {
+                public Iterator<Sample> iterator() {
                     return responses.stream()
-                            .map(r -> new Measurement(
-                                    r.scheduledStartTime(),
-                                    r.startTime(),
-                                    r.stopTime(),
-                                    r.latency(),
-                                    Measurement.Status.OK))
+                            .filter(ProtocolResponse.class::isInstance)
+                            .map(ProtocolResponse.class::cast)
+                            .map(r -> new Sample(
+                                    r.scheduledStartTime(), r.timestamp(), r.stopTime(), r.latency(), Sample.Status.OK))
                             .iterator();
                 }
             };

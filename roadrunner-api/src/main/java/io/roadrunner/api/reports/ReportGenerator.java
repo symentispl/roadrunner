@@ -15,9 +15,9 @@
  */
 package io.roadrunner.api.reports;
 
-import io.roadrunner.api.measurments.MeasurementsReader;
+import io.roadrunner.api.measurments.SamplesReader;
 import java.io.IOException;
 
 public interface ReportGenerator {
-    void generateChart(MeasurementsReader measurementsReader) throws IOException;
+    void generateChart(SamplesReader samplesReader) throws IOException;
 }

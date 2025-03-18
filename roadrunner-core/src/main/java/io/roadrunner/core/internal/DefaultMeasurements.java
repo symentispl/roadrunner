@@ -16,21 +16,21 @@
 package io.roadrunner.core.internal;
 
 import io.roadrunner.api.measurments.Measurements;
-import io.roadrunner.api.measurments.MeasurementsReader;
+import io.roadrunner.api.measurments.SamplesReader;
 
 final class DefaultMeasurements implements Measurements {
-    private final MeasurementsReader measurementsReader;
+    private final SamplesReader samplesReader;
 
-    static Measurements from(MeasurementsReader measurementsReader) {
-        return new DefaultMeasurements(measurementsReader);
+    static Measurements from(SamplesReader samplesReader) {
+        return new DefaultMeasurements(samplesReader);
     }
 
-    private DefaultMeasurements(MeasurementsReader measurementsReader) {
-        this.measurementsReader = measurementsReader;
+    private DefaultMeasurements(SamplesReader samplesReader) {
+        this.samplesReader = samplesReader;
     }
 
     @Override
-    public MeasurementsReader measurementsReader() {
-        return measurementsReader;
+    public SamplesReader samplesReader() {
+        return samplesReader;
     }
 }

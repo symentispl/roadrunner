@@ -13,19 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api.protocol;
+package io.roadrunner.api.events;
 
-public final class Error extends ProtocolResponse<Error> {
+/**
+ * Base sealed class for all events in the Roadrunner.
+ * All events must have a timestamp indicating when they occurred.
+ */
+public abstract sealed class Event permits UserEvent, ProtocolResponse {
+    private final long timestamp;
 
-    private final String message;
-
-    public Error(long startTime, long stopTime, String message) {
-        super(startTime, stopTime);
-        this.message = message;
+    protected Event(long timestamp) {
+        this.timestamp = timestamp;
     }
 
-    @Override
-    Error self() {
-        return this;
+    /**
+     * Returns the timestamp when this event occurred, in nanoseconds.
+     */
+    public long timestamp() {
+        return timestamp;
     }
 }
