@@ -79,7 +79,7 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
         isRunning = false;
         executorService.shutdown();
         try {
-            executorService.awaitTermination(1, TimeUnit.SECONDS);
+            executorService.awaitTermination(10, TimeUnit.SECONDS);
 
             // TODO drain remaining items
 

@@ -20,6 +20,8 @@ import io.roadrunner.api.protocol.Response;
 import io.roadrunner.protocols.spi.ProtocolProvider;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -28,8 +30,14 @@ import picocli.CommandLine.Option;
         mixinStandardHelpOptions = true)
 public class VmProtocolProvider implements ProtocolProvider {
 
+    private final ExecutorService executorService;
+
     @Option(names = "--sleep-time", description = "sleep time in ms", required = true)
     long sleepTime;
+
+    public VmProtocolProvider() {
+        executorService = Executors.newCachedThreadPool();
+    }
 
     // provided for testing
     public static VmProtocolProvider from(Duration sleepTime) {
@@ -45,19 +53,23 @@ public class VmProtocolProvider implements ProtocolProvider {
 
     @Override
     public Protocol newProtocol() {
-        return () -> CompletableFuture.supplyAsync(() -> {
-                    var startTime = System.nanoTime();
-                    try {
-                        Thread.sleep(sleepTime);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    var stopTime = System.nanoTime();
-                    return Response.empty(startTime, stopTime);
-                })
+        return () -> CompletableFuture.supplyAsync(
+                        () -> {
+                            var startTime = System.nanoTime();
+                            try {
+                                Thread.sleep(sleepTime);
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                            var stopTime = System.nanoTime();
+                            return Response.empty(startTime, stopTime);
+                        },
+                        executorService)
                 .join();
     }
 
     @Override
-    public void close() {}
+    public void close() {
+        executorService.close();
+    }
 }

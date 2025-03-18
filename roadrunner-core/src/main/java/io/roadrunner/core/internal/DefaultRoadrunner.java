@@ -117,13 +117,26 @@ public class DefaultRoadrunner implements Roadrunner {
             try {
                 while (measurementControl.isRunning()) {
                     try {
-                        //                        var scheduledTime = System.nanoTime();
+                        // when the next request should start
+                        long scheduledStartTime = System.nanoTime();
+                        // execute the request
                         var response =
                                 requestsExecutor.submit(protocol::execute).get();
-                        //                        var timeInQueue = (response.startTime() - scheduledTime);
-                        //                        var serviceTime = System.nanoTime()-response.stopTime();
-                        //                        Request latency = (now() – intended_time) + service_time
-                        measurementControl.request(response);
+                        // calculate delay from intended start time
+                        var inQueueTime = response.startTime() - scheduledStartTime;
+                        // calculate the service time (actual execution time)
+                        var serviceTime = response.stopTime() - response.startTime();
+
+                        // create a corrected response latency that accounts for coordinated omission
+                        // by adding the delay to the latency
+                        var correctedLatency = serviceTime + inQueueTime;
+                        measurementControl.request(response.withScheduledStartTime(scheduledStartTime)
+                                .withLatency(correctedLatency));
+
+                        // Calculate when the next request should start
+                        // This assumes a closed-world model where we want to maintain a constant rate
+                        // NOTICE: are accumulating delay over time?
+                        // scheduledStartTime = scheduledStartTime + serviceTime;
                     } catch (InterruptedException | ExecutionException e) {
                         System.out.println("<<>>");
                     }
