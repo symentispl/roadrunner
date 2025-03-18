@@ -18,6 +18,6 @@ package io.roadrunner.api.measurments;
 public record Measurement(long scheduleStartTime, long startTime, long stopTime, long latency, Status status) {
     public enum Status {
         OK,
-        ERROR;
+        KO;
     }
 }
