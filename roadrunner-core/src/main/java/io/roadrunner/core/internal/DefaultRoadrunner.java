@@ -69,15 +69,15 @@ public class DefaultRoadrunner implements Roadrunner {
         var csvOutputFile = outputDir.resolve("output.csv");
         LOG.info("writing responses to {}", csvOutputFile);
 
-        try (var responsesJournal =
-                new QueueingProtocolResponsesJournal(new CsvOutputProtocolResponseListener(csvOutputFile))) {
+        try (var responsesJournal = new QueueingProtocolResponsesJournal(new ProgressTrackingResponseListener(
+                new CsvOutputProtocolResponseListener(csvOutputFile), measurementProgress))) {
             responsesJournal.start();
             try (var usersExecutor = Executors.newThreadPerTaskExecutor(
                             Thread.ofVirtual().name("roadrunner-users-").factory());
                     var requestsExecutor = Executors.newCachedThreadPool(
                             Thread.ofVirtual().name("roadrunner-requests-").factory())) {
                 var latch = new CountDownLatch(concurrentUsers);
-                var measurementControl = new MeasurementControl(measurementProgress, requests, responsesJournal, latch);
+                var measurementControl = new MeasurementControl(requests, responsesJournal, latch);
                 for (int i = 0; i < concurrentUsers; i++) {
                     usersExecutor.submit(
                             new RoadrunnerUser(measurementControl, delayedSupplier.get(), requestsExecutor));
@@ -152,16 +152,8 @@ public class DefaultRoadrunner implements Roadrunner {
         private final AtomicLong counter;
         private final QueueingProtocolResponsesJournal responsesJournal;
         private final CountDownLatch latch;
-        private final MeasurementProgress measurementProgress;
-        private final long requests;
 
-        MeasurementControl(
-                MeasurementProgress measurementProgress,
-                long requests,
-                QueueingProtocolResponsesJournal responsesJournal,
-                CountDownLatch latch) {
-            this.measurementProgress = measurementProgress;
-            this.requests = requests;
+        MeasurementControl(long requests, QueueingProtocolResponsesJournal responsesJournal, CountDownLatch latch) {
             this.counter = new AtomicLong(requests);
             this.responsesJournal = responsesJournal;
             this.latch = latch;
@@ -174,12 +166,49 @@ public class DefaultRoadrunner implements Roadrunner {
         public void userEnter() {}
 
         public void request(ProtocolResponse response) {
-            measurementProgress.update(requests - counter.decrementAndGet());
+            counter.decrementAndGet();
             responsesJournal.append(response);
         }
 
         public void userExit() {
             latch.countDown();
+        }
+    }
+
+    /**
+     * A decorator for ProtocolResponseListener that tracks progress
+     */
+    private static class ProgressTrackingResponseListener implements ProtocolResponseListener {
+        private final ProtocolResponseListener delegate;
+        private final MeasurementProgress measurementProgress;
+        private final AtomicLong processedRequests = new AtomicLong(0);
+
+        ProgressTrackingResponseListener(ProtocolResponseListener delegate, MeasurementProgress measurementProgress) {
+            this.delegate = delegate;
+            this.measurementProgress = measurementProgress;
+        }
+
+        @Override
+        public void onStart() {
+            delegate.onStart();
+        }
+
+        @Override
+        public void onResponses(Collection<? extends ProtocolResponse> batch) {
+            delegate.onResponses(batch);
+            // Update progress based on batch size
+            long currentProcessed = processedRequests.addAndGet(batch.size());
+            measurementProgress.update(currentProcessed);
+        }
+
+        @Override
+        public void onStop() {
+            delegate.onStop();
+        }
+
+        @Override
+        public MeasurementsReader measurementsReader() {
+            return delegate.measurementsReader();
         }
     }
 
