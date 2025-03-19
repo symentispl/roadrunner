@@ -22,13 +22,11 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <!-- don't print GraalVM warnings -->
-                    <argLine>-Dpolyglot.engine.WarnInterpreterOnly=false</argLine>
+                    <argLine>-Dpolyglot.engine.WarnInterpreterOnly=false --add-exports=org.graalvm.polyglot/org.graalvm.polyglot.impl=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-
-
 
     <dependencies>
         <dependency>

@@ -21,7 +21,6 @@ module io.roadrunner.reports.html {
     requires io.roadrunner.hdrhistogram;
     requires org.apache.commons.text;
     requires org.apache.commons.io;
-    requires org.apache.commons.lang3;
 
     exports io.roadrunner.reports.html;
 

@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.reports.html;
+package io.roadrunner.reports.html.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.output.csv.CsvOutputEventReader;
+import io.roadrunner.reports.html.HtmlReportGenerator;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

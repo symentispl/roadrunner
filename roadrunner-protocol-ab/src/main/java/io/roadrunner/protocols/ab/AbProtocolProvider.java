@@ -30,7 +30,7 @@ import picocli.CommandLine.Parameters;
 public class AbProtocolProvider implements ProtocolProvider {
 
     @Parameters(paramLabel = "url", description = "HTTP server URL")
-    URI uri;
+    public URI uri;
 
     public AbProtocolProvider() {}
 

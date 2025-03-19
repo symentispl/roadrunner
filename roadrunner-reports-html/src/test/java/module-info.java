@@ -13,23 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api.events;
+open module io.roadrunner.protocol.ab.tests {
+    requires io.roadrunner.reports.html;
+    requires io.roadrunner.output.csv;
+    requires io.roadrunner.api;
+    requires org.apache.commons.lang3;
+    requires org.assertj.core;
+    requires org.junit.jupiter.api;
+    requires transitive org.junit.jupiter.engine;
+    requires org.graalvm.polyglot;
 
-import io.roadrunner.api.measurments.EventReader;
-import java.util.Collection;
-
-/**
- * Represents an event listener for processing measurements and samples.
- * <p>
- * This interface defines methods for handling measurements and samples
- * in the RoadRunner API event processing system.
- */
-public interface EventListener {
-    void onStart();
-
-    void onEvent(Collection<? extends Event> batch);
-
-    void onStop();
-
-    EventReader samplesReader();
+    exports io.roadrunner.reports.html.tests;
 }
