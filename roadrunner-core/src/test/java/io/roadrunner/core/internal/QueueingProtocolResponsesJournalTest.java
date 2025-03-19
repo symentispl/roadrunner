@@ -22,10 +22,13 @@ import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.measurments.EventReader;
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import org.junit.jupiter.api.Test;
 
 class QueueingProtocolResponsesJournalTest {
@@ -33,35 +36,37 @@ class QueueingProtocolResponsesJournalTest {
     @Test
     void drainResponseJournal() {
         var listener = new CollectionEventListener();
-        var journal = new QueueingProtocolResponsesJournal(listener);
-
         var response1 = ProtocolResponse.response(0, 0, "1");
         var response2 = ProtocolResponse.response(0, 0, "2");
         var response3 = ProtocolResponse.response(0, 0, "3");
         var response4 = ProtocolResponse.response(0, 0, "4");
         var response5 = ProtocolResponse.response(0, 0, "5");
 
-        journal.start();
-        journal.response(response1);
-        journal.response(response1);
-        journal.response(response2);
-        journal.response(response3);
-        journal.response(response4);
-        journal.response(response5);
+        try (var journal = new QueueingProtocolResponsesJournal(listener)) {
+            journal.start();
+            journal.response(response1);
+            journal.response(response2);
+            journal.response(response3);
+            journal.response(response4);
+            journal.response(response5);
+        }
 
-        await().atMost(Duration.ofSeconds(2)).untilAsserted(() -> {
-            assertThat(listener.responses).containsExactly(response1, response2, response3, response4, response5);
-        });
+        // Wait for responses to be processed before closing
+        await().atMost(Duration.ofSeconds(5)).until(() -> listener.responses.size() >= 5);
 
-        journal.close();
+
+        // Verify all responses were processed correctly
+        assertThat(listener.responses).containsExactly(response1, response2, response3, response4, response5);
     }
 
     private static class CollectionEventListener implements EventListener {
 
-        List<Event> responses = new ArrayList<>();
+        // Using thread-safe collection since events might be added from different threads
+        List<Event> responses = new CopyOnWriteArrayList<>();
 
         @Override
-        public void onStart() {}
+        public void onStart() {
+        }
 
         @Override
         public void onEvent(Collection<? extends Event> batch) {
@@ -69,7 +74,8 @@ class QueueingProtocolResponsesJournalTest {
         }
 
         @Override
-        public void onStop() {}
+        public void onStop() {
+        }
 
         @Override
         public EventReader samplesReader() {

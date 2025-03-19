@@ -20,12 +20,14 @@ import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
+
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,11 +92,17 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
         executorService.shutdown();
         try {
             executorService.awaitTermination(10, TimeUnit.SECONDS);
-
-            // TODO drain remaining items
-           // System.out.println(Arrays.toString(responses.toArray()));
-
+            // Drain any remaining responses and notify listener
+            if (!responses.isEmpty()) {
+                var remainingEvents = new ArrayList<Event>();
+                responses.drainTo(remainingEvents);
+                if (!remainingEvents.isEmpty()) {
+                    LOG.warn("Processing {} remaining events before closing", remainingEvents.size());
+                    listener.onEvent(remainingEvents);
+                }
+            }
         } catch (InterruptedException e) {
+//            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }

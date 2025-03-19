@@ -15,6 +15,8 @@
  */
 package io.roadrunner.api.events;
 
+import java.util.Objects;
+
 /**
  * Base sealed class for all events in the Roadrunner.
  * All events must have a timestamp indicating when they occurred.
@@ -31,5 +33,16 @@ public abstract sealed class Event permits UserEvent, ProtocolResponse {
      */
     public long timestamp() {
         return timestamp;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Event event)) return false;
+        return timestamp == event.timestamp;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(timestamp);
     }
 }

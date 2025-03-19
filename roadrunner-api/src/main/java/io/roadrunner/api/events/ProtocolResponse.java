@@ -15,6 +15,8 @@
  */
 package io.roadrunner.api.events;
 
+import java.util.Objects;
+
 public abstract sealed class ProtocolResponse<SELF extends ProtocolResponse<SELF>> extends Event
         permits ProtocolResponse.Response, ProtocolResponse.Error {
     private long scheduledStartTime;
@@ -63,6 +65,17 @@ public abstract sealed class ProtocolResponse<SELF extends ProtocolResponse<SELF
 
     abstract SELF self();
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof ProtocolResponse<?> that)) return false;
+        return scheduledStartTime == that.scheduledStartTime && latency == that.latency && stopTime == that.stopTime;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(scheduledStartTime, latency, stopTime);
+    }
+
     public static final class Response<T> extends ProtocolResponse<Response<T>> {
         private final T body;
 
@@ -74,6 +87,17 @@ public abstract sealed class ProtocolResponse<SELF extends ProtocolResponse<SELF
         @Override
         Response<T> self() {
             return this;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Response<?> response)) return false;
+            return Objects.equals(body, response.body);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(body);
         }
     }
 
