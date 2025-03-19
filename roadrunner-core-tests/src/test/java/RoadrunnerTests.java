@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.collection;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
@@ -22,10 +21,8 @@ import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.protocols.vm.VmProtocolProvider;
-
 import java.nio.file.Path;
 import java.time.Duration;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -52,7 +49,9 @@ public class RoadrunnerTests {
                     .asInstanceOf(collection(ProtocolResponse.Response.class))
                     .hasSize(10)
                     .allSatisfy(m -> {
-                        assertThat(m.scheduledStartTime()).isLessThanOrEqualTo(m.timestamp()).isGreaterThan(0);
+                        assertThat(m.scheduledStartTime())
+                                .isLessThanOrEqualTo(m.timestamp())
+                                .isGreaterThan(0);
                         assertThat(m.timestamp()).isGreaterThan(0);
                         assertThat(m.stopTime()).isGreaterThan(m.timestamp());
                         assertThat(m.latency()).isGreaterThan(0);

@@ -22,13 +22,10 @@ import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.measurments.EventReader;
-
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
 import org.junit.jupiter.api.Test;
 
 class QueueingProtocolResponsesJournalTest {
@@ -54,7 +51,6 @@ class QueueingProtocolResponsesJournalTest {
         // Wait for responses to be processed before closing
         await().atMost(Duration.ofSeconds(5)).until(() -> listener.responses.size() >= 5);
 
-
         // Verify all responses were processed correctly
         assertThat(listener.responses).containsExactly(response1, response2, response3, response4, response5);
     }
@@ -65,8 +61,7 @@ class QueueingProtocolResponsesJournalTest {
         List<Event> responses = new CopyOnWriteArrayList<>();
 
         @Override
-        public void onStart() {
-        }
+        public void onStart() {}
 
         @Override
         public void onEvent(Collection<? extends Event> batch) {
@@ -74,8 +69,7 @@ class QueueingProtocolResponsesJournalTest {
         }
 
         @Override
-        public void onStop() {
-        }
+        public void onStop() {}
 
         @Override
         public EventReader samplesReader() {

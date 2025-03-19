@@ -20,14 +20,12 @@ import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
-
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,7 +100,7 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
                 }
             }
         } catch (InterruptedException e) {
-//            Thread.currentThread().interrupt();
+            //            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }

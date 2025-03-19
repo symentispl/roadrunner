@@ -136,7 +136,7 @@ public class DefaultRoadrunner implements Roadrunner {
 
                         // Calculate when the next request should start
                         // This assumes a closed-world model where we want to maintain a constant rate
-                        // NOTICE: are accumulating delay over time?
+                        // NOTICE: are we accumulating delay over time?
                         // scheduledStartTime = scheduledStartTime + serviceTime;
                     } catch (InterruptedException | ExecutionException e) {
                         System.out.println("<<>>");
@@ -201,7 +201,8 @@ public class DefaultRoadrunner implements Roadrunner {
         public void onEvent(Collection<? extends Event> batch) {
             delegate.onEvent(batch);
             // Update progress based on batch size
-            long currentProcessed = processedRequests.addAndGet(batch.size());
+            var currentProcessed = processedRequests.addAndGet(
+                    batch.stream().filter(ProtocolResponse.class::isInstance).count());
             measurementProgress.update(currentProcessed);
         }
 
