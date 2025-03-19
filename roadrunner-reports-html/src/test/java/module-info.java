@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-open module io.roadrunner.protocol.ab.tests {
+open module io.roadrunner.reports.html.tests {
     requires io.roadrunner.reports.html;
     requires io.roadrunner.output.csv;
     requires io.roadrunner.api;
