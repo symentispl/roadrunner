@@ -20,10 +20,9 @@ import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.events.UserEvent;
+import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
-import io.roadrunner.api.measurments.Sample;
-import io.roadrunner.api.measurments.SamplesReader;
 import io.roadrunner.api.protocol.Protocol;
 import io.roadrunner.output.csv.CsvOutputEventListener;
 import java.nio.file.Path;
@@ -212,7 +211,7 @@ public class DefaultRoadrunner implements Roadrunner {
         }
 
         @Override
-        public SamplesReader samplesReader() {
+        public EventReader samplesReader() {
             return delegate.samplesReader();
         }
     }
@@ -228,7 +227,7 @@ public class DefaultRoadrunner implements Roadrunner {
         public void onStop() {}
 
         @Override
-        public SamplesReader samplesReader() {
+        public EventReader samplesReader() {
             return () -> new Iterator<>() {
                 @Override
                 public boolean hasNext() {
@@ -236,7 +235,7 @@ public class DefaultRoadrunner implements Roadrunner {
                 }
 
                 @Override
-                public Sample next() {
+                public Event next() {
                     throw new NoSuchElementException();
                 }
             };

@@ -21,12 +21,10 @@ import static org.awaitility.Awaitility.await;
 import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.ProtocolResponse;
-import io.roadrunner.api.measurments.Sample;
-import io.roadrunner.api.measurments.SamplesReader;
+import io.roadrunner.api.measurments.EventReader;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +42,7 @@ class QueueingProtocolResponsesJournalTest {
         var response5 = ProtocolResponse.response(0, 0, "5");
 
         journal.start();
+        journal.response(response1);
         journal.response(response1);
         journal.response(response2);
         journal.response(response3);
@@ -73,18 +72,8 @@ class QueueingProtocolResponsesJournalTest {
         public void onStop() {}
 
         @Override
-        public SamplesReader samplesReader() {
-            return new SamplesReader() {
-                @Override
-                public Iterator<Sample> iterator() {
-                    return responses.stream()
-                            .filter(ProtocolResponse.class::isInstance)
-                            .map(ProtocolResponse.class::cast)
-                            .map(r -> new Sample(
-                                    r.scheduledStartTime(), r.timestamp(), r.stopTime(), r.latency(), Sample.Status.OK))
-                            .iterator();
-                }
-            };
+        public EventReader samplesReader() {
+            return () -> responses.stream().iterator();
         }
     }
 }

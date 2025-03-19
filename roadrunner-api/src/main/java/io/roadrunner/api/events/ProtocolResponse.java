@@ -66,7 +66,7 @@ public abstract sealed class ProtocolResponse<SELF extends ProtocolResponse<SELF
     public static final class Response<T> extends ProtocolResponse<Response<T>> {
         private final T body;
 
-        Response(long startTime, long stopTime, T body) {
+        public Response(long startTime, long stopTime, T body) {
             super(startTime, stopTime);
             this.body = body;
         }

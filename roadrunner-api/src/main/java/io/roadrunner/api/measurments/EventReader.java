@@ -15,8 +15,13 @@
  */
 package io.roadrunner.api.measurments;
 
+import io.roadrunner.api.events.Event;
 import java.util.Iterator;
 
-public interface SamplesReader extends Iterable<Sample> {
-    Iterator<Sample> iterator();
+/**
+ * Represents a reader for events that can be iterated over.
+ * Provides functionality to read and deserialize event objects.
+ */
+public interface EventReader extends Iterable<Event> {
+    Iterator<Event> iterator();
 }

@@ -19,7 +19,7 @@ import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.events.UserEvent;
-import io.roadrunner.api.measurments.SamplesReader;
+import io.roadrunner.api.measurments.EventReader;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -92,13 +92,14 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
             executorService.awaitTermination(10, TimeUnit.SECONDS);
 
             // TODO drain remaining items
+           // System.out.println(Arrays.toString(responses.toArray()));
 
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public SamplesReader measurementsReader() {
+    public EventReader measurementsReader() {
         return listener.samplesReader();
     }
 }

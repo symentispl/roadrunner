@@ -17,7 +17,7 @@ package io.roadrunner.reports.html;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.roadrunner.output.csv.CsvOutputSamplesReader;
+import io.roadrunner.output.csv.CsvOutputEventReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,8 +33,9 @@ class HtmlReportGeneratorTest {
         var properties = new HashMap<String, String>();
         properties.put("outputPath", chartDir.toString());
         var chartGenerator = new HtmlReportGenerator(properties);
-        chartGenerator.generateChart(new CsvOutputSamplesReader(Paths.get("src/test/resources/output.csv")));
+        chartGenerator.generateChart(new CsvOutputEventReader(Paths.get("src/test/resources/output.csv")));
         assertThat(chartDir.resolve("index.html")).isNotEmptyFile();
         assertThat(chartDir.resolve("data.js")).isNotEmptyFile();
+        assertThat(chartDir.resolve("users.js")).isNotEmptyFile();
     }
 }

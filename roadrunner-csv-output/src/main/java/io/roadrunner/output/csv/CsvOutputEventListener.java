@@ -19,7 +19,7 @@ import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.events.UserEvent;
-import io.roadrunner.api.measurments.SamplesReader;
+import io.roadrunner.api.measurments.EventReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -93,7 +93,7 @@ public class CsvOutputEventListener implements EventListener {
     }
 
     @Override
-    public SamplesReader samplesReader() {
-        return new CsvOutputSamplesReader(csvOutputFile);
+    public EventReader samplesReader() {
+        return new CsvOutputEventReader(csvOutputFile);
     }
 }

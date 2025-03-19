@@ -13,13 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import static org.assertj.core.api.Assertions.assertThat;
 
-import io.roadrunner.api.measurments.Sample;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.collection;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
+
+import io.roadrunner.api.events.ProtocolResponse;
+import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.protocols.vm.VmProtocolProvider;
+
 import java.nio.file.Path;
 import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -32,15 +38,30 @@ public class RoadrunnerTests {
                 .withRequests(10)
                 .withOutputDir(tempDir)
                 .build()) {
-            var protocolProvider = VmProtocolProvider.from(Duration.ofMillis(100));
-            var protocol = protocolProvider.newProtocol();
-            measurements = roadrunner.execute(() -> protocol::execute);
+            try (var protocolProvider = VmProtocolProvider.from(Duration.ofMillis(100))) {
+                var protocol = protocolProvider.newProtocol();
+                measurements = roadrunner.execute(() -> protocol::execute);
+            }
+            assertThat(measurements.samplesReader())
+                    .first(type(UserEvent.Enter.class))
+                    .satisfies(e -> {
+                        assertThat(e.timestamp()).isGreaterThan(0);
+                    });
+            assertThat(measurements.samplesReader())
+                    .filteredOn(ProtocolResponse.class::isInstance)
+                    .asInstanceOf(collection(ProtocolResponse.Response.class))
+                    .hasSize(10)
+                    .allSatisfy(m -> {
+                        assertThat(m.scheduledStartTime()).isLessThanOrEqualTo(m.timestamp()).isGreaterThan(0);
+                        assertThat(m.timestamp()).isGreaterThan(0);
+                        assertThat(m.stopTime()).isGreaterThan(m.timestamp());
+                        assertThat(m.latency()).isGreaterThan(0);
+                    });
+            assertThat(measurements.samplesReader())
+                    .last(type(UserEvent.Exit.class))
+                    .satisfies(e -> {
+                        assertThat(e.timestamp()).isGreaterThan(0);
+                    });
         }
-        var samplesReader = measurements.samplesReader();
-        assertThat(samplesReader).hasSize(10).allSatisfy(m -> {
-            assertThat(m.startTime()).isGreaterThan(0);
-            assertThat(m.stopTime()).isGreaterThan(m.startTime());
-            assertThat(m.status()).isEqualTo(Sample.Status.OK);
-        });
     }
 }

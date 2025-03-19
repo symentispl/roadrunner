@@ -21,7 +21,7 @@
  */
 package io.roadrunner.api.events;
 
-import io.roadrunner.api.measurments.SamplesReader;
+import io.roadrunner.api.measurments.EventReader;
 import java.util.Collection;
 
 public interface EventListener {
@@ -31,5 +31,5 @@ public interface EventListener {
 
     void onStop();
 
-    SamplesReader samplesReader();
+    EventReader samplesReader();
 }

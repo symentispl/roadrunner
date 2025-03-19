@@ -15,22 +15,22 @@
  */
 package io.roadrunner.core.internal;
 
+import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.measurments.Measurements;
-import io.roadrunner.api.measurments.SamplesReader;
 
 final class DefaultMeasurements implements Measurements {
-    private final SamplesReader samplesReader;
+    private final EventReader eventReader;
 
-    static Measurements from(SamplesReader samplesReader) {
-        return new DefaultMeasurements(samplesReader);
+    static Measurements from(EventReader eventReader) {
+        return new DefaultMeasurements(eventReader);
     }
 
-    private DefaultMeasurements(SamplesReader samplesReader) {
-        this.samplesReader = samplesReader;
+    private DefaultMeasurements(EventReader eventReader) {
+        this.eventReader = eventReader;
     }
 
     @Override
-    public SamplesReader samplesReader() {
-        return samplesReader;
+    public EventReader samplesReader() {
+        return eventReader;
     }
 }
