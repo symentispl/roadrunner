@@ -13,19 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api.protocol;
+package io.roadrunner.api.measurments;
 
-public final class Error extends ProtocolResponse<Error> {
-
-    private final String message;
-
-    public Error(long startTime, long stopTime, String message) {
-        super(startTime, stopTime);
-        this.message = message;
-    }
-
-    @Override
-    Error self() {
-        return this;
+public record Sample(long scheduleStartTime, long startTime, long stopTime, long latency, Status status) {
+    public enum Status {
+        OK,
+        KO;
     }
 }

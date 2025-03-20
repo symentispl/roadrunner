@@ -15,8 +15,7 @@
  */
 package io.roadrunner.reports.console;
 
-import io.roadrunner.api.measurments.Measurement;
-import io.roadrunner.api.measurments.MeasurementsReader;
+import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.reports.ReportGenerator;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
 import java.io.BufferedReader;
@@ -38,7 +37,7 @@ final class ConsoleReportGenerator implements ReportGenerator {
     }
 
     @Override
-    public void generateChart(MeasurementsReader measurementsReader) throws IOException {
+    public void generateChart(EventReader eventReader) throws IOException {
         var histogram = new Histogram(3);
 
         // Track the first and last measurement timestamps to calculate total duration
@@ -48,25 +47,25 @@ final class ConsoleReportGenerator implements ReportGenerator {
         // Track error counts
         var totalRequests = 0L;
         var errorRequests = 0L;
-
-        for (Measurement measurement : measurementsReader) {
-            try {
-                totalRequests++;
-                var responseTime = measurement.stopTime() - measurement.startTime();
-                histogram.recordValue(responseTime);
-
-                // Check if this is an error response
-                if (measurement.status() == Measurement.Status.KO) {
-                    errorRequests++;
-                }
-
-                // Update first start time and last stop time
-                firstStartTime = Math.min(firstStartTime, measurement.startTime());
-                lastStopTime = Math.max(lastStopTime, measurement.stopTime());
-            } catch (NumberFormatException e) {
-                System.out.println("invalid line");
-            }
-        }
+        //
+        //        for (Event sample : eventReader) {
+        //            try {
+        //                totalRequests++;
+        //                var responseTime = sample.stopTime() - sample.startTime();
+        //                histogram.recordValue(responseTime);
+        //
+        //                // Check if this is an error response
+        //                if (sample.status() == Sample.Status.KO) {
+        //                    errorRequests++;
+        //                }
+        //
+        //                // Update first start time and last stop time
+        //                firstStartTime = Math.min(firstStartTime, sample.startTime());
+        //                lastStopTime = Math.max(lastStopTime, sample.stopTime());
+        //            } catch (NumberFormatException e) {
+        //                System.out.println("invalid line");
+        //            }
+        //        }
 
         // Calculate total duration in seconds
         double totalDurationSeconds = (lastStopTime - firstStartTime) / 1_000_000_000.0;

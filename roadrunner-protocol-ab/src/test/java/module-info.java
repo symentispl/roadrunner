@@ -13,22 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api.protocol;
+open module io.roadrunner.protocol.ab.tests {
+    requires io.roadrunner.api;
+    requires io.roadrunner.protocol.ab;
+    requires jdk.httpserver;
+    requires org.assertj.core;
+    requires org.junit.jupiter.api;
+    requires transitive org.junit.jupiter.engine;
 
-public final class Response<T> extends ProtocolResponse {
-    private final T body;
-
-    public static ProtocolResponse empty(long startTime, long stopTime) {
-        return new Response(startTime, stopTime, null);
-    }
-
-    Response(long startTime, long stopTime, T body) {
-        super(startTime, stopTime);
-        this.body = body;
-    }
-
-    @Override
-    Response<T> self() {
-        return this;
-    }
+    exports io.roadrunner.protocols.ab.tests;
 }

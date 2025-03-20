@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api;
+package io.roadrunner.api.measurments;
 
-import io.roadrunner.api.measurments.MeasurementsReader;
-import io.roadrunner.api.protocol.ProtocolResponse;
-import java.util.Collection;
+import io.roadrunner.api.events.Event;
+import java.util.Iterator;
 
-public interface ProtocolResponseListener {
-    void onStart();
-
-    void onResponses(Collection<? extends ProtocolResponse> batch);
-
-    void onStop();
-
-    MeasurementsReader measurementsReader();
+/**
+ * Represents a reader for events that can be iterated over.
+ * Provides functionality to read and deserialize event objects.
+ */
+public interface EventReader extends Iterable<Event> {
+    Iterator<Event> iterator();
 }

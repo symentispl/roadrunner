@@ -16,5 +16,5 @@
 package io.roadrunner.api.measurments;
 
 public interface Measurements {
-    MeasurementsReader measurementsReader();
+    EventReader samplesReader();
 }

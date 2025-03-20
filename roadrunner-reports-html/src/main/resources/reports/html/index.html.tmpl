@@ -1,5 +1,4 @@
 <!--
-
     Copyright 2024 Symentis.pl
     <p>
     Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,13 +12,13 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-
 -->
 <!DOCTYPE html>
 <html>
 <head>
     <title>Roadrunner Performance Results</title>
     <script src="data.js"/></script>
+    <script src="users.js"/></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -53,7 +52,14 @@
             datasets: [{
                 label: 'Request Execution Times',
                 data: datapoints,
-                backgroundColor: 'rgba(54, 162, 235, 0.5)'
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                yAxisID: 'y'
+            }, {
+                label: 'Number of Users',
+                data: users,
+                type: 'line',
+                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                yAxisID: 'y1'
             }]
         },
         options: {
@@ -64,7 +70,7 @@
                     position: 'bottom',
                     title: {
                         display: true,
-                        text: 'Timestamp (ms)'
+                        text: 'Timestamp (ns)'
                     }
                 },
                 y: {
@@ -72,12 +78,19 @@
                         display: true,
                         text: 'Execution Time (ns)'
                     }
+                },
+                y1: {
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Number of Users'
+                    }
                 }
             },
             plugins: {
                 title: {
                     display: true,
-                    text: 'Request Performance Over Time'
+                    text: 'Request Performance and User Count Over Time'
                 }
             }
         }

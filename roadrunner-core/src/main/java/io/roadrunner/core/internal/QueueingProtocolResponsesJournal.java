@@ -15,9 +15,11 @@
  */
 package io.roadrunner.core.internal;
 
-import io.roadrunner.api.ProtocolResponseListener;
-import io.roadrunner.api.measurments.MeasurementsReader;
-import io.roadrunner.api.protocol.ProtocolResponse;
+import io.roadrunner.api.events.Event;
+import io.roadrunner.api.events.EventListener;
+import io.roadrunner.api.events.ProtocolResponse;
+import io.roadrunner.api.events.UserEvent;
+import io.roadrunner.api.measurments.EventReader;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -33,12 +35,12 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
 
     private static final int BATCH_SIZE = 1000;
 
-    private final BlockingQueue<ProtocolResponse> responses = new LinkedBlockingQueue<>();
-    private final ProtocolResponseListener listener;
+    private final BlockingQueue<Event> responses = new LinkedBlockingQueue<>();
+    private final EventListener listener;
     private final ExecutorService executorService;
     private volatile boolean isRunning;
 
-    QueueingProtocolResponsesJournal(ProtocolResponseListener listener) {
+    QueueingProtocolResponsesJournal(EventListener listener) {
         this.listener = listener;
         this.executorService = Executors.newSingleThreadExecutor(
                 Thread.ofPlatform().name("responses-journal-").factory());
@@ -49,7 +51,7 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
         isRunning = true;
         executorService.submit(() -> {
             listener.onStart();
-            var batch = new ArrayList<ProtocolResponse>(BATCH_SIZE + 1);
+            var batch = new ArrayList<Event>(BATCH_SIZE + 1);
             while (isRunning) {
                 try {
                     var response = responses.poll(1, TimeUnit.MILLISECONDS);
@@ -57,7 +59,7 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
                         batch.add(response);
                         responses.drainTo(batch, BATCH_SIZE);
                         try {
-                            listener.onResponses(batch);
+                            listener.onEvent(batch);
                         } finally {
                             batch.clear();
                         }
@@ -70,8 +72,16 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
         });
     }
 
-    public void append(ProtocolResponse response) {
+    public void userEnters(UserEvent.Enter event) {
+        responses.offer(event);
+    }
+
+    public void response(ProtocolResponse response) {
         responses.offer(response);
+    }
+
+    public void userExits(UserEvent.Exit event) {
+        responses.offer(event);
     }
 
     @Override
@@ -80,15 +90,22 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
         executorService.shutdown();
         try {
             executorService.awaitTermination(10, TimeUnit.SECONDS);
-
-            // TODO drain remaining items
-
+            // Drain any remaining responses and notify listener
+            if (!responses.isEmpty()) {
+                var remainingEvents = new ArrayList<Event>();
+                responses.drainTo(remainingEvents);
+                if (!remainingEvents.isEmpty()) {
+                    LOG.warn("Processing {} remaining events before closing", remainingEvents.size());
+                    listener.onEvent(remainingEvents);
+                }
+            }
         } catch (InterruptedException e) {
+            //            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }
 
-    public MeasurementsReader measurementsReader() {
-        return listener.measurementsReader();
+    public EventReader measurementsReader() {
+        return listener.samplesReader();
     }
 }

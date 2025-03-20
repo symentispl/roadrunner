@@ -17,8 +17,10 @@ package io.roadrunner.reports.html;
 
 import static java.util.Objects.requireNonNull;
 
-import io.roadrunner.api.measurments.Measurement;
-import io.roadrunner.api.measurments.MeasurementsReader;
+import io.roadrunner.api.events.Event;
+import io.roadrunner.api.events.ProtocolResponse;
+import io.roadrunner.api.events.UserEvent;
+import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.reports.ReportGenerator;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
 import java.io.FileWriter;
@@ -40,28 +42,45 @@ public class HtmlReportGenerator implements ReportGenerator {
 
     public HtmlReportGenerator(Map<String, String> configuration) {
         outputPath = Paths.get(
-                requireNonNull(configuration.get("outputPath"), "missing required outputPath configuration property")
-                        .toString());
+                requireNonNull(configuration.get("outputPath"), "missing required outputPath configuration property"));
     }
 
     @Override
-    public void generateChart(MeasurementsReader measurementsReader) throws IOException {
+    public void generateChart(EventReader eventReader) throws IOException {
         var indexHtml = outputPath.resolve("index.html");
         var datapointsJs = outputPath.resolve("data.js");
+        var usersJs = outputPath.resolve("users.js");
 
         var histogram = new Histogram(3);
 
-        try (PrintStream out = new PrintStream(datapointsJs.toFile())) {
-            out.println("const datapoints = [");
-            for (Measurement measurement : measurementsReader) {
-                try {
-                    histogram.recordValue(measurement.latency());
-                    out.println("\t{x : %d,y : %d},".formatted(measurement.startTime(), measurement.latency()));
-                } catch (NumberFormatException e) {
-                    System.out.println("invalid line");
+        int u = 0;
+        try (PrintStream datapoints = new PrintStream(datapointsJs.toFile());
+                PrintStream users = new PrintStream(usersJs.toFile())) {
+            datapoints.println("const datapoints = [");
+            users.println(("const users = ["));
+            for (Event event : eventReader) {
+                switch (event) {
+                    case ProtocolResponse<?> r: {
+                        histogram.recordValue(r.latency());
+                        datapoints.printf("\t{x : %d,y : %d},%n", r.timestamp(), r.latency());
+                        break;
+                    }
+                    case UserEvent.Enter e: {
+                        u++;
+                        users.printf("\t{x : %d,y : %d},%n", e.timestamp(), u);
+                        break;
+                    }
+                    case UserEvent.Exit e: {
+                        u--;
+                        users.printf("\t{x : %d,y : %d},%n", e.timestamp(), u);
+                        break;
+                    }
+                    default:
+                        throw new IllegalStateException("Unexpected value: " + event);
                 }
             }
-            out.println("];");
+            datapoints.println("];");
+            users.println("];");
         }
 
         var map = Map.of(

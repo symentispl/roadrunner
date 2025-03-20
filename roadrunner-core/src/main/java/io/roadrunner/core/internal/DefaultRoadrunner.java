@@ -15,15 +15,16 @@
  */
 package io.roadrunner.core.internal;
 
-import io.roadrunner.api.ProtocolResponseListener;
 import io.roadrunner.api.Roadrunner;
-import io.roadrunner.api.measurments.Measurement;
+import io.roadrunner.api.events.Event;
+import io.roadrunner.api.events.EventListener;
+import io.roadrunner.api.events.ProtocolResponse;
+import io.roadrunner.api.events.UserEvent;
+import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
-import io.roadrunner.api.measurments.MeasurementsReader;
 import io.roadrunner.api.protocol.Protocol;
-import io.roadrunner.api.protocol.ProtocolResponse;
-import io.roadrunner.output.csv.CsvOutputProtocolResponseListener;
+import io.roadrunner.output.csv.CsvOutputEventListener;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Iterator;
@@ -69,8 +70,8 @@ public class DefaultRoadrunner implements Roadrunner {
         var csvOutputFile = outputDir.resolve("output.csv");
         LOG.info("writing responses to {}", csvOutputFile);
 
-        try (var responsesJournal = new QueueingProtocolResponsesJournal(new ProgressTrackingResponseListener(
-                new CsvOutputProtocolResponseListener(csvOutputFile), measurementProgress))) {
+        try (var responsesJournal = new QueueingProtocolResponsesJournal(
+                new ProgressTrackingResponseListener(new CsvOutputEventListener(csvOutputFile), measurementProgress))) {
             responsesJournal.start();
             try (var usersExecutor = Executors.newThreadPerTaskExecutor(
                             Thread.ofVirtual().name("roadrunner-users-").factory());
@@ -113,7 +114,7 @@ public class DefaultRoadrunner implements Roadrunner {
 
         @Override
         public void run() {
-            measurementControl.userEnter();
+            measurementControl.userEnters();
             try {
                 while (measurementControl.isRunning()) {
                     try {
@@ -123,9 +124,9 @@ public class DefaultRoadrunner implements Roadrunner {
                         var response =
                                 requestsExecutor.submit(protocol::execute).get();
                         // calculate delay from intended start time
-                        var inQueueTime = response.startTime() - scheduledStartTime;
+                        var inQueueTime = response.timestamp() - scheduledStartTime;
                         // calculate the service time (actual execution time)
-                        var serviceTime = response.stopTime() - response.startTime();
+                        var serviceTime = response.stopTime() - response.timestamp();
 
                         // create a corrected response latency that accounts for coordinated omission
                         // by adding the delay to the latency
@@ -135,14 +136,14 @@ public class DefaultRoadrunner implements Roadrunner {
 
                         // Calculate when the next request should start
                         // This assumes a closed-world model where we want to maintain a constant rate
-                        // NOTICE: are accumulating delay over time?
+                        // NOTICE: are we accumulating delay over time?
                         // scheduledStartTime = scheduledStartTime + serviceTime;
                     } catch (InterruptedException | ExecutionException e) {
                         System.out.println("<<>>");
                     }
                 }
             } finally {
-                measurementControl.userExit();
+                measurementControl.userExits();
             }
         }
     }
@@ -163,14 +164,17 @@ public class DefaultRoadrunner implements Roadrunner {
             return counter.get() > 0;
         }
 
-        public void userEnter() {}
+        public void userEnters() {
+            responsesJournal.userEnters(UserEvent.enter());
+        }
 
         public void request(ProtocolResponse response) {
             counter.decrementAndGet();
-            responsesJournal.append(response);
+            responsesJournal.response(response);
         }
 
-        public void userExit() {
+        public void userExits() {
+            responsesJournal.userExits(UserEvent.exit());
             latch.countDown();
         }
     }
@@ -178,12 +182,12 @@ public class DefaultRoadrunner implements Roadrunner {
     /**
      * A decorator for ProtocolResponseListener that tracks progress
      */
-    private static class ProgressTrackingResponseListener implements ProtocolResponseListener {
-        private final ProtocolResponseListener delegate;
+    private static class ProgressTrackingResponseListener implements EventListener {
+        private final EventListener delegate;
         private final MeasurementProgress measurementProgress;
         private final AtomicLong processedRequests = new AtomicLong(0);
 
-        ProgressTrackingResponseListener(ProtocolResponseListener delegate, MeasurementProgress measurementProgress) {
+        ProgressTrackingResponseListener(EventListener delegate, MeasurementProgress measurementProgress) {
             this.delegate = delegate;
             this.measurementProgress = measurementProgress;
         }
@@ -194,10 +198,11 @@ public class DefaultRoadrunner implements Roadrunner {
         }
 
         @Override
-        public void onResponses(Collection<? extends ProtocolResponse> batch) {
-            delegate.onResponses(batch);
+        public void onEvent(Collection<? extends Event> batch) {
+            delegate.onEvent(batch);
             // Update progress based on batch size
-            long currentProcessed = processedRequests.addAndGet(batch.size());
+            var currentProcessed = processedRequests.addAndGet(
+                    batch.stream().filter(ProtocolResponse.class::isInstance).count());
             measurementProgress.update(currentProcessed);
         }
 
@@ -207,23 +212,23 @@ public class DefaultRoadrunner implements Roadrunner {
         }
 
         @Override
-        public MeasurementsReader measurementsReader() {
-            return delegate.measurementsReader();
+        public EventReader samplesReader() {
+            return delegate.samplesReader();
         }
     }
 
-    private static class NoopProtocolResponseListener implements ProtocolResponseListener {
+    private static class NoopEventListener implements EventListener {
         @Override
         public void onStart() {}
 
         @Override
-        public void onResponses(Collection<? extends ProtocolResponse> batch) {}
+        public void onEvent(Collection<? extends Event> batch) {}
 
         @Override
         public void onStop() {}
 
         @Override
-        public MeasurementsReader measurementsReader() {
+        public EventReader samplesReader() {
             return () -> new Iterator<>() {
                 @Override
                 public boolean hasNext() {
@@ -231,7 +236,7 @@ public class DefaultRoadrunner implements Roadrunner {
                 }
 
                 @Override
-                public Measurement next() {
+                public Event next() {
                     throw new NoSuchElementException();
                 }
             };

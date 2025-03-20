@@ -15,6 +15,8 @@
  */
 package io.roadrunner.api.protocol;
 
+import io.roadrunner.api.events.ProtocolResponse;
+
 public interface Protocol {
     ProtocolResponse execute();
 }

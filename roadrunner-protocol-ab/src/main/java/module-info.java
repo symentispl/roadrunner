@@ -22,6 +22,8 @@ module io.roadrunner.protocol.ab {
     requires io.roadrunner.protocols.spi;
     requires info.picocli;
 
+    exports io.roadrunner.protocols.ab;
+
     provides ProtocolProvider with
             AbProtocolProvider;
 

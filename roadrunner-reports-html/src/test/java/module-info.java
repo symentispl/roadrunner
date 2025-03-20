@@ -13,11 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api.measurments;
+open module io.roadrunner.reports.html.tests {
+    requires io.roadrunner.reports.html;
+    requires io.roadrunner.output.csv;
+    requires io.roadrunner.api;
+    requires org.apache.commons.lang3;
+    requires org.assertj.core;
+    requires org.junit.jupiter.api;
+    requires transitive org.junit.jupiter.engine;
+    requires org.graalvm.polyglot;
 
-public record Measurement(long scheduleStartTime, long startTime, long stopTime, long latency, Status status) {
-    public enum Status {
-        OK,
-        KO;
-    }
+    exports io.roadrunner.reports.html.tests;
 }

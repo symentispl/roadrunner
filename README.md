@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/symentispl/roadrunner/graph/badge.svg?token=37S96CL3YR)](https://codecov.io/gh/symentispl/roadrunner)
+
 # Roadrunner: introduction
 
 Roadrunner is (or rather at the moment, will be) yet another load generator tool, this time using Java with

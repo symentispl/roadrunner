@@ -38,7 +38,7 @@ final class ProgressBar implements MeasurementProgress {
     public void update(long currentPosition) {
         if (console != null) {
             var status = (int) (100 * (currentPosition - startPosition) / (finishPosition - startPosition));
-            var move = (progressBarSize * status) / 100;
+            var move = Math.min((progressBarSize * status) / 100, progressBarSize);
 
             System.out.print(new StringBuilder(progressBarSize + 20)
                     .append("\r")

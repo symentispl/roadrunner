@@ -13,11 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api.measurments;
+package io.roadrunner.api.events;
 
-import java.util.Iterator;
+import io.roadrunner.api.measurments.EventReader;
+import java.util.Collection;
 
-public interface MeasurementsReader extends Iterable<Measurement> {
+/**
+ * Represents an event listener for processing measurements and samples.
+ * <p>
+ * This interface defines methods for handling measurements and samples
+ * in the RoadRunner API event processing system.
+ */
+public interface EventListener {
+    void onStart();
 
-    Iterator<Measurement> iterator();
+    void onEvent(Collection<? extends Event> batch);
+
+    void onStop();
+
+    EventReader samplesReader();
 }
