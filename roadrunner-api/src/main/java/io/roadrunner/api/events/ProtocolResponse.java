@@ -68,12 +68,13 @@ public abstract sealed class ProtocolResponse<SELF extends ProtocolResponse<SELF
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof ProtocolResponse<?> that)) return false;
+        if (!super.equals(o)) return false;
         return scheduledStartTime == that.scheduledStartTime && latency == that.latency && stopTime == that.stopTime;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(scheduledStartTime, latency, stopTime);
+        return Objects.hash(super.hashCode(), scheduledStartTime, latency, stopTime);
     }
 
     public static final class Response<T> extends ProtocolResponse<Response<T>> {
@@ -92,12 +93,13 @@ public abstract sealed class ProtocolResponse<SELF extends ProtocolResponse<SELF
         @Override
         public boolean equals(Object o) {
             if (!(o instanceof Response<?> response)) return false;
+            if (!super.equals(o)) return false;
             return Objects.equals(body, response.body);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(body);
+            return Objects.hash(super.hashCode(), body);
         }
     }
 
@@ -112,7 +114,19 @@ public abstract sealed class ProtocolResponse<SELF extends ProtocolResponse<SELF
 
         @Override
         Error self() {
-            return null;
+            return this;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Error that)) return false;
+            if (!super.equals(o)) return false;
+            return Objects.equals(message, that.message);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), message);
         }
     }
 }

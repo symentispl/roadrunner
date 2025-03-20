@@ -37,8 +37,8 @@ public abstract sealed class Event permits UserEvent, ProtocolResponse {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Event event)) return false;
-        return timestamp == event.timestamp;
+        if (!(o instanceof Event that)) return false;
+        return timestamp == that.timestamp;
     }
 
     @Override
