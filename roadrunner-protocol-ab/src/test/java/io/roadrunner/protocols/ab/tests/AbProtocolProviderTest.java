@@ -66,6 +66,7 @@ class AbProtocolProviderTest {
                     .satisfies(response -> {
                         assertThat(response.timestamp()).isGreaterThan(0);
                         assertThat(response.stopTime()).isGreaterThan(response.timestamp());
+                        assertThat(response.metrics().get("transferred").value()).isGreaterThan(0);
                     });
         }
     }
