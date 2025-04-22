@@ -15,6 +15,9 @@
  */
 package io.roadrunner.api.events;
 
+import io.roadrunner.api.metrics.Metrics;
+
+import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 
@@ -101,6 +104,10 @@ public abstract sealed class SamplerResponse<SELF extends SamplerResponse<SELF>>
         @Override
         public int hashCode() {
             return Objects.hash(super.hashCode(), body);
+        }
+
+        public Metrics metrics() {
+            return Metrics.empty();
         }
     }
 
