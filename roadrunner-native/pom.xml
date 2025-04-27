@@ -49,26 +49,11 @@
                         <buildArg>-H:+ReportExceptionStackTraces</buildArg>
                         <buildArg>--enable-url-protocols=http,https</buildArg>
                         <buildArg>--initialize-at-build-time=org.slf4j</buildArg>
+                        <buildArg>--gc=G1</buildArg>
                     </buildArgs>
                 </configuration>
             </plugin>
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>native</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.graalvm.buildtools</groupId>
-                        <artifactId>native-maven-plugin</artifactId>
-                        <configuration>
-                            <skipNative>false</skipNative>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

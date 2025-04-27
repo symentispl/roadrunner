@@ -189,9 +189,9 @@
                     <version>3.6.0</version>
                 </plugin>
                 <plugin>
-                        <groupId>org.moditect</groupId>
-                        <artifactId>moditect-maven-plugin</artifactId>
-                        <version>1.2.2.Final</version>
+                    <groupId>org.moditect</groupId>
+                    <artifactId>moditect-maven-plugin</artifactId>
+                    <version>1.2.2.Final</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
@@ -288,7 +288,6 @@
         <module>roadrunner-reports-html</module>
         <module>roadrunner-reports-console</module>
         <module>roadrunner-csv-output</module>
-        <module>roadrunner-native</module>
     </modules>
     <profiles>
         <profile>
@@ -346,6 +345,15 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>native</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <modules>
+                <module>roadrunner-native</module>
+            </modules>
         </profile>
     </profiles>
 </project>
