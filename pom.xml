@@ -67,6 +67,16 @@
                 <configuration>
                     <source>23</source>
                     <target>23</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>info.picocli</groupId>
+                            <artifactId>picocli-codegen</artifactId>
+                            <version>4.7.7</version>
+                        </path>
+                    </annotationProcessorPaths>
+                    <compilerArgs>
+                        <arg>-Aproject=${project.groupId}/${project.artifactId}</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>
@@ -172,9 +182,9 @@
                     <version>3.6.0</version>
                 </plugin>
                 <plugin>
-                        <groupId>org.moditect</groupId>
-                        <artifactId>moditect-maven-plugin</artifactId>
-                        <version>1.2.2.Final</version>
+                    <groupId>org.moditect</groupId>
+                    <artifactId>moditect-maven-plugin</artifactId>
+                    <version>1.2.2.Final</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
