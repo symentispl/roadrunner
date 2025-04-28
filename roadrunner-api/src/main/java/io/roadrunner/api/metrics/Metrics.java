@@ -28,4 +28,8 @@ public final class Metrics {
     public Metrics(Map<String, Metric> metrics) {
         this.metrics = metrics;
     }
+
+    public Metric get(String metric) {
+        return metrics.get(metric);
+    }
 }

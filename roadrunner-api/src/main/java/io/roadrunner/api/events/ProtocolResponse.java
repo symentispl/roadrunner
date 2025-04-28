@@ -15,6 +15,9 @@
  */
 package io.roadrunner.api.events;
 
+import io.roadrunner.api.metrics.Metrics;
+
+import java.util.Map;
 import java.util.Objects;
 
 public abstract sealed class ProtocolResponse<SELF extends ProtocolResponse<SELF>> extends Event
@@ -100,6 +103,10 @@ public abstract sealed class ProtocolResponse<SELF extends ProtocolResponse<SELF
         @Override
         public int hashCode() {
             return Objects.hash(super.hashCode(), body);
+        }
+
+        public Metrics metrics() {
+            return Metrics.empty();
         }
     }
 
