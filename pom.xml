@@ -307,6 +307,7 @@
         <module>roadrunner-reports-html</module>
         <module>roadrunner-reports-console</module>
         <module>roadrunner-csv-output</module>
+        <module>roadrunner-protocol-neo4j</module>
     </modules>
     <profiles>
         <profile>
