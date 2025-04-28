@@ -43,7 +43,7 @@ jobs:
       - name: Build Native Image
         run: |
           export JAVA_HOME=$GRAALVM_HOME
-          ./mvnw -B clean package -Pnative -pl roadrunner-native
+          ./mvnw -B clean package -Pnative
       # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
       - name: Update dependency graph
         uses: advanced-security/maven-dependency-submission-action@v4.1.1
