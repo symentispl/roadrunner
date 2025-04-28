@@ -19,12 +19,10 @@ permissions:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK 23
+      - name: Set up Temurin
         uses: actions/setup-java@v4
         with:
           java-version: '23'
@@ -32,12 +30,20 @@ jobs:
           cache: maven
       - name: Build with Maven
         run: ./mvnw -B verify --file pom.xml -Pcoverage
-
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
             token: ${{ secrets.CODECOV_TOKEN }}
-
+      - name: Set up GraalVM
+        uses: actions/setup-java@v4
+        with:
+          java-version: '23'
+          distribution: 'graalvm'
+          cache: maven
+      - name: Build Native Image
+        run: |
+          export GRAALVM_HOME=$JAVA_HOME
+          ./mvnw -B clean package -Pnative
       # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
       - name: Update dependency graph
         uses: advanced-security/maven-dependency-submission-action@v4.1.1

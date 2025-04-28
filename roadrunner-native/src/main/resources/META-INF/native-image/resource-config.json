@@ -1,0 +1,11 @@
+{
+  "resources": {
+    "includes": [
+      {"pattern": "META-INF/services/.*"},
+      {"pattern": "META-INF/native/.*"},
+      {"pattern": "picocli/.*"},
+      {"pattern": ".*\\.properties"},
+      {"pattern": ".*\\.tmpl"}
+    ]
+  }
+}
