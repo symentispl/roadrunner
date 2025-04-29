@@ -58,7 +58,7 @@
         <assertj-core.version>3.27.3</assertj-core.version>
         <slf4j-api.version>2.0.17</slf4j-api.version>
         <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
-        <argLine/>
+        <argLine>-Dorg.slf4j.simpleLogger.defaultLogLevel=debug</argLine>
     </properties>
     <build>
         <plugins>

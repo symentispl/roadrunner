@@ -33,11 +33,13 @@
             <groupId>io.roadrunner</groupId>
             <artifactId>roadrunner-protocol-ab</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
             <artifactId>roadrunner-protocol-vm</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
 
 
