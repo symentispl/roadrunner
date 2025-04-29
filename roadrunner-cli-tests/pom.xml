@@ -85,6 +85,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <argLine>
+                        @{argLine}
                         --add-modules io.roadrunner.protocols.spi
                         --patch-module io.roadrunner.cli.tests=${project.build.testOutputDirectory}
                     </argLine>
