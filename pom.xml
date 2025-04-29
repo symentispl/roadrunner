@@ -16,7 +16,7 @@
     <description>
         Roadrunner is (or rather at the moment, will be) yet another Java performance testing framework/library/tool,
         this time using internal DSLs for building scenarios, with low-overhead, fine grained reporting and another
-        lovely things that might come in the future (like distributed load testing, trend analisys, web app for tracing
+        lovely things that might come in the future (like distributed load testing, trend analisys, web preferences for tracing
         execution and so on).
     </description>
     <url>https://bitbucket.org/kcrimson/roadrunner</url>
@@ -56,9 +56,30 @@
         <junit-jupiter.version>5.12.2</junit-jupiter.version>
         <assertj-core.version>3.27.3</assertj-core.version>
         <slf4j-api.version>2.0.17</slf4j-api.version>
+        <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
+        <argLine/>
     </properties>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>add-integration-test-source</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/it/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -160,10 +181,23 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.5.3</version>
+                    <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <argLine>@{argLine}</argLine>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -171,9 +205,9 @@
                     <version>3.6.0</version>
                 </plugin>
                 <plugin>
-                        <groupId>org.moditect</groupId>
-                        <artifactId>moditect-maven-plugin</artifactId>
-                        <version>1.2.2.Final</version>
+                    <groupId>org.moditect</groupId>
+                    <artifactId>moditect-maven-plugin</artifactId>
+                    <version>1.2.2.Final</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
@@ -260,6 +294,7 @@
         <module>roadrunner-core</module>
         <module>roadrunner-core-tests</module>
         <module>roadrunner-cli</module>
+        <module>roadrunner-cli-tests</module>
         <module>roadrunner-app</module>
         <module>roadrunner-protocols-spi</module>
         <module>roadrunner-protocol-vm</module>

@@ -19,16 +19,13 @@ import static picocli.CommandLine.Model.CommandSpec;
 import static picocli.CommandLine.Model.CommandSpec.forAnnotatedObject;
 
 import io.roadrunner.protocols.spi.ProtocolProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.nio.file.Paths;
 import picocli.CommandLine;
 
 public class Main {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Main.class);
-
     public static void main(String[] args) throws Exception {
-        try (var protocolProviders = ProtocolProviders.load()) {
+        try (var protocolProviders = ProtocolProviders.load(new Preferences(Paths.get(System.getProperty("user.home"))))) {
 
             var commandSpec = createCommandSpec(protocolProviders);
 
