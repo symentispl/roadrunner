@@ -27,8 +27,8 @@ class ProtocolProvidersTest {
 
     @Test
     void loadProtocolProviders() throws IOException {
-        var app = new Preferences(Paths.get("target/roadrunner-cli-tests-plugins"));
-        try (var providers = ProtocolProviders.load(app)) {
+        var preferences = new Preferences(Paths.get("target/roadrunner-cli-tests-plugins"));
+        try (var providers = ProtocolProviders.load(preferences)) {
             assertThat(providers.all()).satisfiesExactly(
                     provider -> assertThat(provider.name()).isEqualTo("ab"),
                     provider -> assertThat(provider.name()).isEqualTo("vm")
