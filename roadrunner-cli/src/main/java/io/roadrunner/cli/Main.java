@@ -25,7 +25,8 @@ import picocli.CommandLine;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        try (var protocolProviders = ProtocolProviders.load(new Preferences(Paths.get(System.getProperty("user.home"))))) {
+        try (var protocolProviders =
+                ProtocolProviders.load(new Preferences(Paths.get(System.getProperty("user.home"))))) {
 
             var commandSpec = createCommandSpec(protocolProviders);
 

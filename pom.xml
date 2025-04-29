@@ -16,7 +16,8 @@
     <description>
         Roadrunner is (or rather at the moment, will be) yet another Java performance testing framework/library/tool,
         this time using internal DSLs for building scenarios, with low-overhead, fine grained reporting and another
-        lovely things that might come in the future (like distributed load testing, trend analisys, web preferences for tracing
+        lovely things that might come in the future (like distributed load testing, trend analisys, web preferences for
+        tracing
         execution and so on).
     </description>
     <url>https://bitbucket.org/kcrimson/roadrunner</url>
@@ -318,6 +319,7 @@
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <executions>
+                            <!-- These executions run in all modules -->
                             <execution>
                                 <id>prepare-agent</id>
                                 <goals>
@@ -325,11 +327,42 @@
                                 </goals>
                             </execution>
                             <execution>
-                                <id>report</id>
-                                <phase>prepare-package</phase>
+                                <id>prepare-agent-integration</id>
                                 <goals>
-                                    <goal>report</goal>
+                                    <goal>prepare-agent-integration</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>coverage-report</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <!-- Only run this in the root project -->
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <inherited>false</inherited>
+                        <executions>
+                            <execution>
+                                <id>report-aggregate</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>report-aggregate</goal>
+                                </goals>
+                                <configuration>
+                                    <dataFileIncludes>
+                                        <dataFileInclude>**/jacoco.exec</dataFileInclude>
+                                        <dataFileInclude>**/jacoco-it.exec</dataFileInclude>
+                                    </dataFileIncludes>
+                                    <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate</outputDirectory>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

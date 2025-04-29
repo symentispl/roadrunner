@@ -60,7 +60,8 @@ public final class ProtocolProviders implements AutoCloseable {
         return new ProtocolProviders(protocols, pluginLayers);
     }
 
-    private static List<ModuleLayer> loadPluginProviders(Map<String, ProtocolProvider> protocols, Preferences preferences) {
+    private static List<ModuleLayer> loadPluginProviders(
+            Map<String, ProtocolProvider> protocols, Preferences preferences) {
         var pluginLayers = new java.util.ArrayList<ModuleLayer>();
         Path pluginsDir = preferences.pluginsDir();
 
