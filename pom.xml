@@ -300,6 +300,7 @@
         <module>roadrunner-protocols-spi</module>
         <module>roadrunner-protocol-vm</module>
         <module>roadrunner-protocol-ab</module>
+        <module>roadrunner-protocol-zero</module>
         <module>roadrunner-api</module>
         <module>roadrunner-hdrhistogram</module>
         <module>roadrunner-microbenchmarks</module>

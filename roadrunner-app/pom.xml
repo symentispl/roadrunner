@@ -10,8 +10,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>roadrunner-preferences</artifactId>
-    <name>roadrunner-preferences</name>
+    <artifactId>roadrunner-app</artifactId>
+    <name>roadrunner-app</name>
     <packaging>jlink</packaging>
 
     <build>

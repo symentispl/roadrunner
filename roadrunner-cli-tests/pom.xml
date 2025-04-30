@@ -14,7 +14,6 @@
     <name>roadrunner-cli-tests</name>
 
     <dependencies>
-
         <dependency>
             <groupId>io.roadrunner</groupId>
             <artifactId>roadrunner-cli</artifactId>
@@ -38,6 +37,12 @@
         <dependency>
             <groupId>io.roadrunner</groupId>
             <artifactId>roadrunner-protocol-vm</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-protocol-zero</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>

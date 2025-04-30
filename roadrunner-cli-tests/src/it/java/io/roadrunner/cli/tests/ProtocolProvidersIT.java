@@ -19,19 +19,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.roadrunner.cli.Preferences;
 import io.roadrunner.cli.ProtocolProviders;
+
 import java.io.IOException;
 import java.nio.file.Paths;
+
 import org.junit.jupiter.api.Test;
 
-class ProtocolProvidersTest {
+class ProtocolProvidersIT {
 
     @Test
     void loadProtocolProviders() throws IOException {
         var preferences = new Preferences(Paths.get("target/roadrunner-cli-tests-plugins"));
         try (var providers = ProtocolProviders.load(preferences)) {
-            assertThat(providers.all()).satisfiesExactly(
+            assertThat(providers.all()).satisfiesExactlyInAnyOrder(
                     provider -> assertThat(provider.name()).isEqualTo("ab"),
-                    provider -> assertThat(provider.name()).isEqualTo("vm")
+                    provider -> assertThat(provider.name()).isEqualTo("vm"),
+                    provider -> assertThat(provider.name()).isEqualTo("zero")
             );
         }
     }
