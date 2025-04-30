@@ -18,13 +18,12 @@ package io.roadrunner.protocols.neo4j;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.protocol.Protocol;
 import io.roadrunner.protocols.spi.ProtocolProvider;
+import java.net.URI;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Session;
 import picocli.CommandLine;
-
-import java.net.URI;
 
 @CommandLine.Command(description = "Neo4j protocol provider")
 public class Neo4jProtocolProvider implements ProtocolProvider {
@@ -55,7 +54,7 @@ public class Neo4jProtocolProvider implements ProtocolProvider {
             @Override
             public ProtocolResponse execute() {
                 var startTime = System.nanoTime();
-                var response = session.executeRead(tx -> tx.run("RETURN 1")).consume();
+                var response = session.executeRead(tx -> tx.run("RETURN 1").consume());
                 var stopTime = System.nanoTime();
                 return ProtocolResponse.response(startTime, stopTime, response);
             }

@@ -197,6 +197,12 @@
                                 <goal>integration-test</goal>
                                 <goal>verify</goal>
                             </goals>
+                            <configuration>
+                                <testSourceDirectory>src/it/java</testSourceDirectory>
+                                <includes>
+                                    <include>**/*IT.java</include>
+                                </includes>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
@@ -301,13 +307,13 @@
         <module>roadrunner-protocol-vm</module>
         <module>roadrunner-protocol-ab</module>
         <module>roadrunner-protocol-zero</module>
+        <module>roadrunner-protocol-neo4j</module>
         <module>roadrunner-api</module>
         <module>roadrunner-hdrhistogram</module>
         <module>roadrunner-microbenchmarks</module>
         <module>roadrunner-reports-html</module>
         <module>roadrunner-reports-console</module>
         <module>roadrunner-csv-output</module>
-        <module>roadrunner-protocol-neo4j</module>
     </modules>
     <profiles>
         <profile>
