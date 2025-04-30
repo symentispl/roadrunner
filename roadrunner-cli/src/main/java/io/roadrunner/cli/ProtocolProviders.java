@@ -53,6 +53,9 @@ public final class ProtocolProviders implements AutoCloseable {
                         loadPluginSubdirectoryProviders(preferences))
                 .flatMap(Function.identity())
                 .collect(toMap(ProtocolProvider::name, Function.identity(), (first, second) -> {
+                    // When duplicate protocol providers are found, the first provider is prioritized.
+                    // This ensures that runtime providers take precedence over plugin-based providers,
+                    // as runtime providers are considered more stable and reliable.
                     LOG.debug("found duplicate protocol provider {} in runtime and plugin directories", second.name());
                     return first;
                 }));
