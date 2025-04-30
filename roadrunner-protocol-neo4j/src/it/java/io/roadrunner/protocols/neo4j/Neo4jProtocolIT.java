@@ -15,13 +15,13 @@
  */
 package io.roadrunner.protocols.neo4j;
 
-import io.roadrunner.api.protocol.Protocol;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import picocli.CommandLine;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
@@ -31,22 +31,26 @@ public class Neo4jProtocolIT {
     private final Neo4jContainer<?> neo4jContainer = new Neo4jContainer<>(DockerImageName.parse("neo4j:5.15.0"));
 
     @Test
-    void shouldExecuteQueryAndReturnResults() {
+    void executeQueryAndReturnResults() {
         // given
-        var provider = new Neo4jProtocolProvider();
-        
-        // Set container URI, username and password from testcontainer
-        CommandLine.populateCommand(provider,
-            neo4jContainer.getBoltUrl(),
-            "--username=" + "neo4j",
-            "--password=" + neo4jContainer.getAdminPassword());
-        
-        Protocol protocol = provider.newProtocol();
+        try (var provider = new Neo4jProtocolProvider()) {
 
-        // when
-        var result = protocol.execute();
+            // Set container URI, username and password from testcontainer
+            CommandLine.populateCommand(provider,
+                    "RETURN 1",
+                    "--uri=" + neo4jContainer.getBoltUrl(),
+                    "--username=" + "neo4j",
+                    "--password=" + neo4jContainer.getAdminPassword());
 
-        // then - just verify no exceptions and result is available
-        assertThat(result).isNotNull();
+            try (var protocolSupplier = provider.newProtocolSupplier();
+                 var protocol = protocolSupplier.get()) {
+                // when
+                var result = protocol.execute();
+                // then - just verify no exceptions and result is available
+                assertThat(result).isNotNull();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

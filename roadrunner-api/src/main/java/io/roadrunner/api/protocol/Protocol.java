@@ -17,6 +17,8 @@ package io.roadrunner.api.protocol;
 
 import io.roadrunner.api.events.ProtocolResponse;
 
-public interface Protocol {
+public interface Protocol extends AutoCloseable {
     ProtocolResponse execute();
+
+    default void close() throws Exception {}
 }

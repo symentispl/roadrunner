@@ -35,9 +35,9 @@ public class RoadrunnerTests {
                 .withRequests(10)
                 .withOutputDir(tempDir)
                 .build()) {
-            try (var protocolProvider = VmProtocolProvider.from(Duration.ofMillis(100))) {
-                var protocol = protocolProvider.newProtocol();
-                measurements = roadrunner.execute(() -> protocol::execute);
+            try (var protocolProvider = VmProtocolProvider.from(Duration.ofMillis(100));
+                    var protocolSupplier = protocolProvider.newProtocolSupplier()) {
+                measurements = roadrunner.execute(protocolSupplier);
             }
             assertThat(measurements.samplesReader())
                     .first(type(UserEvent.Enter.class))

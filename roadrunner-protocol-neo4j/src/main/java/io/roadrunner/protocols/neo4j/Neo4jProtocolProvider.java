@@ -17,18 +17,18 @@ package io.roadrunner.protocols.neo4j;
 
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.protocol.Protocol;
+import io.roadrunner.api.protocol.ProtocolSupplier;
 import io.roadrunner.protocols.spi.ProtocolProvider;
 import java.net.URI;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
-import org.neo4j.driver.Session;
 import picocli.CommandLine;
 
 @CommandLine.Command(description = "Neo4j protocol provider")
 public class Neo4jProtocolProvider implements ProtocolProvider {
 
-    @CommandLine.Parameters(paramLabel = "uri", description = "Neo4j URI")
+    @CommandLine.Option(names = "--uri", description = "Neo4j URI")
     private URI uri;
 
     @CommandLine.Option(names = "--username", description = "Neo4j username")
@@ -37,7 +37,8 @@ public class Neo4jProtocolProvider implements ProtocolProvider {
     @CommandLine.Option(names = "--password", description = "Neo4j password")
     private String password = "neo4j";
 
-    private Driver driver;
+    @CommandLine.Parameters(paramLabel = "query", description = "Cypher query to execute")
+    private String query;
 
     @Override
     public String name() {
@@ -45,24 +46,30 @@ public class Neo4jProtocolProvider implements ProtocolProvider {
     }
 
     @Override
-    public Protocol newProtocol() {
-        driver = GraphDatabase.driver(uri, AuthTokens.basic(username, password));
-        return new Protocol() {
-
-            private Session session = driver.session();
-
-            @Override
-            public ProtocolResponse execute() {
-                var startTime = System.nanoTime();
-                var response = session.executeRead(tx -> tx.run("RETURN 1").consume());
-                var stopTime = System.nanoTime();
-                return ProtocolResponse.response(startTime, stopTime, response);
-            }
-        };
+    public ProtocolSupplier newProtocolSupplier() {
+        return new Neo4jProtocolSupplier();
     }
 
     @Override
-    public void close() {
-        driver.close();
+    public void close() {}
+
+    private class Neo4jProtocolSupplier implements ProtocolSupplier {
+        private final Driver driver = GraphDatabase.driver(uri, AuthTokens.basic(username, password));
+
+        @Override
+        public Protocol get() {
+            return () -> {
+                var startTime = System.nanoTime();
+                var session = driver.session();
+                var response = session.executeRead(tx -> tx.run(query).consume());
+                var stopTime = System.nanoTime();
+                return ProtocolResponse.response(startTime, stopTime, response);
+            };
+        }
+
+        @Override
+        public void close() throws Exception {
+            driver.close();
+        }
     }
 }

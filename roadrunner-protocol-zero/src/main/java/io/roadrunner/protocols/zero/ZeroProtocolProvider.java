@@ -17,6 +17,7 @@ package io.roadrunner.protocols.zero;
 
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.protocol.Protocol;
+import io.roadrunner.api.protocol.ProtocolSupplier;
 import io.roadrunner.protocols.spi.ProtocolProvider;
 import picocli.CommandLine.Command;
 
@@ -31,13 +32,23 @@ public class ZeroProtocolProvider implements ProtocolProvider {
     }
 
     @Override
-    public Protocol newProtocol() {
-        return () -> {
-            var nanoTime = System.nanoTime();
-            return ProtocolResponse.empty(nanoTime, nanoTime);
-        };
+    public ProtocolSupplier newProtocolSupplier() {
+        return new ZeroProtocolSupplier();
     }
 
     @Override
     public void close() {}
+
+    private class ZeroProtocolSupplier implements ProtocolSupplier {
+        public Protocol get() {
+            return new ZeroProtocol();
+        }
+    }
+
+    private class ZeroProtocol implements Protocol {
+        public ProtocolResponse execute() {
+            var nanoTime = System.nanoTime();
+            return ProtocolResponse.empty(nanoTime, nanoTime);
+        }
+    }
 }

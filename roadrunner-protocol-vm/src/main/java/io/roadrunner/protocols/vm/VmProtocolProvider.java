@@ -17,6 +17,7 @@ package io.roadrunner.protocols.vm;
 
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.protocol.Protocol;
+import io.roadrunner.api.protocol.ProtocolSupplier;
 import io.roadrunner.protocols.spi.ProtocolProvider;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -52,24 +53,40 @@ public class VmProtocolProvider implements ProtocolProvider {
     }
 
     @Override
-    public Protocol newProtocol() {
-        return () -> CompletableFuture.supplyAsync(
-                        () -> {
-                            var startTime = System.nanoTime();
-                            try {
-                                Thread.sleep(sleepTime);
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                            var stopTime = System.nanoTime();
-                            return ProtocolResponse.empty(startTime, stopTime);
-                        },
-                        executorService)
-                .join();
+    public ProtocolSupplier newProtocolSupplier() {
+        return new VmProtocolSupplier();
     }
 
     @Override
     public void close() {
         executorService.close();
+    }
+
+    private class VmProtocolSupplier implements ProtocolSupplier {
+
+        @Override
+        public Protocol get() {
+            return new VmProtocol();
+        }
+    }
+
+    private class VmProtocol implements Protocol {
+
+        @Override
+        public ProtocolResponse execute() {
+            return CompletableFuture.supplyAsync(
+                            () -> {
+                                var startTime = System.nanoTime();
+                                try {
+                                    Thread.sleep(sleepTime);
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e);
+                                }
+                                var stopTime = System.nanoTime();
+                                return ProtocolResponse.empty(startTime, stopTime);
+                            },
+                            executorService)
+                    .join();
+        }
     }
 }

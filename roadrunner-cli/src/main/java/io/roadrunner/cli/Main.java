@@ -20,11 +20,17 @@ import static picocli.CommandLine.Model.CommandSpec.forAnnotatedObject;
 
 import io.roadrunner.protocols.spi.ProtocolProvider;
 import java.nio.file.Paths;
+import org.slf4j.Logger;
 import picocli.CommandLine;
 
 public class Main {
 
+    private static final Logger LOG = org.slf4j.LoggerFactory.getLogger(Main.class);
+
     public static void main(String[] args) throws Exception {
+
+        LOG.info("Java home: " + System.getProperty("java.home"));
+
         try (var protocolProviders =
                 ProtocolProviders.load(new Preferences(Paths.get(System.getProperty("user.home"))))) {
 

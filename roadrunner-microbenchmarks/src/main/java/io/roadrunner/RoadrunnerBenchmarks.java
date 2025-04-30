@@ -17,6 +17,7 @@ package io.roadrunner;
 
 import io.roadrunner.api.Roadrunner;
 import io.roadrunner.api.protocol.Protocol;
+import io.roadrunner.api.protocol.ProtocolSupplier;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.protocols.vm.VmProtocolProvider;
 import java.io.IOException;
@@ -32,18 +33,21 @@ import org.openjdk.jmh.annotations.State;
 public class RoadrunnerBenchmarks {
 
     private Roadrunner roadrunner;
-    private Protocol request;
+    private Protocol protocol;
+    private ProtocolSupplier protocolSupplier;
 
     @Setup(Level.Trial)
     public void setUp() throws IOException {
         roadrunner = new Bootstrap().withConcurrency(1).withRequests(10).build();
-        var vmProtocol = VmProtocolProvider.from(Duration.ofMillis(100));
-        request = vmProtocol.newProtocol();
+        var protocolProvider = VmProtocolProvider.from(Duration.ofMillis(100));
+        protocolSupplier = protocolProvider.newProtocolSupplier();
+        protocol = protocolSupplier.get();
     }
 
     @Benchmark
     @Fork(value = 1, warmups = 1, jvmArgsAppend = "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn")
     public void executeRoadrunnerVmProtocol() {
-        roadrunner.execute(() -> request::execute);
+        roadrunner.execute(() -> protocolSupplier.get());
+        ;
     }
 }

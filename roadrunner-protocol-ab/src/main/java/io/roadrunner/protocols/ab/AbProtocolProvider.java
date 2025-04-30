@@ -17,6 +17,7 @@ package io.roadrunner.protocols.ab;
 
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.protocol.Protocol;
+import io.roadrunner.api.protocol.ProtocolSupplier;
 import io.roadrunner.protocols.spi.ProtocolProvider;
 import java.io.IOException;
 import java.net.URI;
@@ -40,28 +41,46 @@ public class AbProtocolProvider implements ProtocolProvider {
     }
 
     @Override
-    public Protocol newProtocol() {
-        var httpClient = HttpClient.newBuilder()
-                .followRedirects(HttpClient.Redirect.ALWAYS)
-                .build();
-        return () -> {
-            try {
-                var httpRequest = HttpRequest.newBuilder(uri).GET().build();
-                var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
-                var startTime = System.nanoTime();
-                var httpResponse = httpClient.send(httpRequest, bodyHandler);
-                var stopTime = System.nanoTime();
-                if (httpResponse.statusCode() == 200) {
-                    return ProtocolResponse.response(startTime, stopTime, httpResponse);
-                } else {
-                    return ProtocolResponse.error(startTime, stopTime, "");
-                }
-            } catch (IOException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        };
+    public ProtocolSupplier newProtocolSupplier() {
+        return new AbProtocolSupplier();
     }
 
     @Override
     public void close() {}
+
+    private class AbProtocolSupplier implements ProtocolSupplier {
+
+        private final HttpClient httpClient;
+
+        AbProtocolSupplier() {
+            httpClient = HttpClient.newBuilder()
+                    .followRedirects(HttpClient.Redirect.ALWAYS)
+                    .build();
+        }
+
+        @Override
+        public Protocol get() {
+            return () -> {
+                try {
+                    var httpRequest = HttpRequest.newBuilder(uri).GET().build();
+                    var bodyHandler = HttpResponse.BodyHandlers.ofByteArray();
+                    var startTime = System.nanoTime();
+                    var httpResponse = httpClient.send(httpRequest, bodyHandler);
+                    var stopTime = System.nanoTime();
+                    if (httpResponse.statusCode() == 200) {
+                        return ProtocolResponse.response(startTime, stopTime, httpResponse);
+                    } else {
+                        return ProtocolResponse.error(startTime, stopTime, "");
+                    }
+                } catch (IOException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            };
+        }
+
+        @Override
+        public void close() throws Exception {
+            httpClient.close();
+        }
+    }
 }

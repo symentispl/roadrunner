@@ -55,8 +55,8 @@ class AbProtocolProviderTest {
         try (var provider = new AbProtocolProvider()) {
             provider.uri = URI.create("http://localhost:" + PORT + "/test");
 
-            var protocol = provider.newProtocol();
-
+            var protocolSupplier = provider.newProtocolSupplier();
+            var protocol = protocolSupplier.get();
             // Execute the protocol
             var event = protocol.execute();
 
@@ -76,8 +76,8 @@ class AbProtocolProviderTest {
             provider.uri = URI.create("http://localhost:" + PORT + "/not-existing-endpoint");
 
             // Create a protocol instance
-            var protocol = provider.newProtocol();
-
+            var protocolSupplier = provider.newProtocolSupplier();
+            var protocol = protocolSupplier.get();
             // Execute the protocol
             var event = protocol.execute();
 
