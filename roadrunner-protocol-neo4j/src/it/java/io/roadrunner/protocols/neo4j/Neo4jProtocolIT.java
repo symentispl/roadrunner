@@ -33,7 +33,7 @@ public class Neo4jProtocolIT {
     @Test
     void executeQueryAndReturnResults() {
         // given
-        try (var provider = new Neo4jProtocolProvider()) {
+        try (var provider = new Neo4JProtocolPlugin()) {
 
             // Set container URI, username and password from testcontainer
             CommandLine.populateCommand(provider,

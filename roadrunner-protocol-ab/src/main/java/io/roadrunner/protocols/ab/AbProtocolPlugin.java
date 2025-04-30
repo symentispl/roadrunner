@@ -18,7 +18,7 @@ package io.roadrunner.protocols.ab;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.protocol.Protocol;
 import io.roadrunner.api.protocol.ProtocolSupplier;
-import io.roadrunner.protocols.spi.ProtocolProvider;
+import io.roadrunner.protocols.spi.ProtocolPlugin;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -28,12 +28,12 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
 @Command(description = "Apache HTTP server benchmarking tool implementation")
-public class AbProtocolProvider implements ProtocolProvider {
+public class AbProtocolPlugin implements ProtocolPlugin {
 
     @Parameters(paramLabel = "url", description = "HTTP server URL")
     public URI uri;
 
-    public AbProtocolProvider() {}
+    public AbProtocolPlugin() {}
 
     @Override
     public String name() {

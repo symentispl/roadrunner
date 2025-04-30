@@ -22,7 +22,8 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import io.roadrunner.api.events.ProtocolResponse;
-import io.roadrunner.protocols.ab.AbProtocolProvider;
+import io.roadrunner.protocols.ab.AbProtocolPlugin;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -31,7 +32,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class AbProtocolProviderTest {
+class AbProtocolPluginTest {
 
     private HttpServer server;
     private final int PORT = 8000;
@@ -52,7 +53,7 @@ class AbProtocolProviderTest {
 
     @Test
     void successfulRequest() {
-        try (var provider = new AbProtocolProvider()) {
+        try (var provider = new AbProtocolPlugin()) {
             provider.uri = URI.create("http://localhost:" + PORT + "/test");
 
             var protocolSupplier = provider.newProtocolSupplier();
@@ -72,7 +73,7 @@ class AbProtocolProviderTest {
 
     @Test
     void errorRequest() {
-        try (var provider = new AbProtocolProvider()) {
+        try (var provider = new AbProtocolPlugin()) {
             provider.uri = URI.create("http://localhost:" + PORT + "/not-existing-endpoint");
 
             // Create a protocol instance

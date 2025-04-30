@@ -18,7 +18,8 @@ package io.roadrunner.protocols.neo4j;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.protocol.Protocol;
 import io.roadrunner.api.protocol.ProtocolSupplier;
-import io.roadrunner.protocols.spi.ProtocolProvider;
+import io.roadrunner.protocols.spi.ProtocolPlugin;
+
 import java.net.URI;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
@@ -26,7 +27,7 @@ import org.neo4j.driver.GraphDatabase;
 import picocli.CommandLine;
 
 @CommandLine.Command(description = "Neo4j protocol provider")
-public class Neo4jProtocolProvider implements ProtocolProvider {
+public class Neo4JProtocolPlugin implements ProtocolPlugin {
 
     @CommandLine.Option(names = "--uri", description = "Neo4j URI")
     private URI uri;

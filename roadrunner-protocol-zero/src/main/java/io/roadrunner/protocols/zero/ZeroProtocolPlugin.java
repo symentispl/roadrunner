@@ -18,13 +18,13 @@ package io.roadrunner.protocols.zero;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.protocol.Protocol;
 import io.roadrunner.api.protocol.ProtocolSupplier;
-import io.roadrunner.protocols.spi.ProtocolProvider;
+import io.roadrunner.protocols.spi.ProtocolPlugin;
 import picocli.CommandLine.Command;
 
 @Command(description = "Zero protocol")
-public class ZeroProtocolProvider implements ProtocolProvider {
+public class ZeroProtocolPlugin implements ProtocolPlugin {
 
-    public ZeroProtocolProvider() {}
+    public ZeroProtocolPlugin() {}
 
     @Override
     public String name() {
