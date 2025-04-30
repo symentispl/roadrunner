@@ -29,8 +29,8 @@ public final class Preferences {
 
     public Preferences(Path baseDir) throws IOException {
         this.baseDir = requireNonNull(baseDir).resolve(".roadrunner");
-        if (Files.notExists(baseDir)) {
-            Files.createDirectory(baseDir);
+        if (Files.notExists(this.baseDir)) {
+            Files.createDirectories(this.baseDir);
         }
     }
 
