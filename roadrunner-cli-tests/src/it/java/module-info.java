@@ -13,23 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.api.reports.ReportGeneratorProvider;
-import io.roadrunner.protocols.spi.ProtocolProvider;
-
-module io.roadrunner.cli {
-    requires io.roadrunner.api;
+module io.roadrunner.cli.tests {
+    requires io.roadrunner.cli;
     requires io.roadrunner.protocols.spi;
-    requires io.roadrunner.core;
-    requires org.slf4j;
-    requires org.apache.commons.io;
-    requires org.apache.commons.lang3;
-    requires info.picocli;
+    requires org.junit.jupiter.api;
+    requires org.assertj.core;
 
-    uses ProtocolProvider;
-    uses ReportGeneratorProvider;
+    // Add any other required modules
 
-    opens io.roadrunner.cli to
-            info.picocli;
-
-    exports io.roadrunner.cli;
+    opens io.roadrunner.cli.tests to
+            org.junit.platform.commons;
 }

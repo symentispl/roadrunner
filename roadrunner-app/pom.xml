@@ -23,9 +23,9 @@
                 <extensions>true</extensions>
                 <configuration>
                     <addModules>
-                        <addModule>pl.symentis.roadrunner.cli</addModule>
+                        <addModule>io.roadrunner.cli</addModule>
                     </addModules>
-                    <launcher>roadrunner=pl.symentis.roadrunner.cli/io.roadrunner.cli.Main</launcher>
+                    <launcher>roadrunner=io.roadrunner.cli/io.roadrunner.cli.Main</launcher>
                     <addOptions>
                         <addOption>-Djdk.tracePinnedThreads=full</addOption>
                         <addOption>-Xlog:gc*,metaspace*,safepoint</addOption>
