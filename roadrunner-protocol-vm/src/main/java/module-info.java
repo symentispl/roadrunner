@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.protocols.spi.ProtocolProvider;
-import io.roadrunner.protocols.vm.VmProtocolProvider;
+import io.roadrunner.protocols.spi.ProtocolPlugin;
+import io.roadrunner.protocols.vm.VmProtocolPlugin;
 
 module io.roadrunner.protocol.vm {
     requires io.roadrunner.api;
     requires io.roadrunner.protocols.spi;
     requires info.picocli;
 
-    provides ProtocolProvider with
-            VmProtocolProvider;
+    provides ProtocolPlugin with
+            VmProtocolPlugin;
 
     opens io.roadrunner.protocols.vm to
             info.picocli;

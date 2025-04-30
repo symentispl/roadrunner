@@ -15,10 +15,14 @@
  */
 package io.roadrunner.protocols.spi;
 
-import io.roadrunner.api.protocol.Protocol;
+import io.roadrunner.api.protocol.ProtocolSupplier;
 
-public interface ProtocolProvider extends AutoCloseable {
+public interface ProtocolPlugin extends AutoCloseable {
     String name();
 
-    Protocol newProtocol();
+    ProtocolSupplier newProtocolSupplier();
+
+    default void close() throws Exception {
+        // Default implementation does nothing
+    }
 }

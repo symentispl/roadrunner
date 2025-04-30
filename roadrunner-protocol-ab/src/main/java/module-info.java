@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.protocols.ab.AbProtocolProvider;
-import io.roadrunner.protocols.spi.ProtocolProvider;
+import io.roadrunner.protocols.ab.AbProtocolPlugin;
+import io.roadrunner.protocols.spi.ProtocolPlugin;
 
 module io.roadrunner.protocol.ab {
     requires java.net.http;
@@ -24,8 +24,8 @@ module io.roadrunner.protocol.ab {
 
     exports io.roadrunner.protocols.ab;
 
-    provides ProtocolProvider with
-            AbProtocolProvider;
+    provides ProtocolPlugin with
+            AbProtocolPlugin;
 
     opens io.roadrunner.protocols.ab to
             info.picocli;

@@ -24,18 +24,16 @@ import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
 import io.roadrunner.api.protocol.Protocol;
+import io.roadrunner.api.protocol.ProtocolSupplier;
 import io.roadrunner.output.csv.CsvOutputEventListener;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +59,7 @@ public class DefaultRoadrunner implements Roadrunner {
     }
 
     @Override
-    public Measurements execute(Supplier<Protocol> requestsFactory) {
+    public Measurements execute(ProtocolSupplier requestsFactory) {
 
         LOG.info("Roadrunner started: {} concurrent users, {} total number of requests", concurrentUsers, requests);
         var currentTimeMillis = System.currentTimeMillis();
@@ -144,6 +142,11 @@ public class DefaultRoadrunner implements Roadrunner {
                 }
             } finally {
                 measurementControl.userExits();
+                try {
+                    protocol.close();
+                } catch (Exception e) {
+                    LOG.warn("Error closing protocol", e);
+                }
             }
         }
     }
@@ -214,32 +217,6 @@ public class DefaultRoadrunner implements Roadrunner {
         @Override
         public EventReader samplesReader() {
             return delegate.samplesReader();
-        }
-    }
-
-    private static class NoopEventListener implements EventListener {
-        @Override
-        public void onStart() {}
-
-        @Override
-        public void onEvent(Collection<? extends Event> batch) {}
-
-        @Override
-        public void onStop() {}
-
-        @Override
-        public EventReader samplesReader() {
-            return () -> new Iterator<>() {
-                @Override
-                public boolean hasNext() {
-                    return false;
-                }
-
-                @Override
-                public Event next() {
-                    throw new NoSuchElementException();
-                }
-            };
         }
     }
 }

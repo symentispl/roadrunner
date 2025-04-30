@@ -20,7 +20,8 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.core.Bootstrap;
-import io.roadrunner.protocols.vm.VmProtocolProvider;
+import io.roadrunner.protocols.vm.VmProtocolPlugin;
+
 import java.nio.file.Path;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
@@ -35,9 +36,9 @@ public class RoadrunnerTests {
                 .withRequests(10)
                 .withOutputDir(tempDir)
                 .build()) {
-            try (var protocolProvider = VmProtocolProvider.from(Duration.ofMillis(100))) {
-                var protocol = protocolProvider.newProtocol();
-                measurements = roadrunner.execute(() -> protocol::execute);
+            try (var protocolProvider = VmProtocolPlugin.from(Duration.ofMillis(100));
+                 var protocolSupplier = protocolProvider.newProtocolSupplier()) {
+                measurements = roadrunner.execute(protocolSupplier);
             }
             assertThat(measurements.samplesReader())
                     .first(type(UserEvent.Enter.class))

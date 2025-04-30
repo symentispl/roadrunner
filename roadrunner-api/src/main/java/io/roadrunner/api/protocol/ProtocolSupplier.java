@@ -13,6 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.protocols.spi;
+package io.roadrunner.api.protocol;
 
-public interface Protocol extends Runnable, AutoCloseable {}
+import java.util.function.Supplier;
+
+public interface ProtocolSupplier extends Supplier<Protocol>, AutoCloseable {
+
+    default void close() throws Exception {
+        // Default implementation does nothing
+    }
+}

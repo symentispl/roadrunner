@@ -16,7 +16,8 @@
 package io.roadrunner.cli;
 
 import io.roadrunner.core.Bootstrap;
-import io.roadrunner.protocols.spi.ProtocolProvider;
+import io.roadrunner.protocols.spi.ProtocolPlugin;
+
 import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,7 @@ class RunCommand {
     @Option(names = "-r", description = "Report format type")
     String report;
 
-    public void run(ProtocolProvider protocolProvider) throws Exception {
+    public void run(ProtocolPlugin protocolPlugin) throws Exception {
         var bootstrap = new Bootstrap();
         try (var roadrunner = bootstrap
                 .withConcurrency(concurrency)
@@ -62,8 +63,10 @@ class RunCommand {
                                 reportConfiguration.reportFormat(), chartGeneratorProviders.supportedReportFormats()));
             }
             var chartGenerator = reportGeneratorProvider.create(reportConfiguration.configuration());
-            var measurements = roadrunner.execute(() -> protocolProvider.newProtocol());
-            chartGenerator.generateChart(measurements.samplesReader());
+            try (var protocolSupplier = protocolPlugin.newProtocolSupplier()) {
+                var measurements = roadrunner.execute(() -> protocolSupplier.get());
+                chartGenerator.generateChart(measurements.samplesReader());
+            }
         }
     }
 }
