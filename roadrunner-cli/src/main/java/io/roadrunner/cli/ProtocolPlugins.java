@@ -18,7 +18,7 @@ package io.roadrunner.cli;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
-import io.roadrunner.protocols.spi.ProtocolProvider;
+import io.roadrunner.protocols.spi.ProtocolPlugin;
 import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
@@ -36,33 +36,33 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class ProtocolProviders implements AutoCloseable {
+public final class ProtocolPlugins implements AutoCloseable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ProtocolProviders.class);
-    private final Map<String, ProtocolProvider> protocolProviders;
+    private static final Logger LOG = LoggerFactory.getLogger(ProtocolPlugins.class);
+    private final Map<String, ProtocolPlugin> protocolPlugins;
 
-    private ProtocolProviders(Map<String, ProtocolProvider> protocolProviders) {
-        this.protocolProviders = protocolProviders;
+    private ProtocolPlugins(Map<String, ProtocolPlugin> protocolPlugins) {
+        this.protocolPlugins = protocolPlugins;
     }
 
-    public static ProtocolProviders load(Preferences preferences) {
+    public static ProtocolPlugins load(Preferences preferences) {
         LOG.debug("loading protocol providers");
         var protocols = Stream.of(
                         loadRuntimeProviders(),
                         loadPluginProviders(preferences),
                         loadPluginSubdirectoryProviders(preferences))
                 .flatMap(Function.identity())
-                .collect(toMap(ProtocolProvider::name, Function.identity(), (first, second) -> {
+                .collect(toMap(ProtocolPlugin::name, Function.identity(), (first, second) -> {
                     // When duplicate protocol providers are found, the first provider is prioritized.
                     // This ensures that runtime providers take precedence over plugin-based providers,
                     // as runtime providers are considered more stable and reliable.
-                    LOG.debug("found duplicate protocol provider {} in runtime and plugin directories", second.name());
+                    LOG.debug("found duplicate protocol plugin {} in runtime and plugin directories", second.name());
                     return first;
                 }));
-        return new ProtocolProviders(protocols);
+        return new ProtocolPlugins(protocols);
     }
 
-    private static Stream<ProtocolProvider> loadPluginSubdirectoryProviders(Preferences preferences) {
+    private static Stream<ProtocolPlugin> loadPluginSubdirectoryProviders(Preferences preferences) {
         var pluginsDir = preferences.pluginsDir();
 
         if (!Files.exists(pluginsDir)) {
@@ -95,9 +95,9 @@ public final class ProtocolProviders implements AutoCloseable {
                             .toArray(URL[]::new);
 
                     var classLoader = new URLClassLoader(urls, ClassLoader.getSystemClassLoader());
-                    return ServiceLoader.load(ProtocolProvider.class, classLoader).stream()
+                    return ServiceLoader.load(ProtocolPlugin.class, classLoader).stream()
                             .map(ServiceLoader.Provider::get)
-                            .peek(provider -> LOG.debug("Found protocol {} in directory {}", provider.name(), subdir));
+                            .peek(plugin -> LOG.debug("Found protocol {} in directory {}", plugin.name(), subdir));
 
                 } catch (IOException e) {
                     LOG.error("Failed to scan directory {}: {}", subdir, e.getMessage(), e);
@@ -110,14 +110,14 @@ public final class ProtocolProviders implements AutoCloseable {
         return Stream.empty();
     }
 
-    private static Stream<ProtocolProvider> loadRuntimeProviders() {
+    private static Stream<ProtocolPlugin> loadRuntimeProviders() {
         LOG.debug("Scanning for protocol plugins in runtime");
-        return ServiceLoader.load(ProtocolProvider.class).stream()
+        return ServiceLoader.load(ProtocolPlugin.class).stream()
                 .map(ServiceLoader.Provider::get)
                 .peek(protocolProvider -> LOG.debug("found protocol {} at runtime", protocolProvider.name()));
     }
 
-    private static Stream<ProtocolProvider> loadPluginProviders(Preferences preferences) {
+    private static Stream<ProtocolPlugin> loadPluginProviders(Preferences preferences) {
         var pluginsDir = preferences.pluginsDir();
 
         if (!Files.exists(pluginsDir)) {
@@ -130,14 +130,14 @@ public final class ProtocolProviders implements AutoCloseable {
         try {
             return Files.list(pluginsDir)
                     .filter(path -> path.toString().endsWith(".jar"))
-                    .flatMap(ProtocolProviders::loadProtocolProviderFromModule);
+                    .flatMap(ProtocolPlugins::loadProtocolProviderFromModule);
         } catch (IOException e) {
             LOG.error("Failed to scan plugins directory: {}", e.getMessage(), e);
         }
         return Stream.empty();
     }
 
-    private static Stream<ProtocolProvider> loadProtocolProviderFromModule(Path jarPath) {
+    private static Stream<ProtocolPlugin> loadProtocolProviderFromModule(Path jarPath) {
         try {
             LOG.debug("Loading plugins from {}", jarPath);
 
@@ -164,9 +164,9 @@ public final class ProtocolProviders implements AutoCloseable {
             var scl = ClassLoader.getSystemClassLoader();
             var pluginLayer = parentLayer.defineModulesWithOneLoader(pluginConfiguration, scl);
 
-            return ServiceLoader.load(pluginLayer, ProtocolProvider.class).stream()
+            return ServiceLoader.load(pluginLayer, ProtocolPlugin.class).stream()
                     .map(ServiceLoader.Provider::get)
-                    .peek(provider -> LOG.debug("found protocol {} from plugin module", provider.name()));
+                    .peek(plugin -> LOG.debug("found protocol {} from plugin module", plugin.name()));
 
         } catch (Exception e) {
             LOG.error("Failed to load plugin from {}: {}", jarPath, e.getMessage(), e);
@@ -174,18 +174,18 @@ public final class ProtocolProviders implements AutoCloseable {
         return Stream.empty();
     }
 
-    public Collection<ProtocolProvider> all() {
-        return protocolProviders.values();
+    public Collection<ProtocolPlugin> all() {
+        return protocolPlugins.values();
     }
 
     @Override
     public void close() {
-        LOG.debug("closing protocol providers");
-        for (ProtocolProvider protocolProvider : protocolProviders.values()) {
+        LOG.debug("closing protocol plugins");
+        for (ProtocolPlugin protocolPlugin : protocolPlugins.values()) {
             try {
-                protocolProvider.close();
+                protocolPlugin.close();
             } catch (Exception e) {
-                LOG.error("cannot close protocol provider {}", protocolProvider.name(), e);
+                LOG.error("cannot close protocol plugin {}", protocolPlugin.name(), e);
             }
         }
     }

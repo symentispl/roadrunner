@@ -18,15 +18,22 @@ package io.roadrunner.cli;
 import static picocli.CommandLine.Model.CommandSpec;
 import static picocli.CommandLine.Model.CommandSpec.forAnnotatedObject;
 
-import io.roadrunner.protocols.spi.ProtocolProvider;
+import io.roadrunner.protocols.spi.ProtocolPlugin;
+
 import java.nio.file.Paths;
+import org.slf4j.Logger;
 import picocli.CommandLine;
 
 public class Main {
 
+    private static final Logger LOG = org.slf4j.LoggerFactory.getLogger(Main.class);
+
     public static void main(String[] args) throws Exception {
+
+        LOG.info("Java home: " + System.getProperty("java.home"));
+
         try (var protocolProviders =
-                ProtocolProviders.load(new Preferences(Paths.get(System.getProperty("user.home"))))) {
+                ProtocolPlugins.load(new Preferences(Paths.get(System.getProperty("user.home"))))) {
 
             var commandSpec = createCommandSpec(protocolProviders);
 
@@ -46,19 +53,19 @@ public class Main {
 
             if (subcommand.commandSpec().userObject() instanceof RunCommand runCommand) {
                 var protocolSubCmd = subcommand.subcommand();
-                if (protocolSubCmd.commandSpec().userObject() instanceof ProtocolProvider protocolProvider) {
-                    runCommand.run(protocolProvider);
+                if (protocolSubCmd.commandSpec().userObject() instanceof ProtocolPlugin protocolPlugin) {
+                    runCommand.run(protocolPlugin);
                 }
             }
         }
     }
 
-    private static CommandSpec createCommandSpec(ProtocolProviders protocolProviders) {
+    private static CommandSpec createCommandSpec(ProtocolPlugins protocolPlugins) {
         var commandSpec = CommandSpec.create();
 
         var runCommand = forAnnotatedObject(new RunCommand()).mixinStandardHelpOptions(true);
 
-        for (var protocolProvider : protocolProviders.all()) {
+        for (var protocolProvider : protocolPlugins.all()) {
             runCommand
                     .addSubcommand(protocolProvider.name(), forAnnotatedObject(protocolProvider))
                     .mixinStandardHelpOptions(true);

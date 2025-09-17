@@ -17,7 +17,8 @@ package io.roadrunner.protocols.vm;
 
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.protocol.Protocol;
-import io.roadrunner.protocols.spi.ProtocolProvider;
+import io.roadrunner.api.protocol.ProtocolSupplier;
+import io.roadrunner.protocols.spi.ProtocolPlugin;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -28,20 +29,20 @@ import picocli.CommandLine.Option;
 @Command(
         description = "In-VM protocol, used as baseline to calculate roadrunner overhead",
         mixinStandardHelpOptions = true)
-public class VmProtocolProvider implements ProtocolProvider {
+public class VmProtocolPlugin implements ProtocolPlugin {
 
     private final ExecutorService executorService;
 
     @Option(names = "--sleep-time", description = "sleep time in ms", required = true)
     long sleepTime;
 
-    public VmProtocolProvider() {
+    public VmProtocolPlugin() {
         executorService = Executors.newCachedThreadPool();
     }
 
     // provided for testing
-    public static VmProtocolProvider from(Duration sleepTime) {
-        var vmProtocolProvider = new VmProtocolProvider();
+    public static VmProtocolPlugin from(Duration sleepTime) {
+        var vmProtocolProvider = new VmProtocolPlugin();
         vmProtocolProvider.sleepTime = sleepTime.toMillis();
         return vmProtocolProvider;
     }
@@ -52,24 +53,40 @@ public class VmProtocolProvider implements ProtocolProvider {
     }
 
     @Override
-    public Protocol newProtocol() {
-        return () -> CompletableFuture.supplyAsync(
-                        () -> {
-                            var startTime = System.nanoTime();
-                            try {
-                                Thread.sleep(sleepTime);
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                            var stopTime = System.nanoTime();
-                            return ProtocolResponse.empty(startTime, stopTime);
-                        },
-                        executorService)
-                .join();
+    public ProtocolSupplier newProtocolSupplier() {
+        return new VmProtocolSupplier();
     }
 
     @Override
     public void close() {
         executorService.close();
+    }
+
+    private class VmProtocolSupplier implements ProtocolSupplier {
+
+        @Override
+        public Protocol get() {
+            return new VmProtocol();
+        }
+    }
+
+    private class VmProtocol implements Protocol {
+
+        @Override
+        public ProtocolResponse execute() {
+            return CompletableFuture.supplyAsync(
+                            () -> {
+                                var startTime = System.nanoTime();
+                                try {
+                                    Thread.sleep(sleepTime);
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e);
+                                }
+                                var stopTime = System.nanoTime();
+                                return ProtocolResponse.empty(startTime, stopTime);
+                            },
+                            executorService)
+                    .join();
+        }
     }
 }
