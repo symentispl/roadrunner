@@ -15,4 +15,6 @@
  */
 package io.roadrunner.api.metrics;
 
-public enum MetricUnit {}
+public enum MetricUnit {
+    BYTES;
+}

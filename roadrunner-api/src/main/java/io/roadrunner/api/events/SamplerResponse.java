@@ -15,9 +15,9 @@
  */
 package io.roadrunner.api.events;
 
+import io.roadrunner.api.metrics.Metric;
+import io.roadrunner.api.metrics.MetricUnit;
 import io.roadrunner.api.metrics.Metrics;
-
-import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 
@@ -83,6 +83,7 @@ public abstract sealed class SamplerResponse<SELF extends SamplerResponse<SELF>>
 
     public static final class Response<T> extends SamplerResponse<Response<T>> {
         private final T body;
+        private final Metrics metrics = Metrics.empty();
 
         public Response(long startTime, long stopTime, T body) {
             super(startTime, stopTime);
@@ -107,7 +108,12 @@ public abstract sealed class SamplerResponse<SELF extends SamplerResponse<SELF>>
         }
 
         public Metrics metrics() {
-            return Metrics.empty();
+            return metrics;
+        }
+
+        public ProtocolResponse addMetric(String metric, double value) {
+            metrics.put(metric, new Metric(metric, MetricUnit.BYTES, value));
+            return this;
         }
     }
 
