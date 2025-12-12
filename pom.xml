@@ -16,7 +16,8 @@
     <description>
         Roadrunner is (or rather at the moment, will be) yet another Java performance testing framework/library/tool,
         this time using internal DSLs for building scenarios, with low-overhead, fine grained reporting and another
-        lovely things that might come in the future (like distributed load testing, trend analisys, web app for tracing
+        lovely things that might come in the future (like distributed load testing, trend analisys, web preferences for
+        tracing
         execution and so on).
     </description>
     <url>https://bitbucket.org/kcrimson/roadrunner</url>
@@ -53,13 +54,33 @@
     </scm>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <junit-jupiter.version>5.12.1</junit-jupiter.version>
+        <junit-jupiter.version>6.0.0</junit-jupiter.version>
         <assertj-core.version>3.27.3</assertj-core.version>
         <slf4j-api.version>2.0.17</slf4j-api.version>
-        <argLine></argLine>
+        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <argLine>-Dorg.slf4j.simpleLogger.defaultLogLevel=debug</argLine>
     </properties>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>add-integration-test-source</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/it/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -163,10 +184,23 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.5.2</version>
+                    <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <argLine>@{argLine}</argLine>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -174,14 +208,14 @@
                     <version>3.6.0</version>
                 </plugin>
                 <plugin>
-                        <groupId>org.moditect</groupId>
-                        <artifactId>moditect-maven-plugin</artifactId>
-                        <version>1.2.2.Final</version>
+                    <groupId>org.moditect</groupId>
+                    <artifactId>moditect-maven-plugin</artifactId>
+                    <version>1.2.2.Final</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.12</version>
+                    <version>0.8.13</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -191,7 +225,7 @@
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.18.0</version>
+                <version>2.20.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -201,17 +235,17 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
-                <version>1.13.0</version>
+                <version>1.13.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-csv</artifactId>
-                <version>1.13.0</version>
+                <version>1.14.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.17.0</version>
+                <version>3.18.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -233,12 +267,12 @@
             <dependency>
                 <groupId>io.javalin</groupId>
                 <artifactId>javalin</artifactId>
-                <version>6.5.0</version>
+                <version>6.7.0</version>
             </dependency>
             <dependency>
                 <groupId>info.picocli</groupId>
                 <artifactId>picocli</artifactId>
-                <version>4.7.6</version>
+                <version>4.7.7</version>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
@@ -263,10 +297,12 @@
         <module>roadrunner-core</module>
         <module>roadrunner-core-tests</module>
         <module>roadrunner-cli</module>
+        <module>roadrunner-cli-tests</module>
         <module>roadrunner-app</module>
         <module>roadrunner-protocols-spi</module>
         <module>roadrunner-protocol-vm</module>
         <module>roadrunner-protocol-ab</module>
+        <module>roadrunner-protocol-zero</module>
         <module>roadrunner-api</module>
         <module>roadrunner-hdrhistogram</module>
         <module>roadrunner-microbenchmarks</module>
@@ -286,6 +322,7 @@
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <executions>
+                            <!-- These executions run in all modules -->
                             <execution>
                                 <id>prepare-agent</id>
                                 <goals>
@@ -293,11 +330,41 @@
                                 </goals>
                             </execution>
                             <execution>
-                                <id>report</id>
-                                <phase>prepare-package</phase>
+                                <id>prepare-agent-integration</id>
                                 <goals>
-                                    <goal>report</goal>
+                                    <goal>prepare-agent-integration</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>coverage-report</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <!-- Only run this in the root project -->
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>report-aggregate</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>report-aggregate</goal>
+                                </goals>
+                                <configuration>
+                                    <dataFileIncludes>
+                                        <dataFileInclude>**/jacoco.exec</dataFileInclude>
+                                        <dataFileInclude>**/jacoco-it.exec</dataFileInclude>
+                                    </dataFileIncludes>
+                                    <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate</outputDirectory>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
