@@ -20,30 +20,49 @@ import io.roadrunner.api.protocol.Protocol;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.protocols.vm.VmProtocolProvider;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Duration;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
 
 @State(Scope.Benchmark)
 public class RoadrunnerBenchmarks {
 
     private Roadrunner roadrunner;
-    private Protocol request;
+    private Protocol protocol;
+    private VmProtocolProvider protocolProvider;
 
     @Setup(Level.Trial)
     public void setUp() throws IOException {
-        roadrunner = new Bootstrap().withConcurrency(1).withRequests(10).build();
-        var vmProtocol = VmProtocolProvider.from(Duration.ofMillis(100));
-        request = vmProtocol.newProtocol();
+        roadrunner = new Bootstrap()
+                .withConcurrency(1)
+                .withRequests(1000)
+                .withOutputDir(Files.createTempDirectory("roadrunner-benchmarks-"))
+                .build();
+        protocolProvider = VmProtocolProvider.from(Duration.ofMillis(10));
+        protocol = protocolProvider.newProtocol();
+    }
+
+    @TearDown(Level.Trial)
+    public void tearDown() throws Exception {
+        try {
+            protocolProvider.close();
+        } finally {
+            roadrunner.close();
+        }
     }
 
     @Benchmark
-    @Fork(value = 1, warmups = 1, jvmArgsAppend = "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn")
+    @BenchmarkMode(Mode.SingleShotTime)
+    @Fork(value = 10, jvmArgsAppend = "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn")
     public void executeRoadrunnerVmProtocol() {
-        roadrunner.execute(() -> request::execute);
+        roadrunner.execute(() -> protocol::execute);
     }
 }

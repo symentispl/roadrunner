@@ -52,7 +52,8 @@ public class AbProtocolProvider implements ProtocolProvider {
                 var httpResponse = httpClient.send(httpRequest, bodyHandler);
                 var stopTime = System.nanoTime();
                 if (httpResponse.statusCode() == 200) {
-                    return ProtocolResponse.response(startTime, stopTime, httpResponse);
+                    return ProtocolResponse.response(startTime, stopTime, httpResponse)
+                            .addMetric("transferred", httpResponse.body().length);
                 } else {
                     return ProtocolResponse.error(startTime, stopTime, "");
                 }

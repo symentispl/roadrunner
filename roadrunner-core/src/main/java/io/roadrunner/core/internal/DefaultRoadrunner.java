@@ -47,6 +47,8 @@ public class DefaultRoadrunner implements Roadrunner {
     private final long requests;
     private final MeasurementProgress measurementProgress;
     private final Path outputDir;
+    private final ExecutorService usersExecutor;
+    private final ExecutorService requestsExecutor;
 
     public DefaultRoadrunner(
             int concurrentUsers,
@@ -58,6 +60,10 @@ public class DefaultRoadrunner implements Roadrunner {
         this.requests = requests;
         this.measurementProgress = measurementProgress;
         this.outputDir = outputDir;
+        usersExecutor = Executors.newThreadPerTaskExecutor(
+                Thread.ofVirtual().name("roadrunner-users-").factory());
+        requestsExecutor = Executors.newCachedThreadPool(
+                Thread.ofVirtual().name("roadrunner-requests-").factory());
     }
 
     @Override
@@ -73,32 +79,31 @@ public class DefaultRoadrunner implements Roadrunner {
         try (var responsesJournal = new QueueingProtocolResponsesJournal(
                 new ProgressTrackingResponseListener(new CsvOutputEventListener(csvOutputFile), measurementProgress))) {
             responsesJournal.start();
-            try (var usersExecutor = Executors.newThreadPerTaskExecutor(
-                            Thread.ofVirtual().name("roadrunner-users-").factory());
-                    var requestsExecutor = Executors.newCachedThreadPool(
-                            Thread.ofVirtual().name("roadrunner-requests-").factory())) {
-                var latch = new CountDownLatch(concurrentUsers);
-                var measurementControl = new MeasurementControl(requests, responsesJournal, latch);
-                for (int i = 0; i < concurrentUsers; i++) {
-                    usersExecutor.submit(
-                            new RoadrunnerUser(measurementControl, delayedSupplier.get(), requestsExecutor));
-                }
-
-                try {
-                    latch.await();
-                    LOG.info("Roadrunner stopped, time {}ms", System.currentTimeMillis() - currentTimeMillis);
-                    usersExecutor.shutdown();
-                    usersExecutor.awaitTermination(10, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+            var latch = new CountDownLatch(concurrentUsers);
+            var measurementControl = new MeasurementControl(requests, responsesJournal, latch);
+            for (int i = 0; i < concurrentUsers; i++) {
+                usersExecutor.submit(new RoadrunnerUser(measurementControl, delayedSupplier.get(), requestsExecutor));
+            }
+            try {
+                latch.await();
+                LOG.info("Roadrunner stopped, time {}ms", System.currentTimeMillis() - currentTimeMillis);
+                usersExecutor.shutdown();
+                usersExecutor.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
             return DefaultMeasurements.from(responsesJournal.measurementsReader());
         }
     }
 
     @Override
-    public void close() {}
+    public void close() {
+        try {
+            requestsExecutor.close();
+        } finally {
+            usersExecutor.close();
+        }
+    }
 
     private static class RoadrunnerUser implements Runnable {
         private final MeasurementControl measurementControl;

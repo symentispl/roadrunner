@@ -34,12 +34,12 @@ import org.junit.jupiter.api.Test;
 class AbProtocolProviderTest {
 
     private HttpServer server;
-    private final int PORT = 8000;
 
     @BeforeEach
     void setUp() throws IOException {
         // Start the HTTP server
-        server = HttpServer.create(new InetSocketAddress(PORT), 0);
+        var inetSocketAddress = new InetSocketAddress(0);
+        server = HttpServer.create(inetSocketAddress, 0);
         server.createContext("/test", new TestHandler());
         server.setExecutor(Executors.newFixedThreadPool(1));
         server.start();
@@ -53,7 +53,7 @@ class AbProtocolProviderTest {
     @Test
     void successfulRequest() {
         try (var provider = new AbProtocolProvider()) {
-            provider.uri = URI.create("http://localhost:" + PORT + "/test");
+            provider.uri = URI.create("http://localhost:" + server.getAddress().getPort() + "/test");
 
             var protocol = provider.newProtocol();
 
@@ -66,7 +66,8 @@ class AbProtocolProviderTest {
                     .satisfies(response -> {
                         assertThat(response.timestamp()).isGreaterThan(0);
                         assertThat(response.stopTime()).isGreaterThan(response.timestamp());
-                        assertThat(response.metrics().get("transferred").value()).isGreaterThan(0);
+                        assertThat(response.metrics().get("transferred").value())
+                                .isGreaterThan(0);
                     });
         }
     }
@@ -74,7 +75,7 @@ class AbProtocolProviderTest {
     @Test
     void errorRequest() {
         try (var provider = new AbProtocolProvider()) {
-            provider.uri = URI.create("http://localhost:" + PORT + "/not-existing-endpoint");
+            provider.uri = URI.create("http://localhost:" + server.getAddress().getPort() + "/not-existing-endpoint");
 
             // Create a protocol instance
             var protocol = provider.newProtocol();
