@@ -36,7 +36,8 @@ public class VmProtocolProvider implements ProtocolProvider {
     long sleepTime;
 
     public VmProtocolProvider() {
-        executorService = Executors.newCachedThreadPool();
+        executorService = Executors.newCachedThreadPool(
+                Thread.ofPlatform().name("vm-protocol-").factory());
     }
 
     // provided for testing
