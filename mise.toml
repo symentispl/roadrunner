@@ -1,0 +1,67 @@
+#[plugins]
+#async-profiler = "path:.mise/plugins/async-profiler"
+
+[tools]
+java = "temurin-25"
+maven = "4.0.0-rc-5"
+mvnd = "2.0.0-rc-3"
+#async-profiler = "4.3"
+
+[tasks.default]
+description = "Build and run all tests (incremental)"
+run = "mvnd -q verify"
+sources = [
+    "**/pom.xml",
+    "**/src/main/java/**",
+    "**/src/it/java/**",
+    "**/src/test/main/**",
+]
+outputs = [
+    "**/target/classes/**",
+    "**/target/test-classes/**",
+    "**/target/generated-sources/**",
+    "**/target/generated-test-sources/**",
+]
+
+[tasks.benchmarks]
+description = "Run JMH benchmarks (quick run without metadata)"
+depends = ["default"]
+run = "java -jar roadrunner-microbenchmarks/target/benchmarks.jar"
+
+[tasks."benchmark:run"]
+description = "Run benchmarks and collect results with metadata"
+depends = ["default"]
+run = "./benchmarks/scripts/collect-benchmark.sh"
+
+[tasks."benchmark:check"]
+description = "Run benchmarks and check for regressions against baseline"
+depends = ["benchmark:run"]
+run = "./benchmarks/scripts/detect-regressions.sh --latest"
+
+[tasks."benchmark:compare"]
+description = "Compare two specific benchmark runs"
+run = "./benchmarks/scripts/detect-regressions.sh --compare $@"
+
+[tasks."benchmark:baseline:update"]
+description = "Update baseline from most recent benchmark result"
+run = "./benchmarks/scripts/update-baseline.sh"
+
+[tasks."benchmark:baseline:set"]
+description = "Set baseline from specific result file"
+run = "./benchmarks/scripts/update-baseline.sh $@"
+
+[tasks."benchmark:chart"]
+description = "Generate trend charts for all benchmarks"
+run = "./benchmarks/scripts/generate-charts.sh"
+
+[tasks."benchmark:chart:single"]
+description = "Generate chart for specific benchmark (pass benchmark name)"
+run = "./benchmarks/scripts/generate-charts.sh --benchmark $@"
+
+[tasks."benchmark:report"]
+description = "Full report: run benchmark, check regressions, generate charts"
+depends = ["benchmark:run"]
+run = """
+./benchmarks/scripts/detect-regressions.sh --latest || true
+./benchmarks/scripts/generate-charts.sh
+"""
