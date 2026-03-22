@@ -19,6 +19,7 @@ module io.roadrunner.core {
     requires io.roadrunner.output.csv;
     requires io.roadrunner.api;
     requires org.slf4j;
+    requires jdk.jfr;
 
     exports io.roadrunner.core;
 }

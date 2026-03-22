@@ -51,8 +51,10 @@ public class DefaultRoadrunner implements Roadrunner {
         var csvOutputFile = outputDir.resolve("output.csv");
         LOG.info("writing responses to {}", csvOutputFile);
 
-        try (var responsesJournal = new QueueingProtocolResponsesJournal(
-                new ProgressTrackingResponseListener(new CsvOutputEventListener(csvOutputFile), measurementProgress))) {
+        try (var responsesJournal = new QueueingProtocolResponsesJournal(new ProgressTrackingResponseListener(
+                        new CsvOutputEventListener(csvOutputFile), measurementProgress));
+                var gcProfiler = new GCProfiler()) {
+            gcProfiler.start();
             responsesJournal.start();
             try {
                 strategy.execute(requestsFactory, responsesJournal);
