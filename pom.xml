@@ -2,12 +2,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <!-- added correct parent so I is now ready to be released to Sonatype OSSRH -->
-    <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>9</version>
-    </parent>
     <groupId>io.roadrunner</groupId>
     <artifactId>roadrunner</artifactId>
     <version>0.0.2-SNAPSHOT</version>
@@ -15,10 +9,9 @@
     <name>roadrunner</name>
     <description>
         Roadrunner is (or rather at the moment, will be) yet another Java performance testing framework/library/tool,
-        this time using internal DSLs for building scenarios, with low-overhead, fine grained reporting and another
-        lovely things that might come in the future (like distributed load testing, trend analisys, web preferences for
-        tracing
-        execution and so on).
+        this time using internal DSLs for building scenarios, with low-overhead, fine-grained reporting and another
+        lovely thing that might come in the future (like distributed load testing, trend analysis, web preferences for
+        tracing execution and so on).
     </description>
     <url>https://bitbucket.org/kcrimson/roadrunner</url>
     <licenses>
@@ -57,11 +50,31 @@
         <junit-jupiter.version>6.0.3</junit-jupiter.version>
         <assertj-core.version>3.27.7</assertj-core.version>
         <slf4j-api.version>2.0.17</slf4j-api.version>
-        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
         <argLine>-Dorg.slf4j.simpleLogger.defaultLogLevel=debug</argLine>
     </properties>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.6.2</version>
+                <executions>
+                    <execution>
+                        <id>maven-version</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>4.0.0-rc-3</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
@@ -150,7 +163,7 @@
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.4.0</version>
                 <configuration>
                     <java>
                         <!-- These are the defaults, you can override if you want -->
@@ -159,21 +172,15 @@
                             <include>src/test/java/**/*.java</include>
                         </includes>
                         <palantirJavaFormat>
-                            <version>2.58.0</version>
-                            <!-- optional -->
                             <style>PALANTIR</style>
-                            <!-- or AOSP/GOOGLE (optional) -->
-                            <formatJavadoc>false
-                            </formatJavadoc>
-                            <!-- defaults to false (optional, requires at least Palantir 2.39.0) -->
+                            <formatJavadoc>false</formatJavadoc>
                         </palantirJavaFormat>
                         <importOrder/>
-                        <!-- standard import order -->
                         <removeUnusedImports/>
-                        <!-- self-explanatory -->
                         <formatAnnotations/>
-                        <!-- fixes formatting of type annotations, see below -->
                     </java>
+                    <pom>
+                    </pom>
                 </configuration>
             </plugin>
         </plugins>
@@ -203,7 +210,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.6.1</version>
+                    <version>3.6.2</version>
                 </plugin>
                 <plugin>
                     <groupId>org.moditect</groupId>
@@ -361,7 +368,8 @@
                                         <dataFileInclude>**/jacoco.exec</dataFileInclude>
                                         <dataFileInclude>**/jacoco-it.exec</dataFileInclude>
                                     </dataFileIncludes>
-                                    <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate</outputDirectory>
+                                    <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate
+                                    </outputDirectory>
                                 </configuration>
                             </execution>
                         </executions>

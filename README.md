@@ -14,7 +14,7 @@ and easy to extend.
 Why not [JMeter](https://jmeter.apache.org/), [Gatling](https://gatling.io/),[locust.io](https://locust.io/) or [k6s](https://k6.io/)?
 
 * because sometimes you need something that is really simple, that can generate load, and you don't need fancy scenarios and write code to generate load
-* because most of load generation tools target HTTP protocol, and are build around HTTP protocol semantics, I wanted (and need something) that can test any protocol, so adding protocol implementations should be trivial
+* because most load generation tools target HTTP protocol, and are build around HTTP protocol semantics, I wanted (and need something) that can test any protocol, so adding protocol implementations should be trivial
 * in a continuous performance management it is crucial to make it easy to work with performance tests results, so reporting and processing of load generator results is key
 * low-overhead, that doesn't need explanation
 * as always it is opportunity to learn, this implementation is heavily using Java virtual threads, so expect some bumps down the road
@@ -45,14 +45,14 @@ Now something more handy:
 This will execute 500 requests using 50 concurrent users, using HTTP protocol against provided URL.
 
 Why it is called `ab`? Because in a first iteration I want to provide same command line syntax and behaviour as [Apache HTTP server benchmarking tool](https://httpd.apache.org/docs/2.4/programs/ab.html)
-So this isn't going to be full blown HTTP load test. Rather drop in replacement for `ab` command (and I will use `ab` as baseline)
+So this isn't going to be full-blown HTTP load test. Rather drop in replacement for `ab` command (and I will use `ab` as baseline)
 
 # Protocols
 
 By now, you should grab the idea. Roadrunner is a framework for executing requests and simulating users distribution. It will not (at the moment, and probably never will) allow you to run complex load generation scenarios.
 Just grab URL, query, request and allow Roadrunner to flood your system under test with requests.
 
-NOTICE: At some point in future, you will be able to provide list of urls, queries and sets of parameters.
+NOTICE: At some point in the future, you will be able to provide list of urls, queries and sets of parameters.
 
 # Reporting
 
