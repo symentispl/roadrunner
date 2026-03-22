@@ -36,7 +36,7 @@ public class RoadrunnerBenchmarks {
 
     @Setup(Level.Trial)
     public void setUp() throws IOException {
-        roadrunner = new Bootstrap().withConcurrency(1).withRequests(10).build();
+        roadrunner = new Bootstrap().withClosedWorldModel(1,10).build();
         var vmProtocol = VmProtocolProvider.from(Duration.ofMillis(100));
         request = vmProtocol.newProtocol();
     }

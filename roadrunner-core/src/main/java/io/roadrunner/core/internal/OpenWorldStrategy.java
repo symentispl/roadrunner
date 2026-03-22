@@ -17,11 +17,13 @@ package io.roadrunner.core.internal;
 
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.protocol.Protocol;
+
 import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,23 +31,36 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenWorldStrategy.class);
 
-    private final int requestsPerSecond;
+    private final int usersArrivalRate;
     private final Duration testDuration;
 
-    public OpenWorldStrategy(int requestsPerSecond, Duration testDuration) {
-        this.requestsPerSecond = requestsPerSecond;
+    public static OpenWorldStrategy of(int usersArrivalRate, Duration testDuration) {
+        if (usersArrivalRate <= 0) {
+            throw new IllegalArgumentException("usersArrivalRate must be positive: %d".formatted(usersArrivalRate));
+        }
+        if (testDuration.isNegative() || testDuration.isZero()) {
+            throw new IllegalArgumentException("testDuration must be positive: %s".formatted(testDuration));
+        }
+        return new OpenWorldStrategy(usersArrivalRate, testDuration);
+    }
+
+    private OpenWorldStrategy(int usersArrivalRate, Duration testDuration) {
+        this.usersArrivalRate = usersArrivalRate;
         this.testDuration = testDuration;
     }
 
     @Override
     public void execute(Supplier<Protocol> protocolFactory, QueueingProtocolResponsesJournal journal)
             throws InterruptedException {
-        long intervalNanos = 1_000_000_000L / requestsPerSecond;
+        long intervalNanos = 1_000_000_000L / usersArrivalRate;
+        if (intervalNanos <= 0) {
+            throw new IllegalArgumentException("usersArrivalRate is too high, request interval is zero");
+        }
         long durationNanos = testDuration.toNanos();
 
         LOG.info(
-                "Roadrunner open-world started: {} requests/sec, duration {}",
-                requestsPerSecond,
+                "Roadrunner open-world started: {} users/sec, duration {}",
+                usersArrivalRate,
                 testDuration);
 
         var protocol = protocolFactory.get();

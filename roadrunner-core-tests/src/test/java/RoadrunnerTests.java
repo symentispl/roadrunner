@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.collection;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
@@ -21,8 +22,10 @@ import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.protocols.vm.VmProtocolProvider;
+
 import java.nio.file.Path;
 import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -68,8 +71,7 @@ public class RoadrunnerTests {
     void generateLoad(@TempDir Path tempDir) throws Exception {
         io.roadrunner.api.measurments.Measurements measurements;
         try (var roadrunner = new Bootstrap()
-                .withConcurrency(1)
-                .withRequests(10)
+                .withClosedWorldModel(1, 10)
                 .withOutputDir(tempDir)
                 .build()) {
             try (var protocolProvider = VmProtocolProvider.from(Duration.ofMillis(100))) {

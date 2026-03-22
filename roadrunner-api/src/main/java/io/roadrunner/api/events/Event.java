@@ -21,7 +21,7 @@ import java.util.Objects;
  * Base sealed class for all events in the Roadrunner.
  * All events must have a timestamp indicating when they occurred.
  */
-public abstract sealed class Event permits UserEvent, ProtocolResponse {
+public abstract sealed class Event permits UserEvent, ProtocolResponse, MeasurementError {
     private final long timestamp;
 
     protected Event(long timestamp) {

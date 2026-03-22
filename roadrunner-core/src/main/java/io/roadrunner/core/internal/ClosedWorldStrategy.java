@@ -18,6 +18,7 @@ package io.roadrunner.core.internal;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.protocol.Protocol;
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -41,9 +42,9 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
             throws InterruptedException {
         var delayedSupplier = new DelayedSupplier<>(protocolFactory, () -> 20L);
         try (var usersExecutor = Executors.newThreadPerTaskExecutor(
-                        Thread.ofVirtual().name("roadrunner-users-").factory());
-                var requestsExecutor = Executors.newCachedThreadPool(
-                        Thread.ofVirtual().name("roadrunner-requests-").factory())) {
+                Thread.ofVirtual().name("roadrunner-users-").factory());
+             var requestsExecutor = Executors.newCachedThreadPool(
+                     Thread.ofVirtual().name("roadrunner-requests-").factory())) {
             var latch = new CountDownLatch(concurrentUsers);
             var measurementControl = new MeasurementControl(requests, journal, latch);
             for (int i = 0; i < concurrentUsers; i++) {
@@ -89,7 +90,7 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
                         measurementControl.request(response.withScheduledStartTime(scheduledStartTime)
                                 .withLatency(correctedLatency));
                     } catch (InterruptedException | ExecutionException e) {
-                        System.out.println("<<>>");
+                        measurementControl.error(e);
                     }
                 }
             } finally {
@@ -126,6 +127,10 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
         public void userExits() {
             responsesJournal.userExits(UserEvent.exit());
             latch.countDown();
+        }
+
+        public void error(Exception e) {
+            responsesJournal.error(e);
         }
     }
 }

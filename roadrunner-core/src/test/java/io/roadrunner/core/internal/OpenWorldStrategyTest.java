@@ -24,10 +24,12 @@ import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
+
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
 import org.junit.jupiter.api.Test;
 
 class OpenWorldStrategyTest {
@@ -38,7 +40,7 @@ class OpenWorldStrategyTest {
 
         try (var journal = new QueueingProtocolResponsesJournal(listener)) {
             journal.start();
-            var strategy = new OpenWorldStrategy(5, Duration.ofSeconds(2));
+            var strategy = OpenWorldStrategy.of(5, Duration.ofSeconds(2));
             strategy.execute(
                     () -> () -> {
                         var start = System.nanoTime();
@@ -72,7 +74,8 @@ class OpenWorldStrategyTest {
         final List<Event> events = new CopyOnWriteArrayList<>();
 
         @Override
-        public void onStart() {}
+        public void onStart() {
+        }
 
         @Override
         public void onEvent(Collection<? extends Event> batch) {
@@ -80,7 +83,8 @@ class OpenWorldStrategyTest {
         }
 
         @Override
-        public void onStop() {}
+        public void onStop() {
+        }
 
         @Override
         public EventReader samplesReader() {
