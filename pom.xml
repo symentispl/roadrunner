@@ -2,12 +2,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <!-- added correct parent so I is now ready to be released to Sonatype OSSRH -->
-    <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>9</version>
-    </parent>
     <groupId>io.roadrunner</groupId>
     <artifactId>roadrunner</artifactId>
     <version>0.0.2-SNAPSHOT</version>
@@ -15,10 +9,9 @@
     <name>roadrunner</name>
     <description>
         Roadrunner is (or rather at the moment, will be) yet another Java performance testing framework/library/tool,
-        this time using internal DSLs for building scenarios, with low-overhead, fine grained reporting and another
-        lovely things that might come in the future (like distributed load testing, trend analisys, web preferences for
-        tracing
-        execution and so on).
+        this time using internal DSLs for building scenarios, with low-overhead, fine-grained reporting and another
+        lovely thing that might come in the future (like distributed load testing, trend analisys, web preferences for
+        tracing execution and so on).
     </description>
     <url>https://bitbucket.org/kcrimson/roadrunner</url>
     <licenses>
@@ -361,7 +354,8 @@
                                         <dataFileInclude>**/jacoco.exec</dataFileInclude>
                                         <dataFileInclude>**/jacoco-it.exec</dataFileInclude>
                                     </dataFileIncludes>
-                                    <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate</outputDirectory>
+                                    <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate
+                                    </outputDirectory>
                                 </configuration>
                             </execution>
                         </executions>
