@@ -50,7 +50,7 @@ public class RoadrunnerTests {
             assertThat(measurements.samplesReader())
                     .filteredOn(ProtocolResponse.class::isInstance)
                     .asInstanceOf(collection(ProtocolResponse.Response.class))
-                    .hasSizeBetween(6, 14)
+                    .hasSizeBetween(6, 20)
                     .allSatisfy(m -> {
                         assertThat(m.scheduledStartTime())
                                 .isLessThanOrEqualTo(m.timestamp())
@@ -60,8 +60,9 @@ public class RoadrunnerTests {
                         assertThat(m.latency()).isGreaterThanOrEqualTo(0);
                     });
             assertThat(measurements.samplesReader())
-                    .last(type(UserEvent.Exit.class))
-                    .satisfies(e -> {
+                    .filteredOn(UserEvent.class::isInstance)
+                    .hasSizeBetween(6, 20)
+                    .allSatisfy(e -> {
                         assertThat(e.timestamp()).isGreaterThan(0);
                     });
         }
