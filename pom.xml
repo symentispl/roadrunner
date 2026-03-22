@@ -10,7 +10,7 @@
     <description>
         Roadrunner is (or rather at the moment, will be) yet another Java performance testing framework/library/tool,
         this time using internal DSLs for building scenarios, with low-overhead, fine-grained reporting and another
-        lovely thing that might come in the future (like distributed load testing, trend analisys, web preferences for
+        lovely thing that might come in the future (like distributed load testing, trend analysis, web preferences for
         tracing execution and so on).
     </description>
     <url>https://bitbucket.org/kcrimson/roadrunner</url>
