@@ -64,8 +64,6 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 testDuration);
 
         var protocol = protocolFactory.get();
-        journal.userEnters(UserEvent.enter());
-
         var requestsExecutor = Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("roadrunner-requests-").factory());
 
@@ -82,27 +80,30 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 }
                 long now = System.nanoTime();
                 long waitNanos = nextScheduledStartTime - now;
-                if (waitNanos > 0) {
+                while (waitNanos > 0) {
                     LockSupport.parkNanos(waitNanos);
+                    // handle possible spurious wake-ups
+                    waitNanos = nextScheduledStartTime - System.nanoTime();
                 }
                 long scheduledStartTime = nextScheduledStartTime;
                 requestsExecutor.submit(() -> {
                     try {
+                        journal.userEnters(UserEvent.enter());
                         var response = protocol.execute();
                         var inQueueTime = response.timestamp() - scheduledStartTime;
                         var serviceTime = response.stopTime() - response.timestamp();
                         var correctedLatency = serviceTime + inQueueTime;
                         journal.response(response.withScheduledStartTime(scheduledStartTime)
                                 .withLatency(correctedLatency));
+                        journal.userExits(UserEvent.exit());
                     } catch (Exception e) {
-                        LOG.error("Error executing protocol request", e);
+                        journal.error(e);
                     }
                 });
             }
         } finally {
             requestsExecutor.shutdown();
             requestsExecutor.awaitTermination(30, TimeUnit.SECONDS);
-            journal.userExits(UserEvent.exit());
         }
 
         LOG.info("Roadrunner open-world stopped");
