@@ -10,7 +10,7 @@
     <artifactId>roadrunner-reports-html</artifactId>
 
     <properties>
-        <graaljs.version>24.2.1</graaljs.version>
+        <graaljs.version>25.0.2</graaljs.version>
     </properties>
 
     <build>
