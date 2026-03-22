@@ -24,12 +24,10 @@ import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
-
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
 import org.junit.jupiter.api.Test;
 
 class OpenWorldStrategyTest {
@@ -50,13 +48,11 @@ class OpenWorldStrategyTest {
                     journal);
         }
 
-        assertThat(listener.events)
-                .first(type(UserEvent.Enter.class))
-                .satisfies(e -> assertThat(e.timestamp()).isGreaterThan(0));
+        assertThat(listener.events).first(type(UserEvent.Enter.class)).satisfies(e -> assertThat(e.timestamp())
+                .isGreaterThan(0));
 
-        assertThat(listener.events)
-                .last(type(UserEvent.Exit.class))
-                .satisfies(e -> assertThat(e.timestamp()).isGreaterThan(0));
+        assertThat(listener.events).last(type(UserEvent.Exit.class)).satisfies(e -> assertThat(e.timestamp())
+                .isGreaterThan(0));
 
         // 5 rps * 2s = 10 expected requests; allow ±4 tolerance for scheduling jitter
         assertThat(listener.events)
@@ -74,8 +70,7 @@ class OpenWorldStrategyTest {
         final List<Event> events = new CopyOnWriteArrayList<>();
 
         @Override
-        public void onStart() {
-        }
+        public void onStart() {}
 
         @Override
         public void onEvent(Collection<? extends Event> batch) {
@@ -83,8 +78,7 @@ class OpenWorldStrategyTest {
         }
 
         @Override
-        public void onStop() {
-        }
+        public void onStop() {}
 
         @Override
         public EventReader samplesReader() {

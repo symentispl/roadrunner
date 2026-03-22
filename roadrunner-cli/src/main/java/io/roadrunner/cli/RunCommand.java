@@ -71,10 +71,12 @@ class RunCommand {
         var bootstrap = new Bootstrap().withOutputDir(outputDir);
 
         if (loadModel.closedWorld != null) {
-            bootstrap.withClosedWorldModel(loadModel.closedWorld.concurrency, loadModel.closedWorld.numberOfRequests)
+            bootstrap
+                    .withClosedWorldModel(loadModel.closedWorld.concurrency, loadModel.closedWorld.numberOfRequests)
                     .withMeasurementProgress(new ProgressBar(100, 0, loadModel.closedWorld.numberOfRequests));
         } else {
-            bootstrap.withOpenWorldModel(loadModel.openWorld.rate, loadModel.openWorld.duration)
+            bootstrap
+                    .withOpenWorldModel(loadModel.openWorld.rate, loadModel.openWorld.duration)
                     .withMeasurementProgress(new TimeBasedProgressBar(loadModel.openWorld.duration));
         }
 

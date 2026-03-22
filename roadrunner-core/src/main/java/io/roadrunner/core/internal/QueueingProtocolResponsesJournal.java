@@ -17,14 +17,12 @@ package io.roadrunner.core.internal;
 
 import io.roadrunner.api.events.*;
 import io.roadrunner.api.measurments.EventReader;
-
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,5 +105,4 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
     public EventReader measurementsReader() {
         return listener.samplesReader();
     }
-
 }

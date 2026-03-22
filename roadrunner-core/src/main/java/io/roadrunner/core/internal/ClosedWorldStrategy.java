@@ -18,7 +18,6 @@ package io.roadrunner.core.internal;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.protocol.Protocol;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -42,14 +41,13 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
             throws InterruptedException {
         var delayedSupplier = new DelayedSupplier<>(protocolFactory, () -> 20L);
         try (var usersExecutor = Executors.newThreadPerTaskExecutor(
-                Thread.ofVirtual().name("roadrunner-users-").factory());
-             var requestsExecutor = Executors.newCachedThreadPool(
-                     Thread.ofVirtual().name("roadrunner-requests-").factory())) {
+                        Thread.ofVirtual().name("roadrunner-users-").factory());
+                var requestsExecutor = Executors.newCachedThreadPool(
+                        Thread.ofVirtual().name("roadrunner-requests-").factory())) {
             var latch = new CountDownLatch(concurrentUsers);
             var measurementControl = new MeasurementControl(requests, journal, latch);
             for (int i = 0; i < concurrentUsers; i++) {
-                usersExecutor.submit(
-                        new RoadrunnerUser(measurementControl, delayedSupplier.get(), requestsExecutor));
+                usersExecutor.submit(new RoadrunnerUser(measurementControl, delayedSupplier.get(), requestsExecutor));
             }
             latch.await();
             usersExecutor.shutdown();
@@ -78,7 +76,8 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
                         // when the next request should start
                         long scheduledStartTime = System.nanoTime();
                         // execute the request
-                        var response = requestsExecutor.submit(protocol::execute).get();
+                        var response =
+                                requestsExecutor.submit(protocol::execute).get();
                         // calculate delay from the intended start time
                         var inQueueTime = response.timestamp() - scheduledStartTime;
                         // calculate the service time (actual execution time)

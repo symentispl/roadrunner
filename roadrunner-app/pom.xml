@@ -27,7 +27,6 @@
                     <launcher>roadrunner=io.roadrunner.cli/io.roadrunner.cli.Main</launcher>
                     <addOptions>
                         <addOption>-Djdk.tracePinnedThreads=full</addOption>
-                        <addOption>-Xlog:gc*,metaspace*,safepoint</addOption>
                     </addOptions>
                 </configuration>
             </plugin>

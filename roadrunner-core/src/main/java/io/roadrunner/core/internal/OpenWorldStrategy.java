@@ -17,13 +17,12 @@ package io.roadrunner.core.internal;
 
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.protocol.Protocol;
-
 import java.time.Duration;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,19 +57,21 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
         }
         long durationNanos = testDuration.toNanos();
 
-        LOG.info(
-                "Roadrunner open-world started: {} users/sec, duration {}",
-                usersArrivalRate,
-                testDuration);
+        LOG.info("Roadrunner open-world started: {} users/sec, duration {}", usersArrivalRate, testDuration);
 
         var protocol = protocolFactory.get();
         var requestsExecutor = Executors.newThreadPerTaskExecutor(
-                Thread.ofVirtual().name("roadrunner-requests-").factory());
+                Thread.ofVirtual().name("roadrunner-users-").factory());
 
-        long startNanos = System.nanoTime();
-        long deadlineNanos = startNanos + durationNanos;
+        var startNanos = System.nanoTime();
+        var deadlineNanos = startNanos + durationNanos;
         // Track the next arrival as an absolute nanos value to avoid drift accumulation
-        long nextScheduledStartTime = startNanos;
+        var nextScheduledStartTime = startNanos;
+
+        // Phaser tracks in-flight users; registered parties = concurrent users in the system.
+        // Phaser supports at most 65535 simultaneous parties, which bounds max concurrency, not
+        // total request count.
+        var phaser = new Phaser(1);
 
         try {
             while (true) {
@@ -78,34 +79,60 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 if (nextScheduledStartTime >= deadlineNanos) {
                     break;
                 }
-                long now = System.nanoTime();
-                long waitNanos = nextScheduledStartTime - now;
+                var now = System.nanoTime();
+                var waitNanos = nextScheduledStartTime - now;
                 while (waitNanos > 0) {
                     LockSupport.parkNanos(waitNanos);
                     // handle possible spurious wake-ups
                     waitNanos = nextScheduledStartTime - System.nanoTime();
                 }
-                long scheduledStartTime = nextScheduledStartTime;
-                requestsExecutor.submit(() -> {
-                    try {
-                        journal.userEnters(UserEvent.enter());
-                        var response = protocol.execute();
-                        var inQueueTime = response.timestamp() - scheduledStartTime;
-                        var serviceTime = response.stopTime() - response.timestamp();
-                        var correctedLatency = serviceTime + inQueueTime;
-                        journal.response(response.withScheduledStartTime(scheduledStartTime)
-                                .withLatency(correctedLatency));
-                        journal.userExits(UserEvent.exit());
-                    } catch (Exception e) {
-                        journal.error(e);
-                    }
-                });
+                var scheduledStartTime = nextScheduledStartTime;
+                phaser.register();
+                requestsExecutor.submit(new RoadrunnerUser(journal, protocol, scheduledStartTime, phaser));
             }
         } finally {
+            // Deregister the main party; when the last in-flight user also deregisters the phaser
+            // terminates and awaitAdvance returns, giving us a precise "all users have left"
+            // barrier without an arbitrary timeout.
+            int phase = phaser.arriveAndDeregister();
+            phaser.awaitAdvance(phase);
             requestsExecutor.shutdown();
-            requestsExecutor.awaitTermination(30, TimeUnit.SECONDS);
+            requestsExecutor.awaitTermination(1, TimeUnit.SECONDS);
         }
 
         LOG.info("Roadrunner open-world stopped");
+    }
+
+    private static class RoadrunnerUser implements Runnable {
+        private final QueueingProtocolResponsesJournal journal;
+        private final Protocol protocol;
+        private final long scheduledStartTime;
+        private final Phaser phaser;
+
+        public RoadrunnerUser(
+                QueueingProtocolResponsesJournal journal, Protocol protocol, long scheduledStartTime, Phaser phaser) {
+            this.journal = journal;
+            this.protocol = protocol;
+            this.scheduledStartTime = scheduledStartTime;
+            this.phaser = phaser;
+        }
+
+        @Override
+        public void run() {
+            try {
+                journal.userEnters(UserEvent.enter());
+                var response = protocol.execute();
+                var inQueueTime = response.timestamp() - scheduledStartTime;
+                var serviceTime = response.stopTime() - response.timestamp();
+                var correctedLatency = serviceTime + inQueueTime;
+                journal.response(
+                        response.withScheduledStartTime(scheduledStartTime).withLatency(correctedLatency));
+                journal.userExits(UserEvent.exit());
+            } catch (Exception e) {
+                journal.error(e);
+            } finally {
+                phaser.arriveAndDeregister();
+            }
+        }
     }
 }

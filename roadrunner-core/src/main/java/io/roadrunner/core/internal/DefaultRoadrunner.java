@@ -26,8 +26,6 @@ import io.roadrunner.api.protocol.Protocol;
 import io.roadrunner.output.csv.CsvOutputEventListener;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
@@ -41,10 +39,7 @@ public class DefaultRoadrunner implements Roadrunner {
     private final MeasurementProgress measurementProgress;
     private final Path outputDir;
 
-    public DefaultRoadrunner(
-            ExecutionStrategy strategy,
-            MeasurementProgress measurementProgress,
-            Path outputDir) {
+    public DefaultRoadrunner(ExecutionStrategy strategy, MeasurementProgress measurementProgress, Path outputDir) {
         this.strategy = strategy;
         this.measurementProgress = measurementProgress;
         this.outputDir = outputDir;
@@ -106,32 +101,6 @@ public class DefaultRoadrunner implements Roadrunner {
         @Override
         public EventReader samplesReader() {
             return delegate.samplesReader();
-        }
-    }
-
-    private static class NoopEventListener implements EventListener {
-        @Override
-        public void onStart() {}
-
-        @Override
-        public void onEvent(Collection<? extends Event> batch) {}
-
-        @Override
-        public void onStop() {}
-
-        @Override
-        public EventReader samplesReader() {
-            return () -> new Iterator<>() {
-                @Override
-                public boolean hasNext() {
-                    return false;
-                }
-
-                @Override
-                public Event next() {
-                    throw new NoSuchElementException();
-                }
-            };
         }
     }
 }

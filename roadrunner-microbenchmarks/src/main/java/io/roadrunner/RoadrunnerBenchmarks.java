@@ -19,14 +19,11 @@ import io.roadrunner.api.Roadrunner;
 import io.roadrunner.api.protocol.Protocol;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.protocols.vm.VmProtocolProvider;
-
 import java.io.IOException;
 import java.time.Duration;
-
 import org.openjdk.jmh.annotations.*;
 
 public class RoadrunnerBenchmarks {
-
 
     @State(Scope.Benchmark)
     public static class ClosedWorldBenchmark {
@@ -46,7 +43,6 @@ public class RoadrunnerBenchmarks {
             roadrunner.close();
             vmProtocol.close();
         }
-
     }
 
     @State(Scope.Benchmark)
@@ -57,7 +53,9 @@ public class RoadrunnerBenchmarks {
 
         @Setup(Level.Trial)
         public void setUp() throws IOException {
-            roadrunner = new Bootstrap().withOpenWorldModel(10, Duration.ofSeconds(1)).build();
+            roadrunner = new Bootstrap()
+                    .withOpenWorldModel(10, Duration.ofSeconds(1))
+                    .build();
             vmProtocol = VmProtocolProvider.from(Duration.ofMillis(100));
             request = vmProtocol.newProtocol();
         }
@@ -67,7 +65,6 @@ public class RoadrunnerBenchmarks {
             roadrunner.close();
             vmProtocol.close();
         }
-
     }
 
     @Benchmark
