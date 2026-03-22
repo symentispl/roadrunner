@@ -13,8 +13,10 @@ run = "mvnd -q verify"
 sources = [
     "**/pom.xml",
     "**/src/main/java/**",
+    "**/src/test/java/**",
+    "**/src/test/resources/**",
     "**/src/it/java/**",
-    "**/src/test/main/**",
+    "**/src/it/resources/**",
 ]
 outputs = [
     "**/target/classes/**",
