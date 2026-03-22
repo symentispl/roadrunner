@@ -17,11 +17,15 @@ package io.roadrunner.core;
 
 import io.roadrunner.api.Roadrunner;
 import io.roadrunner.api.measurments.MeasurementProgress;
+import io.roadrunner.core.internal.ClosedWorldStrategy;
 import io.roadrunner.core.internal.DefaultRoadrunner;
+import io.roadrunner.core.internal.ExecutionStrategy;
+import io.roadrunner.core.internal.OpenWorldStrategy;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,18 +33,46 @@ public class Bootstrap {
 
     private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
 
-    private int concurrency;
-    private int requests;
+    private ExecutionStrategy strategy;
+    private int pendingConcurrency;
     private MeasurementProgress measurementProgress = MeasurementProgress.NO_OP;
     private Path outputDir;
 
-    public Bootstrap withConcurrency(int concurrency) {
-        this.concurrency = concurrency;
+    /**
+     * Configure the closed-world load model: N concurrent users each loop until the total
+     * request count is reached.
+     */
+    public Bootstrap withClosedWorldModel(int concurrentUsers, long requests) {
+        this.strategy = new ClosedWorldStrategy(concurrentUsers, requests);
         return this;
     }
 
+    /**
+     * Configure the open-world load model: requests arrive at a fixed rate for the given
+     * duration, independent of whether previous requests have completed.
+     */
+    public Bootstrap withOpenWorldModel(int requestsPerSecond, Duration duration) {
+        this.strategy = new OpenWorldStrategy(requestsPerSecond, duration);
+        return this;
+    }
+
+    /**
+     * @deprecated Prefer {@link #withClosedWorldModel(int, long)}. This method stores the
+     *     concurrency value and materializes a {@link ClosedWorldStrategy} when
+     *     {@link #withRequests(int)} is called.
+     */
+    @Deprecated
+    public Bootstrap withConcurrency(int concurrency) {
+        this.pendingConcurrency = concurrency;
+        return this;
+    }
+
+    /**
+     * @deprecated Prefer {@link #withClosedWorldModel(int, long)}.
+     */
+    @Deprecated
     public Bootstrap withRequests(int requests) {
-        this.requests = requests;
+        this.strategy = new ClosedWorldStrategy(pendingConcurrency, requests);
         return this;
     }
 
@@ -63,6 +95,6 @@ public class Bootstrap {
             outputDir = Files.createTempDirectory(Paths.get("."), "roadrunner-");
             LOG.warn("setting output directory to {}", outputDir);
         }
-        return new DefaultRoadrunner(concurrency, requests, measurementProgress, outputDir);
+        return new DefaultRoadrunner(strategy, measurementProgress, outputDir);
     }
 }

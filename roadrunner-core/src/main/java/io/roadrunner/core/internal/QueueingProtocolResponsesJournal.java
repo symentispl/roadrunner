@@ -68,6 +68,12 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
                     throw new RuntimeException(e);
                 }
             }
+            // Drain any events that arrived after the last poll before stopping
+            responses.drainTo(batch);
+            if (!batch.isEmpty()) {
+                listener.onEvent(batch);
+                batch.clear();
+            }
             listener.onStop();
         });
     }
@@ -90,17 +96,7 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
         executorService.shutdown();
         try {
             executorService.awaitTermination(10, TimeUnit.SECONDS);
-            // Drain any remaining responses and notify listener
-            if (!responses.isEmpty()) {
-                var remainingEvents = new ArrayList<Event>();
-                responses.drainTo(remainingEvents);
-                if (!remainingEvents.isEmpty()) {
-                    LOG.warn("Processing {} remaining events before closing", remainingEvents.size());
-                    listener.onEvent(remainingEvents);
-                }
-            }
         } catch (InterruptedException e) {
-            //            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }

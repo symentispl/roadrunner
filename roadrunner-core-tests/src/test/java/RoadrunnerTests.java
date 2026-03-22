@@ -28,6 +28,43 @@ import org.junit.jupiter.api.io.TempDir;
 
 public class RoadrunnerTests {
     @Test
+    void generateOpenWorldLoad(@TempDir Path tempDir) throws Exception {
+        io.roadrunner.api.measurments.Measurements measurements;
+        try (var roadrunner = new Bootstrap()
+                .withOpenWorldModel(5, Duration.ofSeconds(2))
+                .withOutputDir(tempDir)
+                .build()) {
+            try (var protocolProvider = VmProtocolProvider.from(Duration.ofMillis(10))) {
+                var protocol = protocolProvider.newProtocol();
+                measurements = roadrunner.execute(() -> protocol::execute);
+            }
+            assertThat(measurements.samplesReader())
+                    .first(type(UserEvent.Enter.class))
+                    .satisfies(e -> {
+                        assertThat(e.timestamp()).isGreaterThan(0);
+                    });
+            // 5 rps * 2s = 10 expected; allow ±4 tolerance for scheduling jitter
+            assertThat(measurements.samplesReader())
+                    .filteredOn(ProtocolResponse.class::isInstance)
+                    .asInstanceOf(collection(ProtocolResponse.Response.class))
+                    .hasSizeBetween(6, 14)
+                    .allSatisfy(m -> {
+                        assertThat(m.scheduledStartTime())
+                                .isLessThanOrEqualTo(m.timestamp())
+                                .isGreaterThan(0);
+                        assertThat(m.timestamp()).isGreaterThan(0);
+                        assertThat(m.stopTime()).isGreaterThan(m.timestamp());
+                        assertThat(m.latency()).isGreaterThanOrEqualTo(0);
+                    });
+            assertThat(measurements.samplesReader())
+                    .last(type(UserEvent.Exit.class))
+                    .satisfies(e -> {
+                        assertThat(e.timestamp()).isGreaterThan(0);
+                    });
+        }
+    }
+
+    @Test
     void generateLoad(@TempDir Path tempDir) throws Exception {
         io.roadrunner.api.measurments.Measurements measurements;
         try (var roadrunner = new Bootstrap()

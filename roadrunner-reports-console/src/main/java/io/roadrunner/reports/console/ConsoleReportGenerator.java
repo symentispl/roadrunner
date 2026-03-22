@@ -15,6 +15,7 @@
  */
 package io.roadrunner.reports.console;
 
+import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.reports.ReportGenerator;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
@@ -38,6 +39,8 @@ final class ConsoleReportGenerator implements ReportGenerator {
 
     @Override
     public void generateChart(EventReader eventReader) throws IOException {
+        // Ensure the progress bar line is terminated before the report starts
+        System.out.println();
         var histogram = new Histogram(3);
 
         // Track the first and last measurement timestamps to calculate total duration
@@ -47,25 +50,18 @@ final class ConsoleReportGenerator implements ReportGenerator {
         // Track error counts
         var totalRequests = 0L;
         var errorRequests = 0L;
-        //
-        //        for (Event sample : eventReader) {
-        //            try {
-        //                totalRequests++;
-        //                var responseTime = sample.stopTime() - sample.startTime();
-        //                histogram.recordValue(responseTime);
-        //
-        //                // Check if this is an error response
-        //                if (sample.status() == Sample.Status.KO) {
-        //                    errorRequests++;
-        //                }
-        //
-        //                // Update first start time and last stop time
-        //                firstStartTime = Math.min(firstStartTime, sample.startTime());
-        //                lastStopTime = Math.max(lastStopTime, sample.stopTime());
-        //            } catch (NumberFormatException e) {
-        //                System.out.println("invalid line");
-        //            }
-        //        }
+
+        for (var event : eventReader) {
+            if (event instanceof ProtocolResponse<?> response) {
+                totalRequests++;
+                histogram.recordValue(response.latency());
+                firstStartTime = Math.min(firstStartTime, response.scheduledStartTime());
+                lastStopTime = Math.max(lastStopTime, response.stopTime());
+                if (response instanceof ProtocolResponse.Error) {
+                    errorRequests++;
+                }
+            }
+        }
 
         // Calculate total duration in seconds
         double totalDurationSeconds = (lastStopTime - firstStartTime) / 1_000_000_000.0;
