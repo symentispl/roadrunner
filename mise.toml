@@ -5,6 +5,7 @@
 java = "temurin-25"
 maven = "4.0.0-rc-5"
 mvnd = "2.0.0-rc-3"
+shellcheck = "latest"
 #async-profiler = "4.3"
 
 [tasks.default]
@@ -24,6 +25,10 @@ outputs = [
     "**/target/generated-sources/**",
     "**/target/generated-test-sources/**",
 ]
+
+[tasks."lint:sh"]
+description = "Lint shell scripts with shellcheck"
+run = "shellcheck -x --source-path=SCRIPTDIR benchmarks/scripts/**/*.sh benchmarks/scripts/*.sh"
 
 [tasks.benchmarks]
 description = "Run JMH benchmarks (quick run without metadata)"
