@@ -6,7 +6,6 @@
         <groupId>io.roadrunner</groupId>
         <artifactId>roadrunner</artifactId>
         <version>0.0.3-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>roadrunner-app</artifactId>
@@ -27,7 +26,6 @@
                     <launcher>roadrunner=io.roadrunner.cli/io.roadrunner.cli.Main</launcher>
                     <addOptions>
                         <addOption>-Djdk.tracePinnedThreads=full</addOption>
-                        <addOption>-Xlog:gc*,metaspace*,safepoint</addOption>
                     </addOptions>
                 </configuration>
             </plugin>

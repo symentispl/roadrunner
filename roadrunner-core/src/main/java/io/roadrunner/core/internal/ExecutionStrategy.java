@@ -13,13 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.core {
-    requires io.roadrunner.protocols.spi;
-    requires io.roadrunner.hdrhistogram;
-    requires io.roadrunner.output.csv;
-    requires io.roadrunner.api;
-    requires org.slf4j;
-    requires jdk.jfr;
+package io.roadrunner.core.internal;
 
-    exports io.roadrunner.core;
+import io.roadrunner.api.protocol.Protocol;
+import java.util.function.Supplier;
+
+public interface ExecutionStrategy {
+    /**
+     * Execute the load model using the given protocol factory and journal.
+     * Implementations are responsible for spawning virtual threads,
+     * recording UserEvent.Enter/Exit, submitting Protocol.execute() calls,
+     * computing corrected latency, and blocking until the test is complete.
+     */
+    void execute(Supplier<Protocol> protocolFactory, QueueingProtocolResponsesJournal journal)
+            throws InterruptedException;
 }

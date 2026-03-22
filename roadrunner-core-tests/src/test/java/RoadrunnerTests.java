@@ -19,6 +19,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.events.UserEvent;
+import io.roadrunner.api.measurments.Measurements;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.protocols.vm.VmProtocolProvider;
 import java.nio.file.Path;
@@ -28,11 +29,48 @@ import org.junit.jupiter.api.io.TempDir;
 
 public class RoadrunnerTests {
     @Test
-    void generateLoad(@TempDir Path tempDir) throws Exception {
-        io.roadrunner.api.measurments.Measurements measurements;
+    void generateOpenWorldLoad(@TempDir Path tempDir) throws Exception {
+        Measurements measurements;
         try (var roadrunner = new Bootstrap()
-                .withConcurrency(1)
-                .withRequests(10)
+                .withOpenWorldModel(5, Duration.ofSeconds(2))
+                .withOutputDir(tempDir)
+                .build()) {
+            try (var protocolProvider = VmProtocolProvider.from(Duration.ofMillis(10))) {
+                var protocol = protocolProvider.newProtocol();
+                measurements = roadrunner.execute(() -> protocol::execute);
+            }
+            assertThat(measurements.samplesReader())
+                    .first(type(UserEvent.Enter.class))
+                    .satisfies(e -> {
+                        assertThat(e.timestamp()).isGreaterThan(0);
+                    });
+            // 5 rps * 2s = 10 expected; allow ±4 tolerance for scheduling jitter
+            assertThat(measurements.samplesReader())
+                    .filteredOn(ProtocolResponse.class::isInstance)
+                    .asInstanceOf(collection(ProtocolResponse.Response.class))
+                    .hasSizeBetween(6, 20)
+                    .allSatisfy(m -> {
+                        assertThat(m.scheduledStartTime())
+                                .isLessThanOrEqualTo(m.timestamp())
+                                .isGreaterThan(0);
+                        assertThat(m.timestamp()).isGreaterThan(0);
+                        assertThat(m.stopTime()).isGreaterThan(m.timestamp());
+                        assertThat(m.latency()).isGreaterThanOrEqualTo(0);
+                    });
+            assertThat(measurements.samplesReader())
+                    .filteredOn(UserEvent.class::isInstance)
+                    .hasSizeBetween(6, 20)
+                    .allSatisfy(e -> {
+                        assertThat(e.timestamp()).isGreaterThan(0);
+                    });
+        }
+    }
+
+    @Test
+    void generateCloseWorldLoad(@TempDir Path tempDir) throws Exception {
+        Measurements measurements;
+        try (var roadrunner = new Bootstrap()
+                .withClosedWorldModel(1, 10)
                 .withOutputDir(tempDir)
                 .build()) {
             try (var protocolProvider = VmProtocolProvider.from(Duration.ofMillis(100))) {

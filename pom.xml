@@ -134,6 +134,10 @@
                         <exclude>mvnw</exclude>
                         <exclude>mvnw.cmd</exclude>
                         <exclude>.gitignore</exclude>
+                        <exclude>*.toml</exclude>
+                        <exclude>*.yaml</exclude>
+                        <exclude>*.md</exclude>
+                        <exclude>*.tmpl</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -205,6 +209,16 @@
         </plugins>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.4.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.4.2</version>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>

@@ -31,7 +31,19 @@ public class Main {
             var commandSpec = createCommandSpec(protocolProviders);
 
             var commandLine = new CommandLine(commandSpec);
-            var parseResult = commandLine.parseArgs(args);
+
+            CommandLine.ParseResult parseResult;
+            try {
+                parseResult = commandLine.parseArgs(args);
+            } catch (CommandLine.ParameterException e) {
+                for (String arg : args) {
+                    if ("--help".equals(arg) || "-h".equals(arg)) {
+                        e.getCommandLine().usage(System.out);
+                        return;
+                    }
+                }
+                throw e;
+            }
 
             if (parseResult.isUsageHelpRequested()) {
                 commandLine.usage(System.out);
@@ -46,8 +58,14 @@ public class Main {
 
             if (subcommand.commandSpec().userObject() instanceof RunCommand runCommand) {
                 var protocolSubCmd = subcommand.subcommand();
-                if (protocolSubCmd.commandSpec().userObject() instanceof ProtocolProvider protocolProvider) {
-                    runCommand.run(protocolProvider);
+                if (protocolSubCmd != null) {
+                    if (protocolSubCmd.isUsageHelpRequested()) {
+                        protocolSubCmd.commandSpec().commandLine().usage(System.out);
+                        return;
+                    }
+                    if (protocolSubCmd.commandSpec().userObject() instanceof ProtocolProvider protocolProvider) {
+                        runCommand.run(protocolProvider);
+                    }
                 }
             }
         }

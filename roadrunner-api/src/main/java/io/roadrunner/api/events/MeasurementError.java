@@ -13,13 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.core {
-    requires io.roadrunner.protocols.spi;
-    requires io.roadrunner.hdrhistogram;
-    requires io.roadrunner.output.csv;
-    requires io.roadrunner.api;
-    requires org.slf4j;
-    requires jdk.jfr;
+package io.roadrunner.api.events;
 
-    exports io.roadrunner.core;
+public final class MeasurementError extends Event {
+
+    private final Exception exception;
+
+    public MeasurementError(long timestamp, Exception e) {
+        super(timestamp);
+        this.exception = e;
+    }
+
+    public Exception getException() {
+        return exception;
+    }
 }
