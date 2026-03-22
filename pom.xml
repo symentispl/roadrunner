@@ -134,6 +134,10 @@
                         <exclude>mvnw</exclude>
                         <exclude>mvnw.cmd</exclude>
                         <exclude>.gitignore</exclude>
+                        <exclude>*.toml</exclude>
+                        <exclude>*.yaml</exclude>
+                        <exclude>*.md</exclude>
+                        <exclude>*.tmpl</exclude>
                     </excludes>
                 </configuration>
                 <executions>
