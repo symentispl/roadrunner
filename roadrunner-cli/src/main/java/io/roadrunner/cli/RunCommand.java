@@ -30,7 +30,7 @@ class RunCommand {
 
     private static final Logger LOG = LoggerFactory.getLogger(RunCommand.class);
 
-    @ArgGroup(exclusive = true, multiplicity = "1")
+    @ArgGroup(multiplicity = "1")
     LoadModelArgs loadModel;
 
     static class LoadModelArgs {
