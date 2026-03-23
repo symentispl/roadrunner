@@ -76,7 +76,7 @@ run = """
 [tasks."release:patch"]
 description = "Release next patch version (e.g. 1.0.2-SNAPSHOT → 1.0.2, next 1.0.3-SNAPSHOT)"
 run = """
-CURRENT=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+CURRENT=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout --raw-streams)
 BASE="${CURRENT%-SNAPSHOT}"
 MAJOR=$(echo "$BASE" | cut -d. -f1)
 MINOR=$(echo "$BASE" | cut -d. -f2)
@@ -90,7 +90,7 @@ PATCH=$(echo "$BASE" | cut -d. -f3)
 [tasks."release:minor"]
 description = "Release next minor version (e.g. 1.0.x-SNAPSHOT → 1.1.0, next 1.1.1-SNAPSHOT)"
 run = """
-CURRENT=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+CURRENT=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout --raw-streams)
 BASE="${CURRENT%-SNAPSHOT}"
 MAJOR=$(echo "$BASE" | cut -d. -f1)
 MINOR=$(echo "$BASE" | cut -d. -f2)
@@ -103,7 +103,7 @@ MINOR=$(echo "$BASE" | cut -d. -f2)
 [tasks."release:major"]
 description = "Release next major version (e.g. 1.x.x-SNAPSHOT → 2.0.0, next 2.0.1-SNAPSHOT)"
 run = """
-CURRENT=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+CURRENT=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout --raw-streams)
 BASE="${CURRENT%-SNAPSHOT}"
 MAJOR=$(echo "$BASE" | cut -d. -f1)
 ./mvnw -B release:prepare release:perform \
