@@ -13,7 +13,7 @@
         lovely thing that might come in the future (like distributed load testing, trend analysis, web preferences for
         tracing execution and so on).
     </description>
-    <url>https://bitbucket.org/kcrimson/roadrunner</url>
+    <url>https://github.com/symentispl/roadrunner/</url>
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
@@ -22,12 +22,12 @@
         </license>
     </licenses>
     <issueManagement>
-        <system>bitbucket</system>
-        <url>https://bitbucket.org/kcrimson/roadrunner/issues</url>
+        <system>github</system>
+        <url>https://github.com/symentispl/roadrunner/issues</url>
     </issueManagement>
     <ciManagement>
-        <system>jenkins</system>
-        <url>http://primitive.symentis.pl/job/roadrunner/</url>
+        <system>github</system>
+        <url>https://github.com/symentispl/roadrunner/actions</url>
     </ciManagement>
     <developers>
         <developer>
@@ -44,7 +44,7 @@
         <connection>scm:git:https://github.com/symentispl/roadrunner.git</connection>
         <developerConnection>scm:git:git@github.com:symentispl/roadrunner.git</developerConnection>
         <url>https://github.com/symentispl/roadrunner</url>
-        <tag>HEAD</tag>
+        <tag>master</tag>
     </scm>
     <distributionManagement>
         <repository>
