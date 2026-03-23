@@ -25,10 +25,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+
       - name: Release
-        uses: qcastel/github-actions-maven-release@v1.12
-        env:
-          JAVA_HOME: /usr/lib/jvm/java-25-openjdk/
+        uses: qcastel/github-actions-maven-release@master
         with:
           release-branch-name: "master"
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
