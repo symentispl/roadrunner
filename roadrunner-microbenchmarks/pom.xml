@@ -4,7 +4,7 @@
     <parent>
         <artifactId>roadrunner</artifactId>
         <groupId>io.roadrunner</groupId>
-        <version>0.0.2-SNAPSHOT</version>
+        <version>0.0.2</version>
     </parent>
 
     <artifactId>roadrunner-microbenchmarks</artifactId>
