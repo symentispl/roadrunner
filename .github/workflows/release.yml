@@ -3,14 +3,15 @@ name: Maven Release
 on:
   workflow_dispatch:
     inputs:
-      version-major:
-        description: 'Bump major version (e.g. 1.x.x → 2.0.0)'
-        required: false
-        default: 'false'
-      version-minor:
-        description: 'Bump minor version (e.g. 1.0.x → 1.1.0)'
-        required: false
-        default: 'false'
+      bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
@@ -23,16 +24,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Release
-        uses: qcastel/github-actions-maven-release@master
-        env:
-          JAVA_HOME: /usr/lib/jvm/java-25-openjdk/
+      # Writes ~/.m2/settings.xml with <server id="github"> for GitHub Packages.
+      # server-username/server-password are env var *names* resolved at Maven runtime.
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
         with:
-          release-branch-name: "master"
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+          server-id: github
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+
+      - name: Set up mise
+        uses: jdx/mise-action@v2
+
+      # Loads SSH_PRIVATE_KEY so maven-release-plugin can push [release] commits
+      # and the vX.Y.Z tag via the SSH developerConnection in pom.xml.
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          git-release-bot-name: "release-bot"
-          git-release-bot-email: "release-bot@users.noreply.github.com"
-          maven-args: "-DskipTests -Dmaven.javadoc.skip=true -Denforcer.skip=true"
-          maven-servers: '[{"id":"github","username":"${{ github.actor }}","password":"${{ secrets.GITHUB_TOKEN }}"}]'
-          version-major: ${{ github.event.inputs.version-major }}
-          version-minor: ${{ github.event.inputs.version-minor }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "release-bot"
+          git config user.email "release-bot@users.noreply.github.com"
+
+      - name: Run release
+        env:
+          MAVEN_USERNAME: ${{ github.actor }}
+          MAVEN_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: mise run release:${{ github.event.inputs.bump }}
