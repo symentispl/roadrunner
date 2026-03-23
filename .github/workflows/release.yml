@@ -1,0 +1,38 @@
+name: Maven Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version-major:
+        description: 'Bump major version (e.g. 1.x.x → 2.0.0)'
+        required: false
+        default: 'false'
+      version-minor:
+        description: 'Bump minor version (e.g. 1.0.x → 1.1.0)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Release
+        uses: qcastel/github-actions-maven-release@master
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-25-openjdk/
+        with:
+          release-branch-name: "master"
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          git-release-bot-name: "release-bot"
+          git-release-bot-email: "release-bot@users.noreply.github.com"
+          maven-args: "-DskipTests -Dmaven.javadoc.skip=true -Denforcer.skip=true"
+          maven-servers: '[{"id":"github","username":"${{ github.actor }}","password":"${{ secrets.GITHUB_TOKEN }}"}]'
+          version-major: ${{ github.event.inputs.version-major }}
+          version-minor: ${{ github.event.inputs.version-minor }}
