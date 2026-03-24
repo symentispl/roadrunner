@@ -88,7 +88,11 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
                         var correctedLatency = serviceTime + inQueueTime;
                         measurementControl.request(response.withScheduledStartTime(scheduledStartTime)
                                 .withLatency(correctedLatency));
-                    } catch (InterruptedException | ExecutionException e) {
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        measurementControl.error(e);
+                        break;
+                    } catch (ExecutionException e) {
                         measurementControl.error(e);
                     }
                 }
