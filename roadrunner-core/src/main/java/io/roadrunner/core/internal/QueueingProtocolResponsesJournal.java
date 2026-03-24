@@ -15,10 +15,7 @@
  */
 package io.roadrunner.core.internal;
 
-import io.roadrunner.api.events.Event;
-import io.roadrunner.api.events.EventListener;
-import io.roadrunner.api.events.ProtocolResponse;
-import io.roadrunner.api.events.UserEvent;
+import io.roadrunner.api.events.*;
 import io.roadrunner.api.measurments.EventReader;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
@@ -68,6 +65,12 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
                     throw new RuntimeException(e);
                 }
             }
+            // Drain any events that arrived after the last poll before stopping
+            responses.drainTo(batch);
+            if (!batch.isEmpty()) {
+                listener.onEvent(batch);
+                batch.clear();
+            }
             listener.onStop();
         });
     }
@@ -80,6 +83,10 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
         responses.offer(response);
     }
 
+    public void error(Exception e) {
+        responses.offer(new MeasurementError(System.nanoTime(), e));
+    }
+
     public void userExits(UserEvent.Exit event) {
         responses.offer(event);
     }
@@ -89,19 +96,14 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
         isRunning = false;
         executorService.shutdown();
         try {
-            executorService.awaitTermination(10, TimeUnit.SECONDS);
-            // Drain any remaining responses and notify listener
-            if (!responses.isEmpty()) {
-                var remainingEvents = new ArrayList<Event>();
-                responses.drainTo(remainingEvents);
-                if (!remainingEvents.isEmpty()) {
-                    LOG.warn("Processing {} remaining events before closing", remainingEvents.size());
-                    listener.onEvent(remainingEvents);
-                }
+            if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
+                LOG.warn("responses journal thread did not terminate within timeout, forcing shutdown");
+                executorService.shutdownNow();
             }
         } catch (InterruptedException e) {
-            //            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            LOG.warn("interrupted while waiting for responses journal thread to terminate, forcing shutdown");
+            Thread.currentThread().interrupt();
+            executorService.shutdownNow();
         }
     }
 

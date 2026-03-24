@@ -21,29 +21,61 @@ import io.roadrunner.core.Bootstrap;
 import io.roadrunner.protocols.vm.VmProtocolProvider;
 import java.io.IOException;
 import java.time.Duration;
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Level;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.*;
 
-@State(Scope.Benchmark)
 public class RoadrunnerBenchmarks {
 
-    private Roadrunner roadrunner;
-    private Protocol request;
+    @State(Scope.Benchmark)
+    public static class ClosedWorldBenchmark {
+        private Roadrunner roadrunner;
+        private VmProtocolProvider vmProtocol;
+        private Protocol request;
 
-    @Setup(Level.Trial)
-    public void setUp() throws IOException {
-        roadrunner = new Bootstrap().withConcurrency(1).withRequests(10).build();
-        var vmProtocol = VmProtocolProvider.from(Duration.ofMillis(100));
-        request = vmProtocol.newProtocol();
+        @Setup(Level.Trial)
+        public void setUp() throws IOException {
+            roadrunner = new Bootstrap().withClosedWorldModel(1, 10).build();
+            vmProtocol = VmProtocolProvider.from(Duration.ofMillis(100));
+            request = vmProtocol.newProtocol();
+        }
+
+        @TearDown(Level.Trial)
+        public void tearDown() throws Exception {
+            roadrunner.close();
+            vmProtocol.close();
+        }
+    }
+
+    @State(Scope.Benchmark)
+    public static class OpenWorldBenchmark {
+        private Roadrunner roadrunner;
+        private VmProtocolProvider vmProtocol;
+        private Protocol request;
+
+        @Setup(Level.Trial)
+        public void setUp() throws IOException {
+            roadrunner = new Bootstrap()
+                    .withOpenWorldModel(10, Duration.ofSeconds(1))
+                    .build();
+            vmProtocol = VmProtocolProvider.from(Duration.ofMillis(100));
+            request = vmProtocol.newProtocol();
+        }
+
+        @TearDown(Level.Trial)
+        public void tearDown() throws Exception {
+            roadrunner.close();
+            vmProtocol.close();
+        }
     }
 
     @Benchmark
     @Fork(value = 1, warmups = 1, jvmArgsAppend = "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn")
-    public void executeRoadrunnerVmProtocol() {
-        roadrunner.execute(() -> request::execute);
+    public void closedWorldBenchmark(ClosedWorldBenchmark benchmark) {
+        benchmark.roadrunner.execute(() -> benchmark.request::execute);
+    }
+
+    @Benchmark
+    @Fork(value = 1, warmups = 1, jvmArgsAppend = "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn")
+    public void openWorldBenchmark(OpenWorldBenchmark benchmark) {
+        benchmark.roadrunner.execute(() -> benchmark.request::execute);
     }
 }

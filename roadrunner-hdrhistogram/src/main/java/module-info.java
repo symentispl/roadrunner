@@ -13,13 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.core {
-    requires io.roadrunner.protocols.spi;
-    requires io.roadrunner.hdrhistogram;
-    requires io.roadrunner.output.csv;
-    requires io.roadrunner.api;
-    requires org.slf4j;
-    requires jdk.jfr;
-
-    exports io.roadrunner.core;
+module io.roadrunner.hdrhistogram {
+    // Wrapper module for HdrHistogram
+    // Moditect will add proper exports after shading during package phase
 }

@@ -18,8 +18,10 @@ package io.roadrunner.cli;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.protocols.spi.ProtocolProvider;
 import java.nio.file.Path;
+import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -28,11 +30,36 @@ class RunCommand {
 
     private static final Logger LOG = LoggerFactory.getLogger(RunCommand.class);
 
-    @Option(names = "-c", description = "Number of multiple requests to make at a time", required = true)
-    int concurrency;
+    @ArgGroup(multiplicity = "1", exclusive = true, heading = "Load model options:%n")
+    LoadModelArgs loadModel;
 
-    @Option(names = "-n", description = "Total number of multiple requests to make", required = true)
-    int numberOfRequests;
+    static class LoadModelArgs {
+        @ArgGroup(exclusive = false, heading = "Closed-world model options:%n")
+        ClosedWorldArgs closedWorld;
+
+        @ArgGroup(exclusive = false, heading = "Open-world model options:%n")
+        OpenWorldArgs openWorld;
+    }
+
+    static class ClosedWorldArgs {
+        @Option(names = "-c", description = "Number of concurrent users", required = true)
+        int concurrency;
+
+        @Option(names = "-n", description = "Total number of requests to make", required = true)
+        int numberOfRequests;
+    }
+
+    static class OpenWorldArgs {
+        @Option(names = "--rate", description = "Target request rate (requests/second)", required = true)
+        int rate;
+
+        @Option(
+                names = "--duration",
+                description = "Test duration (e.g. 30s, 5m, 2h)",
+                required = true,
+                converter = DurationConverter.class)
+        Duration duration;
+    }
 
     @Option(names = "-s", description = "Loadtests results output directory")
     Path outputDir;
@@ -41,13 +68,19 @@ class RunCommand {
     String report;
 
     public void run(ProtocolProvider protocolProvider) throws Exception {
-        var bootstrap = new Bootstrap();
-        try (var roadrunner = bootstrap
-                .withConcurrency(concurrency)
-                .withRequests(numberOfRequests)
-                .withMeasurementProgress(new ProgressBar(100, 0, numberOfRequests))
-                .withOutputDir(outputDir)
-                .build()) {
+        var bootstrap = new Bootstrap().withOutputDir(outputDir);
+
+        if (loadModel.closedWorld != null) {
+            bootstrap
+                    .withClosedWorldModel(loadModel.closedWorld.concurrency, loadModel.closedWorld.numberOfRequests)
+                    .withMeasurementProgress(new ProgressBar(100, 0, loadModel.closedWorld.numberOfRequests));
+        } else {
+            bootstrap
+                    .withOpenWorldModel(loadModel.openWorld.rate, loadModel.openWorld.duration)
+                    .withMeasurementProgress(new TimeBasedProgressBar(loadModel.openWorld.duration));
+        }
+
+        try (var roadrunner = bootstrap.build()) {
             LOG.debug("loading report generators");
             var reportOpts = report;
             if (reportOpts == null) {
