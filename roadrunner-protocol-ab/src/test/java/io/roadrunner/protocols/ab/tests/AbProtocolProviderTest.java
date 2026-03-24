@@ -26,7 +26,9 @@ import io.roadrunner.protocols.ab.AbProtocolProvider;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.nio.file.Files;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,10 +37,11 @@ class AbProtocolProviderTest {
 
     private HttpServer server;
     private final int PORT = 8000;
+    private final AtomicReference<String> lastMethod = new AtomicReference<>();
+    private final AtomicReference<String> lastContentType = new AtomicReference<>();
 
     @BeforeEach
     void setUp() throws IOException {
-        // Start the HTTP server
         server = HttpServer.create(new InetSocketAddress(PORT), 0);
         server.createContext("/test", new TestHandler());
         server.setExecutor(Executors.newFixedThreadPool(1));
@@ -48,6 +51,8 @@ class AbProtocolProviderTest {
     @AfterEach
     void tearDown() {
         server.stop(0);
+        lastMethod.set(null);
+        lastContentType.set(null);
     }
 
     @Test
@@ -56,17 +61,15 @@ class AbProtocolProviderTest {
             provider.uri = URI.create("http://localhost:" + PORT + "/test");
 
             var protocol = provider.newProtocol();
-
-            // Execute the protocol
             var event = protocol.execute();
 
-            // Verify it's a ProtocolResponse
             assertThat(event)
                     .asInstanceOf(type(ProtocolResponse.Response.class))
                     .satisfies(response -> {
                         assertThat(response.timestamp()).isGreaterThan(0);
                         assertThat(response.stopTime()).isGreaterThan(response.timestamp());
                     });
+            assertThat(lastMethod.get()).isEqualTo("GET");
         }
     }
 
@@ -75,13 +78,9 @@ class AbProtocolProviderTest {
         try (var provider = new AbProtocolProvider()) {
             provider.uri = URI.create("http://localhost:" + PORT + "/not-existing-endpoint");
 
-            // Create a protocol instance
             var protocol = provider.newProtocol();
-
-            // Execute the protocol
             var event = protocol.execute();
 
-            // Verify it's a ProtocolResponse
             assertThat(event).asInstanceOf(type(ProtocolResponse.Error.class)).satisfies(response -> {
                 assertThat(response.timestamp()).isGreaterThan(0);
                 assertThat(response.stopTime()).isGreaterThan(response.timestamp());
@@ -89,9 +88,82 @@ class AbProtocolProviderTest {
         }
     }
 
-    private static class TestHandler implements HttpHandler {
+    @Test
+    void postRequestWithFile() throws IOException {
+        var tempFile = Files.createTempFile("post-body", ".txt");
+        Files.writeString(tempFile, "hello=world");
+
+        try (var provider = new AbProtocolProvider()) {
+            provider.uri = URI.create("http://localhost:" + PORT + "/test");
+            provider.postFile = tempFile;
+
+            var event = provider.newProtocol().execute();
+
+            assertThat(event).isInstanceOf(ProtocolResponse.Response.class);
+            assertThat(lastMethod.get()).isEqualTo("POST");
+            assertThat(lastContentType.get()).isEqualTo("text/plain");
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
+    }
+
+    @Test
+    void putRequestWithFile() throws IOException {
+        var tempFile = Files.createTempFile("put-body", ".json");
+        Files.writeString(tempFile, """
+                {"key":"value"}""");
+
+        try (var provider = new AbProtocolProvider()) {
+            provider.uri = URI.create("http://localhost:" + PORT + "/test");
+            provider.putFile = tempFile;
+            provider.contentType = "application/json";
+
+            var event = provider.newProtocol().execute();
+
+            assertThat(event).isInstanceOf(ProtocolResponse.Response.class);
+            assertThat(lastMethod.get()).isEqualTo("PUT");
+            assertThat(lastContentType.get()).isEqualTo("application/json");
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
+    }
+
+    @Test
+    void customMethodDelete() {
+        try (var provider = new AbProtocolProvider()) {
+            provider.uri = URI.create("http://localhost:" + PORT + "/test");
+            provider.method = "DELETE";
+
+            var event = provider.newProtocol().execute();
+
+            assertThat(event).isInstanceOf(ProtocolResponse.Response.class);
+            assertThat(lastMethod.get()).isEqualTo("DELETE");
+        }
+    }
+
+    @Test
+    void customMethodHead() {
+        try (var provider = new AbProtocolProvider()) {
+            provider.uri = URI.create("http://localhost:" + PORT + "/test");
+            provider.method = "HEAD";
+
+            var event = provider.newProtocol().execute();
+
+            assertThat(event).isInstanceOf(ProtocolResponse.Response.class);
+            assertThat(lastMethod.get()).isEqualTo("HEAD");
+        }
+    }
+
+    private class TestHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            lastMethod.set(exchange.getRequestMethod());
+            var ct = exchange.getRequestHeaders().getFirst("Content-Type");
+            if (ct != null) {
+                lastContentType.set(ct);
+            }
+            // Consume request body
+            exchange.getRequestBody().readAllBytes();
             byte[] response = "Hello, Roadrunner!".getBytes();
             exchange.sendResponseHeaders(200, response.length);
             exchange.getResponseBody().write(response);
