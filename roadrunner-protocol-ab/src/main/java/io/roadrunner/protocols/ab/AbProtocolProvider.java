@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -47,11 +48,16 @@ public class AbProtocolProvider implements ProtocolProvider {
     @Option(names = "-m", description = "HTTP method (default: GET)", defaultValue = "GET")
     public String method = "GET";
 
-    @Option(names = "-p", description = "File containing data to POST")
-    public Path postFile;
+    @ArgGroup
+    public FileContent fileContent;
 
-    @Option(names = "-u", description = "File containing data to PUT")
-    public Path putFile;
+    public static class FileContent {
+        @Option(names = "-p", description = "File containing data to POST")
+        public Path postFile;
+
+        @Option(names = "-u", description = "File containing data to PUT")
+        public Path putFile;
+    }
 
     @Option(names = "-T", description = "Content-type header for POST/PUT data", defaultValue = "text/plain")
     public String contentType = "text/plain";
@@ -105,9 +111,9 @@ public class AbProtocolProvider implements ProtocolProvider {
         var httpClient = httpClientBuilder.build();
 
         var effectiveMethod = method;
-        if (postFile != null) {
+        if (fileContent != null && fileContent.postFile != null) {
             effectiveMethod = "POST";
-        } else if (putFile != null) {
+        } else if (fileContent != null && fileContent.putFile != null) {
             effectiveMethod = "PUT";
         } else if (method.equals("GET") && useHEAD) {
             effectiveMethod = "HEAD";
@@ -118,12 +124,12 @@ public class AbProtocolProvider implements ProtocolProvider {
                     case "GET" -> newBuilder().GET().build();
                     case "POST" ->
                         newBuilder()
-                                .POST(ofFilePublisher(postFile))
+                                .POST(ofFilePublisher(fileContent.postFile))
                                 .header("Content-Type", contentType)
                                 .build();
                     case "PUT" ->
                         newBuilder()
-                                .PUT(ofFilePublisher(putFile))
+                                .PUT(ofFilePublisher(fileContent.putFile))
                                 .header("Content-Type", contentType)
                                 .build();
                     case "HEAD" -> newBuilder().HEAD().build();
@@ -160,12 +166,12 @@ public class AbProtocolProvider implements ProtocolProvider {
         var builder = HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(timeout));
         Arrays.stream(Objects.requireNonNullElseGet(headers, () -> new String[0]))
                 .map(s -> {
-                    var z = s.split("=");
+                    var z = s.split(":");
                     if (z.length == 2) {
-                        return Map.entry(z[0], z[1]);
+                        return Map.entry(z[0].trim(), z[1].trim());
                     } else {
                         throw new IllegalArgumentException(
-                                "Invalid header: %s, expected format: key=value".formatted(s));
+                                "Invalid header: %s, expected format: 'key: value'".formatted(s));
                     }
                 })
                 .forEach((entry) -> builder.header(entry.getKey(), entry.getValue()));
@@ -177,7 +183,7 @@ public class AbProtocolProvider implements ProtocolProvider {
 
     public static class InetSocketAddressConverter implements CommandLine.ITypeConverter<InetSocketAddress> {
         @Override
-        public InetSocketAddress convert(String s) throws Exception {
+        public InetSocketAddress convert(String s) {
             var strings = s.split(":");
             if (strings.length == 1) {
                 return new InetSocketAddress(strings[0], 80);

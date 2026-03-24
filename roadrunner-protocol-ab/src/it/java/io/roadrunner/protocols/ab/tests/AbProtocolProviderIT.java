@@ -33,7 +33,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class AbProtocolProviderTest {
+class AbProtocolProviderIT {
 
     private HttpServer server;
     private final int PORT = 8000;
@@ -59,6 +59,7 @@ class AbProtocolProviderTest {
     void successfulRequest() {
         try (var provider = new AbProtocolProvider()) {
             provider.uri = URI.create("http://localhost:" + PORT + "/test");
+            provider.headers = new String[]{"Accept-Encoding: gzip"};
 
             var protocol = provider.newProtocol();
             var event = protocol.execute();
@@ -95,7 +96,8 @@ class AbProtocolProviderTest {
 
         try (var provider = new AbProtocolProvider()) {
             provider.uri = URI.create("http://localhost:" + PORT + "/test");
-            provider.postFile = tempFile;
+            provider.fileContent  = new AbProtocolProvider.FileContent();
+            provider.fileContent.postFile= tempFile;
 
             var event = provider.newProtocol().execute();
 
@@ -115,7 +117,8 @@ class AbProtocolProviderTest {
 
         try (var provider = new AbProtocolProvider()) {
             provider.uri = URI.create("http://localhost:" + PORT + "/test");
-            provider.putFile = tempFile;
+            provider.fileContent  = new AbProtocolProvider.FileContent();
+            provider.fileContent.putFile = tempFile;
             provider.contentType = "application/json";
 
             var event = provider.newProtocol().execute();
