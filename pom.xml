@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.roadrunner</groupId>
     <artifactId>roadrunner</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>roadrunner</name>
     <description>
@@ -43,7 +43,7 @@
         <connection>scm:git:https://github.com/symentispl/roadrunner.git</connection>
         <developerConnection>scm:git:git@github.com:symentispl/roadrunner.git</developerConnection>
         <url>https://github.com/symentispl/roadrunner</url>
-        <tag>v0.0.3</tag>
+        <tag>master</tag>
     </scm>
     <distributionManagement>
         <repository>
