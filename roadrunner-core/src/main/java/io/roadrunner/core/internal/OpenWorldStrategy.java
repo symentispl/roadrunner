@@ -59,7 +59,6 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
 
         LOG.info("Roadrunner open-world started: {} users/sec, duration {}", usersArrivalRate, testDuration);
 
-        var protocol = protocolFactory.get();
         var requestsExecutor = Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("roadrunner-users-").factory());
 
@@ -88,7 +87,7 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 }
                 var scheduledStartTime = nextScheduledStartTime;
                 phaser.register();
-                requestsExecutor.submit(new RoadrunnerUser(journal, protocol, scheduledStartTime, phaser));
+                requestsExecutor.submit(new RoadrunnerUser(journal, protocolFactory.get(), scheduledStartTime, phaser));
             }
         } finally {
             // Deregister the main party; when the last in-flight user also deregisters the phaser
