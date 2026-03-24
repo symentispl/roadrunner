@@ -96,9 +96,14 @@ final class QueueingProtocolResponsesJournal implements AutoCloseable {
         isRunning = false;
         executorService.shutdown();
         try {
-            executorService.awaitTermination(10, TimeUnit.SECONDS);
+            if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
+                LOG.warn("responses journal thread did not terminate within timeout, forcing shutdown");
+                executorService.shutdownNow();
+            }
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            LOG.warn("interrupted while waiting for responses journal thread to terminate, forcing shutdown");
+            Thread.currentThread().interrupt();
+            executorService.shutdownNow();
         }
     }
 
