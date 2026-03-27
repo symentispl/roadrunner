@@ -103,6 +103,11 @@
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-protocol-jdbc</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.roadrunner</groupId>
             <artifactId>roadrunner-reports-console</artifactId>
             <version>${project.version}</version>
             <exclusions>
