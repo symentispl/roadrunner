@@ -15,4 +15,10 @@
  */
 package io.roadrunner.samplers.spi;
 
-public interface ProtocolRequestOptions {}
+public interface SamplerPlugin<T extends SamplerProvider> {
+    String name();
+
+    T newSamplerProvider();
+
+    SamplerOptions<T> options();
+}
