@@ -15,16 +15,16 @@
  */
 package io.roadrunner.core.internal;
 
-import io.roadrunner.api.protocol.Protocol;
+import io.roadrunner.api.samplers.Sampler;
 import java.util.function.Supplier;
 
 public interface ExecutionStrategy {
     /**
-     * Execute the load model using the given protocol factory and journal.
+     * Execute the load model using the given sampler factory and journal.
      * Implementations are responsible for spawning virtual threads,
-     * recording UserEvent.Enter/Exit, submitting Protocol.execute() calls,
+     * recording UserEvent.Enter/Exit, submitting Sampler.execute() calls,
      * computing corrected latency, and blocking until the test is complete.
      */
-    void execute(Supplier<Protocol> protocolFactory, QueueingProtocolResponsesJournal journal)
+    void execute(Supplier<Sampler> samplerSupplier, QueueingSamplerResponsesJournal journal)
             throws InterruptedException;
 }

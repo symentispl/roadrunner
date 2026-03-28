@@ -35,15 +35,15 @@ final class ChartGeneratorProviders {
     }
 
     static ChartGeneratorProviders load() {
-        var protocols = ServiceLoader.load(ReportGeneratorProvider.class).stream()
+        var chartGenerators = ServiceLoader.load(ReportGeneratorProvider.class).stream()
                 .map(ServiceLoader.Provider::get)
-                .peek(protocolProvider -> LOG.info("found chart generator {}", protocolProvider.name()))
+                .peek(chartGenerator -> LOG.info("found chart generator {}", chartGenerator.name()))
                 .collect(toMap(ReportGeneratorProvider::name, identity()));
-        return new ChartGeneratorProviders(protocols);
+        return new ChartGeneratorProviders(chartGenerators);
     }
 
-    public ReportGeneratorProvider get(String protocolName) {
-        return chartGeneratorProviders.get(protocolName);
+    public ReportGeneratorProvider get(String chartGeneratorName) {
+        return chartGeneratorProviders.get(chartGeneratorName);
     }
 
     public Set<String> supportedReportFormats() {

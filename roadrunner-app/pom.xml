@@ -88,17 +88,17 @@
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocol-vm</artifactId>
+            <artifactId>roadrunner-sampler-vm</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocol-ab</artifactId>
+            <artifactId>roadrunner-sampler-ab</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocol-neo4j</artifactId>
+            <artifactId>roadrunner-sampler-neo4j</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

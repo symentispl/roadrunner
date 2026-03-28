@@ -18,11 +18,11 @@ package io.roadrunner.core.internal;
 import io.roadrunner.api.Roadrunner;
 import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
-import io.roadrunner.api.events.ProtocolResponse;
+import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
-import io.roadrunner.api.protocol.Protocol;
+import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.output.csv.CsvOutputEventListener;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -46,18 +46,18 @@ public class DefaultRoadrunner implements Roadrunner {
     }
 
     @Override
-    public Measurements execute(Supplier<Protocol> requestsFactory) {
+    public Measurements execute(Supplier<Sampler> samplerSupplier) {
         LOG.info("Roadrunner started");
         var csvOutputFile = outputDir.resolve("output.csv");
         LOG.info("writing responses to {}", csvOutputFile);
 
-        try (var responsesJournal = new QueueingProtocolResponsesJournal(new ProgressTrackingResponseListener(
+        try (var responsesJournal = new QueueingSamplerResponsesJournal(new ProgressTrackingResponseListener(
                         new CsvOutputEventListener(csvOutputFile), measurementProgress));
                 var gcProfiler = new GCProfiler()) {
             gcProfiler.start();
             responsesJournal.start();
             try {
-                strategy.execute(requestsFactory, responsesJournal);
+                strategy.execute(samplerSupplier, responsesJournal);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -68,9 +68,6 @@ public class DefaultRoadrunner implements Roadrunner {
     @Override
     public void close() {}
 
-    /**
-     * A decorator for ProtocolResponseListener that tracks progress
-     */
     private static class ProgressTrackingResponseListener implements EventListener {
         private final EventListener delegate;
         private final MeasurementProgress measurementProgress;
@@ -91,7 +88,7 @@ public class DefaultRoadrunner implements Roadrunner {
             delegate.onEvent(batch);
             // Update progress based on batch size
             var currentProcessed = processedRequests.addAndGet(
-                    batch.stream().filter(ProtocolResponse.class::isInstance).count());
+                    batch.stream().filter(SamplerResponse.class::isInstance).count());
             measurementProgress.update(currentProcessed);
         }
 

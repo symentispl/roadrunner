@@ -17,7 +17,7 @@ package io.roadrunner.reports.html.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.roadrunner.api.events.ProtocolResponse;
+import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.output.csv.CsvOutputEventReader;
 import io.roadrunner.reports.html.HtmlReportGenerator;
 import java.io.IOException;
@@ -57,8 +57,8 @@ class HtmlReportGeneratorTest {
 
     private static List<Pair<Long, Long>> getDatapoints(CsvOutputEventReader eventReader) {
         return StreamSupport.stream(eventReader.spliterator(), false)
-                .filter(ProtocolResponse.Response.class::isInstance)
-                .map(ProtocolResponse.Response.class::cast)
+                .filter(SamplerResponse.Response.class::isInstance)
+                .map(SamplerResponse.Response.class::cast)
                 .map(r -> Pair.of(r.timestamp(), r.latency()))
                 .toList();
     }

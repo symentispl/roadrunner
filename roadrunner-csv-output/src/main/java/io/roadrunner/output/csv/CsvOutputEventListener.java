@@ -17,7 +17,7 @@ package io.roadrunner.output.csv;
 
 import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
-import io.roadrunner.api.events.ProtocolResponse;
+import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
 import java.io.BufferedWriter;
@@ -56,8 +56,8 @@ public class CsvOutputEventListener implements EventListener {
         for (var response : batch) {
             var row =
                     switch (response) {
-                        case ProtocolResponse.Error e -> toRow(e, "KO");
-                        case ProtocolResponse.Response<?> e -> toRow(e, "OK");
+                        case SamplerResponse.Error e -> toRow(e, "KO");
+                        case SamplerResponse.Response<?> e -> toRow(e, "OK");
                         case UserEvent.Enter e -> "USER,%d,ENTER".formatted(e.timestamp());
                         case UserEvent.Exit e -> "USER,%d,EXIT".formatted(e.timestamp());
                         default -> throw new IllegalStateException("Unexpected value: " + response);
@@ -73,7 +73,7 @@ public class CsvOutputEventListener implements EventListener {
         }
     }
 
-    private String toRow(ProtocolResponse<?> response, String status) {
+    private String toRow(SamplerResponse<?> response, String status) {
         return "REQ,%d,%d,%d,%d,%s"
                 .formatted(
                         response.scheduledStartTime(),

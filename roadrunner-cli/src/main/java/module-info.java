@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 import io.roadrunner.api.reports.ReportGeneratorProvider;
-import io.roadrunner.protocols.spi.ProtocolProvider;
+import io.roadrunner.samplers.spi.SamplerProvider;
 
 module io.roadrunner.cli {
     requires io.roadrunner.api;
-    requires io.roadrunner.protocols.spi;
+    requires io.roadrunner.samplers.spi;
     requires io.roadrunner.core;
     requires org.slf4j;
     requires org.apache.commons.io;
     requires org.apache.commons.lang3;
     requires info.picocli;
 
-    uses ProtocolProvider;
+    uses SamplerProvider;
     uses ReportGeneratorProvider;
 
     opens io.roadrunner.cli to

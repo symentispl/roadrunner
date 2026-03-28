@@ -15,7 +15,7 @@
  */
 module io.roadrunner.api {
     exports io.roadrunner.api;
-    exports io.roadrunner.api.protocol;
+    exports io.roadrunner.api.samplers;
     exports io.roadrunner.api.metrics;
     exports io.roadrunner.api.measurments;
     exports io.roadrunner.api.reports;

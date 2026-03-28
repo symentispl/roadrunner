@@ -18,7 +18,7 @@ package io.roadrunner.reports.html;
 import static java.util.Objects.requireNonNull;
 
 import io.roadrunner.api.events.Event;
-import io.roadrunner.api.events.ProtocolResponse;
+import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.reports.ReportGenerator;
@@ -60,7 +60,7 @@ public class HtmlReportGenerator implements ReportGenerator {
             users.println(("const users = ["));
             for (Event event : eventReader) {
                 switch (event) {
-                    case ProtocolResponse<?> r: {
+                    case SamplerResponse<?> r: {
                         histogram.recordValue(r.latency());
                         datapoints.printf("\t{x : %d,y : %d},%n", r.timestamp(), r.latency());
                         break;
