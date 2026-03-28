@@ -17,38 +17,25 @@ package io.roadrunner.samplers.vm;
 
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.samplers.Sampler;
-import io.roadrunner.samplers.spi.SamplerProvider;
+import io.roadrunner.api.samplers.SamplerProvider;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
 
-@Command(
-        description = "In-VM sampler, used as baseline to calculate roadrunner overhead",
-        mixinStandardHelpOptions = true)
 public class VmSamplerProvider implements SamplerProvider {
 
     private final ExecutorService executorService;
+    private final long sleepTime;
 
-    @Option(names = "--sleep-time", description = "sleep time in ms", required = true)
-    long sleepTime;
-
-    public VmSamplerProvider() {
-        executorService = Executors.newCachedThreadPool();
+    public VmSamplerProvider(ExecutorService executorService, long sleepTime) {
+        this.executorService = executorService;
+        this.sleepTime = sleepTime;
     }
 
     // provided for testing
     public static VmSamplerProvider from(Duration sleepTime) {
-        var samplerProvider = new VmSamplerProvider();
-        samplerProvider.sleepTime = sleepTime.toMillis();
-        return samplerProvider;
-    }
-
-    @Override
-    public String name() {
-        return "vm";
+        return new VmSamplerProvider(Executors.newCachedThreadPool(), sleepTime.toMillis());
     }
 
     @Override

@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.samplers.neo4j.Neo4JSamplerProvider;
-import io.roadrunner.samplers.spi.SamplerProvider;
+import io.roadrunner.samplers.neo4j.Neo4jSamplerPlugin;
+import io.roadrunner.samplers.spi.SamplerPlugin;
 
 module io.roadrunner.samplers.neo4j {
     requires io.roadrunner.api;
@@ -24,8 +24,8 @@ module io.roadrunner.samplers.neo4j {
 
     exports io.roadrunner.samplers.neo4j;
 
-    provides SamplerProvider with
-            Neo4JSamplerProvider;
+    provides SamplerPlugin with
+            Neo4jSamplerPlugin;
 
     opens io.roadrunner.samplers.neo4j to
             info.picocli;

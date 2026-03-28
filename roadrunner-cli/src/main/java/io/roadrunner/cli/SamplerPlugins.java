@@ -18,7 +18,7 @@ package io.roadrunner.cli;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
-import io.roadrunner.samplers.spi.SamplerProvider;
+import io.roadrunner.samplers.spi.SamplerPlugin;
 import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
@@ -36,33 +36,33 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class SamplerProviders implements AutoCloseable {
+public final class SamplerPlugins implements AutoCloseable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SamplerProviders.class);
-    private final Map<String, SamplerProvider> samplerProviders;
+    private static final Logger LOG = LoggerFactory.getLogger(SamplerPlugins.class);
+    private final Map<String, SamplerPlugin> samplerPlugins;
 
-    private SamplerProviders(Map<String, SamplerProvider> samplerProviders) {
-        this.samplerProviders = samplerProviders;
+    private SamplerPlugins(Map<String, SamplerPlugin> samplerPlugins) {
+        this.samplerPlugins = samplerPlugins;
     }
 
-    public static SamplerProviders load(Preferences preferences) {
+    public static SamplerPlugins load(Preferences preferences) {
         LOG.debug("loading samplers providers");
         var samplers = Stream.of(
                         loadRuntimeProviders(),
                         loadPluginProviders(preferences),
                         loadPluginSubdirectoryProviders(preferences))
                 .flatMap(Function.identity())
-                .collect(toMap(SamplerProvider::name, Function.identity(), (first, second) -> {
+                .collect(toMap(SamplerPlugin::name, Function.identity(), (first, second) -> {
                     // When duplicate sampler providers are found, the first provider is prioritized.
                     // This ensures that runtime providers take precedence over plugin-based providers,
                     // as runtime providers are considered more stable and reliable.
                     LOG.debug("found duplicate sampler provider {} in runtime and plugin directories", second.name());
                     return first;
                 }));
-        return new SamplerProviders(samplers);
+        return new SamplerPlugins(samplers);
     }
 
-    private static Stream<SamplerProvider> loadPluginSubdirectoryProviders(Preferences preferences) {
+    private static Stream<SamplerPlugin> loadPluginSubdirectoryProviders(Preferences preferences) {
         var pluginsDir = preferences.pluginsDir();
 
         if (!Files.exists(pluginsDir)) {
@@ -73,51 +73,53 @@ public final class SamplerProviders implements AutoCloseable {
         LOG.debug("Scanning for sampler plugins in subdirectories of {}", pluginsDir);
 
         try {
-            return Files.list(pluginsDir).filter(Files::isDirectory).flatMap(subdir -> {
-                try (var jarFiles =
-                        Files.list(subdir).filter(path -> path.toString().endsWith(".jar"))) {
-                    var jarPaths = jarFiles.toList();
-                    if (jarPaths.isEmpty()) {
-                        LOG.debug("No jar files found in {}", subdir);
+            try (Stream<Path> paths = Files.list(pluginsDir)) {
+                return paths.filter(Files::isDirectory).flatMap(subdir -> {
+                    try (var jarFiles =
+                            Files.list(subdir).filter(path -> path.toString().endsWith(".jar"))) {
+                        var jarPaths = jarFiles.toList();
+                        if (jarPaths.isEmpty()) {
+                            LOG.debug("No jar files found in {}", subdir);
+                            return Stream.empty();
+                        }
+
+                        var urls = jarPaths.stream()
+                                .map(path -> {
+                                    try {
+                                        return path.toUri().toURL();
+                                    } catch (Exception e) {
+                                        LOG.error("Failed to convert path to URL: {}", path, e);
+                                        return null;
+                                    }
+                                })
+                                .filter(Objects::nonNull)
+                                .toArray(URL[]::new);
+
+                        var classLoader = new URLClassLoader(urls, ClassLoader.getSystemClassLoader());
+                        return ServiceLoader.load(SamplerPlugin.class, classLoader).stream()
+                                .map(ServiceLoader.Provider::get)
+                                .peek(plugin -> LOG.debug("Found sampler {} in directory {}", plugin.name(), subdir));
+
+                    } catch (IOException e) {
+                        LOG.error("Failed to scan directory {}: {}", subdir, e.getMessage(), e);
                         return Stream.empty();
                     }
-
-                    var urls = jarPaths.stream()
-                            .map(path -> {
-                                try {
-                                    return path.toUri().toURL();
-                                } catch (Exception e) {
-                                    LOG.error("Failed to convert path to URL: {}", path, e);
-                                    return null;
-                                }
-                            })
-                            .filter(Objects::nonNull)
-                            .toArray(URL[]::new);
-
-                    var classLoader = new URLClassLoader(urls, ClassLoader.getSystemClassLoader());
-                    return ServiceLoader.load(SamplerProvider.class, classLoader).stream()
-                            .map(ServiceLoader.Provider::get)
-                            .peek(provider -> LOG.debug("Found sampler {} in directory {}", provider.name(), subdir));
-
-                } catch (IOException e) {
-                    LOG.error("Failed to scan directory {}: {}", subdir, e.getMessage(), e);
-                    return Stream.empty();
-                }
-            });
+                });
+            }
         } catch (IOException e) {
             LOG.error("Failed to scan plugins directory: {}", e.getMessage(), e);
         }
         return Stream.empty();
     }
 
-    private static Stream<SamplerProvider> loadRuntimeProviders() {
+    private static Stream<SamplerPlugin> loadRuntimeProviders() {
         LOG.debug("Scanning for sampler plugins in runtime");
-        return ServiceLoader.load(SamplerProvider.class).stream()
+        return ServiceLoader.load(SamplerPlugin.class).stream()
                 .map(ServiceLoader.Provider::get)
-                .peek(samplerProvider -> LOG.debug("found sampler {} at runtime", samplerProvider.name()));
+                .peek(plugin -> LOG.debug("found sampler {} at runtime", plugin.name()));
     }
 
-    private static Stream<SamplerProvider> loadPluginProviders(Preferences preferences) {
+    private static Stream<SamplerPlugin> loadPluginProviders(Preferences preferences) {
         var pluginsDir = preferences.pluginsDir();
 
         if (!Files.exists(pluginsDir)) {
@@ -130,14 +132,14 @@ public final class SamplerProviders implements AutoCloseable {
         try {
             return Files.list(pluginsDir)
                     .filter(path -> path.toString().endsWith(".jar"))
-                    .flatMap(SamplerProviders::loadSamplerProviderFromModule);
+                    .flatMap(SamplerPlugins::loadSamplerProviderFromModule);
         } catch (IOException e) {
             LOG.error("Failed to scan plugins directory: {}", e.getMessage(), e);
         }
         return Stream.empty();
     }
 
-    private static Stream<SamplerProvider> loadSamplerProviderFromModule(Path jarPath) {
+    private static Stream<SamplerPlugin> loadSamplerProviderFromModule(Path jarPath) {
         try {
             LOG.debug("Loading plugins from {}", jarPath);
 
@@ -164,9 +166,9 @@ public final class SamplerProviders implements AutoCloseable {
             var scl = ClassLoader.getSystemClassLoader();
             var pluginLayer = parentLayer.defineModulesWithOneLoader(pluginConfiguration, scl);
 
-            return ServiceLoader.load(pluginLayer, SamplerProvider.class).stream()
+            return ServiceLoader.load(pluginLayer, SamplerPlugin.class).stream()
                     .map(ServiceLoader.Provider::get)
-                    .peek(provider -> LOG.debug("found sampler {} from plugin module", provider.name()));
+                    .peek(plugin -> LOG.debug("found sampler {} from plugin module", plugin.name()));
 
         } catch (Exception e) {
             LOG.error("Failed to load plugin from {}: {}", jarPath, e.getMessage(), e);
@@ -174,18 +176,18 @@ public final class SamplerProviders implements AutoCloseable {
         return Stream.empty();
     }
 
-    public Collection<SamplerProvider> all() {
-        return samplerProviders.values();
+    public Collection<SamplerPlugin> all() {
+        return samplerPlugins.values();
     }
 
     @Override
     public void close() {
         LOG.debug("closing samplers providers");
-        for (SamplerProvider samplerProvider : samplerProviders.values()) {
+        for (SamplerPlugin samplerPlugin : samplerPlugins.values()) {
             try {
-                samplerProvider.close();
+                samplerPlugin.close();
             } catch (Exception e) {
-                LOG.error("cannot close sampler provider {}", samplerProvider.name(), e);
+                LOG.error("cannot close sampler provider {}", samplerPlugin.name(), e);
             }
         }
     }

@@ -13,23 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.api.reports.ReportGeneratorProvider;
+package io.roadrunner.samplers.zero;
+
 import io.roadrunner.samplers.spi.SamplerPlugin;
 
-module io.roadrunner.cli {
-    requires io.roadrunner.api;
-    requires io.roadrunner.samplers.spi;
-    requires io.roadrunner.core;
-    requires org.slf4j;
-    requires org.apache.commons.io;
-    requires org.apache.commons.lang3;
-    requires info.picocli;
+public class ZeroSamplerPlugin implements SamplerPlugin<ZeroSamplerProvider, ZeroSamplerOptions> {
 
-    uses SamplerPlugin;
-    uses ReportGeneratorProvider;
+    public ZeroSamplerPlugin() {}
 
-    opens io.roadrunner.cli to
-            info.picocli;
+    @Override
+    public String name() {
+        return "zero";
+    }
 
-    exports io.roadrunner.cli;
+    @Override
+    public ZeroSamplerProvider newSamplerProvider(ZeroSamplerOptions options) {
+        return null;
+    }
+
+    @Override
+    public ZeroSamplerOptions options() {
+        return new ZeroSamplerOptions(this);
+    }
+
+    @Override
+    public void close() {}
 }

@@ -18,15 +18,14 @@ package io.roadrunner.cli;
 import static picocli.CommandLine.Model.CommandSpec;
 import static picocli.CommandLine.Model.CommandSpec.forAnnotatedObject;
 
-import io.roadrunner.samplers.spi.SamplerProvider;
+import io.roadrunner.samplers.spi.SamplerOptions;
 import java.nio.file.Paths;
 import picocli.CommandLine;
 
 public class Main {
 
     static void main(String[] args) throws Exception {
-        try (var samplerProviders =
-                SamplerProviders.load(new Preferences(Paths.get(System.getProperty("user.home"))))) {
+        try (var samplerProviders = SamplerPlugins.load(new Preferences(Paths.get(System.getProperty("user.home"))))) {
 
             var commandSpec = createCommandSpec(samplerProviders);
 
@@ -68,22 +67,24 @@ public class Main {
                         samplerSubCmd.commandSpec().commandLine().usage(System.out);
                         return;
                     }
-                    if (samplerSubCmd.commandSpec().userObject() instanceof SamplerProvider samplerProvider) {
-                        runCommand.run(samplerProvider);
+                    if (samplerSubCmd.commandSpec().userObject() instanceof SamplerOptions samplerOptions) {
+                        try (var samplerProvider = samplerOptions.samplerProvider()) {
+                            runCommand.run(samplerProvider);
+                        }
                     }
                 }
             }
         }
     }
 
-    private static CommandSpec createCommandSpec(SamplerProviders samplerProviders) {
+    private static CommandSpec createCommandSpec(SamplerPlugins samplerPlugins) {
         var commandSpec = CommandSpec.create();
         commandSpec.versionProvider(() -> new String[] {"Roadrunner, a simplistic load generator"});
         var runCommand = forAnnotatedObject(new RunCommand()).mixinStandardHelpOptions(true);
 
-        for (var samplerProvider : samplerProviders.all()) {
+        for (var samplerPlugin : samplerPlugins.all()) {
             runCommand
-                    .addSubcommand(samplerProvider.name(), forAnnotatedObject(samplerProvider))
+                    .addSubcommand(samplerPlugin.name(), forAnnotatedObject(samplerPlugin.options()))
                     .mixinStandardHelpOptions(true);
         }
 

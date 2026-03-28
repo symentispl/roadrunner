@@ -15,8 +15,8 @@
  */
 package io.roadrunner.cli;
 
+import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.core.Bootstrap;
-import io.roadrunner.samplers.spi.SamplerProvider;
 import java.nio.file.Path;
 import java.time.Duration;
 import org.slf4j.Logger;
@@ -95,7 +95,7 @@ class RunCommand {
                                 reportConfiguration.reportFormat(), chartGeneratorProviders.supportedReportFormats()));
             }
             var chartGenerator = reportGeneratorProvider.create(reportConfiguration.configuration());
-            var measurements = roadrunner.execute(() -> samplerProvider.newSampler());
+            var measurements = roadrunner.execute(samplerProvider);
             chartGenerator.generateChart(measurements.samplesReader());
         }
     }

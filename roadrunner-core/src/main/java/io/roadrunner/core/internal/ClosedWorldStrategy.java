@@ -18,13 +18,13 @@ package io.roadrunner.core.internal;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.samplers.Sampler;
+import io.roadrunner.api.samplers.SamplerProvider;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 
 public final class ClosedWorldStrategy implements ExecutionStrategy {
 
@@ -47,9 +47,9 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
     }
 
     @Override
-    public void execute(Supplier<Sampler> samplerSupplier, QueueingSamplerResponsesJournal journal)
+    public void execute(SamplerProvider samplerProvider, QueueingSamplerResponsesJournal journal)
             throws InterruptedException {
-        var delayedSupplier = new DelayedSupplier<>(samplerSupplier, () -> 20L);
+        var delayedSupplier = new DelayedSupplier<>(samplerProvider::newSampler, () -> 20L);
         try (var usersExecutor = Executors.newThreadPerTaskExecutor(
                         Thread.ofVirtual().name("roadrunner-users-").factory());
                 var requestsExecutor = Executors.newCachedThreadPool(

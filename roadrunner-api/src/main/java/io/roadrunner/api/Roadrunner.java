@@ -16,9 +16,8 @@
 package io.roadrunner.api;
 
 import io.roadrunner.api.measurments.Measurements;
-import io.roadrunner.api.samplers.Sampler;
-import java.util.function.Supplier;
+import io.roadrunner.api.samplers.SamplerProvider;
 
 public interface Roadrunner extends AutoCloseable {
-    Measurements execute(Supplier<Sampler> samplerSupplier);
+    Measurements execute(SamplerProvider samplerProvider);
 }

@@ -22,12 +22,11 @@ import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
-import io.roadrunner.api.samplers.Sampler;
+import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.output.csv.CsvOutputEventListener;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +45,7 @@ public class DefaultRoadrunner implements Roadrunner {
     }
 
     @Override
-    public Measurements execute(Supplier<Sampler> samplerSupplier) {
+    public Measurements execute(SamplerProvider samplerSupplier) {
         LOG.info("Roadrunner started");
         var csvOutputFile = outputDir.resolve("output.csv");
         LOG.info("writing responses to {}", csvOutputFile);

@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.samplers.spi.SamplerProvider;
-import io.roadrunner.samplers.vm.VmSamplerProvider;
+import io.roadrunner.samplers.spi.SamplerPlugin;
+import io.roadrunner.samplers.vm.VmSamplerPlugin;
 
 module io.roadrunner.samplers.vm {
     requires io.roadrunner.api;
     requires io.roadrunner.samplers.spi;
     requires info.picocli;
 
-    provides SamplerProvider with
-            VmSamplerProvider;
+    provides SamplerPlugin with
+            VmSamplerPlugin;
 
     opens io.roadrunner.samplers.vm to
             info.picocli;

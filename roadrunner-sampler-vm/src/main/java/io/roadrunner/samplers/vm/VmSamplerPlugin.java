@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.api.reports.ReportGeneratorProvider;
-import io.roadrunner.samplers.spi.SamplerPlugin;
+package io.roadrunner.samplers.vm;
 
-module io.roadrunner.cli {
-    requires io.roadrunner.api;
-    requires io.roadrunner.samplers.spi;
-    requires io.roadrunner.core;
-    requires org.slf4j;
-    requires org.apache.commons.io;
-    requires org.apache.commons.lang3;
-    requires info.picocli;
+import java.util.concurrent.Executors;
 
-    uses SamplerPlugin;
-    uses ReportGeneratorProvider;
+public class VmSamplerPlugin implements io.roadrunner.samplers.spi.SamplerPlugin<VmSamplerProvider, VmSamplerOptions> {
+    @Override
+    public String name() {
+        return "vm";
+    }
 
-    opens io.roadrunner.cli to
-            info.picocli;
+    @Override
+    public VmSamplerProvider newSamplerProvider(VmSamplerOptions options) {
+        return new VmSamplerProvider(Executors.newCachedThreadPool(), options.sleepTime);
+    }
 
-    exports io.roadrunner.cli;
+    @Override
+    public VmSamplerOptions options() {
+        return new VmSamplerOptions(this);
+    }
 }

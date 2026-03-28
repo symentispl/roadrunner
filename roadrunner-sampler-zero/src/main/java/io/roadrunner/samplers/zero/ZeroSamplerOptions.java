@@ -13,12 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.samplers.spi;
+package io.roadrunner.samplers.zero;
 
-import io.roadrunner.api.samplers.Sampler;
+import io.roadrunner.samplers.spi.SamplerOptions;
+import picocli.CommandLine.Command;
 
-public interface SamplerProvider extends AutoCloseable {
-    String name();
+@Command(description = "Zero sampler")
+public class ZeroSamplerOptions implements SamplerOptions<ZeroSamplerProvider> {
+    private final ZeroSamplerPlugin zeroSamplerPlugin;
 
-    Sampler newSampler();
+    public ZeroSamplerOptions(ZeroSamplerPlugin zeroSamplerPlugin) {
+        this.zeroSamplerPlugin = zeroSamplerPlugin;
+    }
+
+    @Override
+    public ZeroSamplerProvider samplerProvider() {
+        return zeroSamplerPlugin.newSamplerProvider(this);
+    }
 }

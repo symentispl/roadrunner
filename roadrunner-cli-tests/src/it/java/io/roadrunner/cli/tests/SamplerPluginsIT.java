@@ -18,19 +18,19 @@ package io.roadrunner.cli.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.roadrunner.cli.Preferences;
-import io.roadrunner.cli.SamplerProviders;
+import io.roadrunner.cli.SamplerPlugins;
 
 import java.io.IOException;
 import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
 
-class SamplerProvidersIT {
+class SamplerPluginsIT {
 
     @Test
     void loadSamplerProviders() throws IOException {
         var preferences = new Preferences(Paths.get("target/roadrunner-cli-tests-plugins"));
-        try (var providers = SamplerProviders.load(preferences)) {
+        try (var providers = SamplerPlugins.load(preferences)) {
             assertThat(providers.all()).satisfiesExactlyInAnyOrder(
                     provider -> assertThat(provider.name()).isEqualTo("ab"),
                     provider -> assertThat(provider.name()).isEqualTo("neo4j"),

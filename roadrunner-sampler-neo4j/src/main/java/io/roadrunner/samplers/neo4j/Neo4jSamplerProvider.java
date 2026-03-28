@@ -13,24 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.samplers.zero;
+package io.roadrunner.samplers.neo4j;
 
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
+import org.neo4j.driver.Driver;
 
-public class ZeroSamplerProvider implements SamplerProvider {
+public class Neo4jSamplerProvider implements SamplerProvider {
 
-    public ZeroSamplerProvider() {}
+    private final Driver driver;
+    private final String query;
+
+    public Neo4jSamplerProvider(Driver driver, String query) {
+        this.driver = driver;
+        this.query = query;
+    }
 
     @Override
     public Sampler newSampler() {
         return () -> {
-            var nanoTime = System.nanoTime();
-            return SamplerResponse.empty(nanoTime, nanoTime);
+            var startTime = System.nanoTime();
+            try (var session = driver.session()) {
+                session.run(query);
+                return SamplerResponse.response(startTime, System.nanoTime(), "OK");
+            } catch (Exception e) {
+                return SamplerResponse.error(startTime, System.nanoTime(), e.getMessage());
+            }
         };
     }
 
     @Override
-    public void close() {}
+    public void close() {
+        driver.close();
+    }
 }

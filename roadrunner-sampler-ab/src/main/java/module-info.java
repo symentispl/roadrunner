@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.samplers.ab.AbSamplerProvider;
-import io.roadrunner.samplers.spi.SamplerProvider;
+import io.roadrunner.samplers.ab.AbSamplerPlugin;
+import io.roadrunner.samplers.spi.SamplerPlugin;
 
 module io.roadrunner.samplers.ab {
     requires java.net.http;
@@ -24,8 +24,8 @@ module io.roadrunner.samplers.ab {
 
     exports io.roadrunner.samplers.ab;
 
-    provides SamplerProvider with
-            AbSamplerProvider;
+    provides SamplerPlugin with
+            AbSamplerPlugin;
 
     opens io.roadrunner.samplers.ab to
             info.picocli;

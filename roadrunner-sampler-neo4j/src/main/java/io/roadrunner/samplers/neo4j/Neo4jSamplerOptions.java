@@ -15,57 +15,34 @@
  */
 package io.roadrunner.samplers.neo4j;
 
-import io.roadrunner.api.events.SamplerResponse;
-import io.roadrunner.api.samplers.Sampler;
-import io.roadrunner.samplers.spi.SamplerProvider;
+import io.roadrunner.samplers.spi.SamplerOptions;
 import java.net.URI;
-import org.neo4j.driver.AuthTokens;
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.GraphDatabase;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Command(description = "Neo4j sampler")
-public class Neo4JSamplerProvider implements SamplerProvider {
-
+public class Neo4jSamplerOptions implements SamplerOptions<Neo4jSamplerProvider> {
     @Parameters(paramLabel = "query", description = "Neo4j query")
-    private String query;
+    public String query;
 
     @Option(names = "--uri", description = "Neo4j database uri", required = true)
-    private URI uri;
+    public URI uri;
 
     @Option(names = "--username", description = "Neo4j database username", required = true)
-    private String username;
+    public String username;
 
     @Option(names = "--password", description = "Neo4j database password", required = true)
-    private String password;
+    public String password;
 
-    private Driver driver;
+    private final Neo4jSamplerPlugin neo4jSamplerPlugin;
 
-    @Override
-    public String name() {
-        return "neo4j";
+    public Neo4jSamplerOptions(Neo4jSamplerPlugin neo4jSamplerPlugin) {
+        this.neo4jSamplerPlugin = neo4jSamplerPlugin;
     }
 
     @Override
-    public Sampler newSampler() {
-        driver = GraphDatabase.driver(uri, AuthTokens.basic(username, password));
-        return () -> {
-            var startTime = System.nanoTime();
-            try (var session = driver.session()) {
-                session.run(query);
-                return SamplerResponse.response(startTime, System.nanoTime(), "OK");
-            } catch (Exception e) {
-                return SamplerResponse.error(startTime, System.nanoTime(), e.getMessage());
-            }
-        };
-    }
-
-    @Override
-    public void close() {
-        if (driver != null) {
-            driver.close();
-        }
+    public Neo4jSamplerProvider samplerProvider() {
+        return neo4jSamplerPlugin.newSamplerProvider(this);
     }
 }

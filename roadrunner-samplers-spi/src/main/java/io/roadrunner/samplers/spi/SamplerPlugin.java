@@ -15,10 +15,14 @@
  */
 package io.roadrunner.samplers.spi;
 
-public interface SamplerPlugin<T extends SamplerProvider> {
+import io.roadrunner.api.samplers.SamplerProvider;
+
+public interface SamplerPlugin<T extends SamplerProvider, O extends SamplerOptions<T>> extends AutoCloseable {
     String name();
 
-    T newSamplerProvider();
+    T newSamplerProvider(O options);
 
-    SamplerOptions<T> options();
+    O options();
+
+    default void close() {}
 }

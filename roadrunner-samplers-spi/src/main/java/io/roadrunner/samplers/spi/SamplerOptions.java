@@ -15,7 +15,11 @@
  */
 package io.roadrunner.samplers.spi;
 
+import io.roadrunner.api.samplers.SamplerProvider;
+
 /**
  * Marker interface for sampler options.
  */
-public interface SamplerOptions<T extends SamplerProvider> {}
+public interface SamplerOptions<T extends SamplerProvider> {
+    T samplerProvider();
+}

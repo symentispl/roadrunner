@@ -22,7 +22,9 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import io.roadrunner.api.events.SamplerResponse;
-import io.roadrunner.samplers.ab.AbSamplerProvider;
+import io.roadrunner.samplers.ab.AbSamplerOptions;
+import io.roadrunner.samplers.ab.AbSamplerPlugin;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -58,35 +60,33 @@ class AbSamplerProviderIT {
 
     @Test
     void successfulRequest() {
-        try (var provider = new AbSamplerProvider()) {
-            provider.uri = URI.create("http://localhost:" + PORT + "/test");
-            provider.headers = new String[]{"Accept-Encoding: gzip"};
-
-            var sampler = provider.newSampler();
-            var event = sampler.execute();
-
-            assertThat(event)
-                    .asInstanceOf(type(SamplerResponse.Response.class))
-                    .satisfies(response -> {
-                        assertThat(response.timestamp()).isGreaterThan(0);
-                        assertThat(response.stopTime()).isGreaterThan(response.timestamp());
-                    });
-            assertThat(lastMethod.get()).isEqualTo("GET");
+        try (var plugin = new AbSamplerPlugin()) {
+            var options = plugin.options();
+            options.uri = URI.create("http://localhost:" + PORT + "/test");
+            options.headers = new String[]{"Accept-Encoding: gzip"};
+            try (var provider = plugin.newSamplerProvider(options); var sampler = provider.newSampler()) {
+                var event = sampler.execute();
+                assertThat(event).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(response -> {
+                    assertThat(response.timestamp()).isGreaterThan(0);
+                    assertThat(response.stopTime()).isGreaterThan(response.timestamp());
+                });
+                assertThat(lastMethod.get()).isEqualTo("GET");
+            }
         }
     }
 
     @Test
     void errorRequest() {
-        try (var provider = new AbSamplerProvider()) {
-            provider.uri = URI.create("http://localhost:" + PORT + "/not-existing-endpoint");
-
-            var sampler = provider.newSampler();
-            var event = sampler.execute();
-
-            assertThat(event).asInstanceOf(type(SamplerResponse.Error.class)).satisfies(response -> {
-                assertThat(response.timestamp()).isGreaterThan(0);
-                assertThat(response.stopTime()).isGreaterThan(response.timestamp());
-            });
+        try (var plugin = new AbSamplerPlugin()) {
+            var options = plugin.options();
+            options.uri = URI.create("http://localhost:" + PORT + "/not-existing-endpoint");
+            try (var provider = plugin.newSamplerProvider(options); var sampler = provider.newSampler()) {
+                var event = sampler.execute();
+                assertThat(event).asInstanceOf(type(SamplerResponse.Error.class)).satisfies(response -> {
+                    assertThat(response.timestamp()).isGreaterThan(0);
+                    assertThat(response.stopTime()).isGreaterThan(response.timestamp());
+                });
+            }
         }
     }
 
@@ -95,18 +95,20 @@ class AbSamplerProviderIT {
         var tempFile = Files.createTempFile("post-body", ".txt");
         Files.writeString(tempFile, "hello=world");
 
-        try (var provider = new AbSamplerProvider()) {
-            provider.uri = URI.create("http://localhost:" + PORT + "/test");
-            provider.fileContent  = new AbSamplerProvider.FileContent();
-            provider.fileContent.postFile= tempFile;
+        try (var plugin = new AbSamplerPlugin()) {
+            var options = plugin.options();
+            options.uri = URI.create("http://localhost:" + PORT + "/test");
+            options.fileContent = new AbSamplerOptions.FileContent();
+            options.fileContent.postFile = tempFile;
+            try (var provider = plugin.newSamplerProvider(options); var sampler = provider.newSampler()) {
+                var event = sampler.execute();
 
-            var event = provider.newSampler().execute();
-
-            assertThat(event).isInstanceOf(SamplerResponse.Response.class);
-            assertThat(lastMethod.get()).isEqualTo("POST");
-            assertThat(lastContentType.get()).isEqualTo("text/plain");
-        } finally {
-            Files.deleteIfExists(tempFile);
+                assertThat(event).isInstanceOf(SamplerResponse.Response.class);
+                assertThat(lastMethod.get()).isEqualTo("POST");
+                assertThat(lastContentType.get()).isEqualTo("text/plain");
+            } finally {
+                Files.deleteIfExists(tempFile);
+            }
         }
     }
 
@@ -115,46 +117,52 @@ class AbSamplerProviderIT {
         var tempFile = Files.createTempFile("put-body", ".json");
         Files.writeString(tempFile, """
                 {"key":"value"}""");
-
-        try (var provider = new AbSamplerProvider()) {
-            provider.uri = URI.create("http://localhost:" + PORT + "/test");
-            provider.fileContent  = new AbSamplerProvider.FileContent();
-            provider.fileContent.putFile = tempFile;
-            provider.contentType = "application/json";
-
-            var event = provider.newSampler().execute();
-
-            assertThat(event).isInstanceOf(SamplerResponse.Response.class);
-            assertThat(lastMethod.get()).isEqualTo("PUT");
-            assertThat(lastContentType.get()).isEqualTo("application/json");
-        } finally {
-            Files.deleteIfExists(tempFile);
+        try (var plugin = new AbSamplerPlugin()) {
+            var options = plugin.options();
+            options.uri = URI.create("http://localhost:" + PORT + "/test");
+            options.fileContent = new AbSamplerOptions.FileContent();
+            options.fileContent.putFile = tempFile;
+            options.contentType = "application/json";
+            try (var provider = plugin.newSamplerProvider(options);
+                 var sampler = provider.newSampler()) {
+                var event = sampler.execute();
+                assertThat(event).isInstanceOf(SamplerResponse.Response.class);
+                assertThat(lastMethod.get()).isEqualTo("PUT");
+                assertThat(lastContentType.get()).isEqualTo("application/json");
+            } finally {
+                Files.deleteIfExists(tempFile);
+            }
         }
     }
 
     @Test
     void customMethodDelete() {
-        try (var provider = new AbSamplerProvider()) {
-            provider.uri = URI.create("http://localhost:" + PORT + "/test");
-            provider.method = "DELETE";
-
-            var event = provider.newSampler().execute();
-
-            assertThat(event).isInstanceOf(SamplerResponse.Response.class);
-            assertThat(lastMethod.get()).isEqualTo("DELETE");
+        try (var plugin = new AbSamplerPlugin()) {
+            var options = plugin.options();
+            options.uri = URI.create("http://localhost:" + PORT + "/test");
+            options.method = "DELETE";
+            try (var provider = plugin.newSamplerProvider(options);
+                 var sampler = provider.newSampler()) {
+                var event = sampler.execute();
+                assertThat(event).isInstanceOf(SamplerResponse.Response.class);
+                assertThat(lastMethod.get()).isEqualTo("DELETE");
+            }
         }
     }
 
     @Test
     void customMethodHead() {
-        try (var provider = new AbSamplerProvider()) {
-            provider.uri = URI.create("http://localhost:" + PORT + "/test");
-            provider.method = "HEAD";
+        try (var plugin = new AbSamplerPlugin()) {
+            var options = plugin.options();
 
-            var event = provider.newSampler().execute();
-
-            assertThat(event).isInstanceOf(SamplerResponse.Response.class);
-            assertThat(lastMethod.get()).isEqualTo("HEAD");
+            options.uri = URI.create("http://localhost:" + PORT + "/test");
+            options.method = "HEAD";
+            try (var provider = plugin.newSamplerProvider(options);
+                 var sampler = provider.newSampler()) {
+                var event = sampler.execute();
+                assertThat(event).isInstanceOf(SamplerResponse.Response.class);
+                assertThat(lastMethod.get()).isEqualTo("HEAD");
+            }
         }
     }
 

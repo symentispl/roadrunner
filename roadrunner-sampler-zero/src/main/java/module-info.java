@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.samplers.spi.SamplerProvider;
-import io.roadrunner.samplers.zero.ZeroSamplerProvider;
+import io.roadrunner.samplers.spi.SamplerPlugin;
+import io.roadrunner.samplers.zero.ZeroSamplerPlugin;
 
 module io.roadrunner.samplers.zero {
     requires io.roadrunner.api;
@@ -23,8 +23,8 @@ module io.roadrunner.samplers.zero {
 
     exports io.roadrunner.samplers.zero;
 
-    provides SamplerProvider with
-            ZeroSamplerProvider;
+    provides SamplerPlugin with
+            ZeroSamplerPlugin;
 
     opens io.roadrunner.samplers.zero to
             info.picocli;
