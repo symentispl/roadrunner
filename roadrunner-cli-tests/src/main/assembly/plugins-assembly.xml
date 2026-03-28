@@ -28,9 +28,9 @@
         <dependencySet>
             <outputDirectory>.roadrunner/plugins/protocols</outputDirectory>
             <includes>
-                <include>io.roadrunner:roadrunner-protocol-ab</include>
-                <include>io.roadrunner:roadrunner-protocol-vm</include>
-                <include>io.roadrunner:roadrunner-protocol-neo4j</include>
+                <include>io.roadrunner:roadrunner-sampler-ab</include>
+                <include>io.roadrunner:roadrunner-sampler-vm</include>
+                <include>io.roadrunner:roadrunner-sampler-neo4j</include>
             </includes>
             <useProjectArtifact>false</useProjectArtifact>
             <scope>provided</scope>
