@@ -15,14 +15,10 @@
  */
 package io.roadrunner.app.tests;
 
-import jdk.jfr.Enabled;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -33,15 +29,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class RoadrunnerAppIT {
 
     @Test
-    void listProtocols() throws Exception {
+    void cliVersion() throws Exception {
         Files.setPosixFilePermissions(Path.of("target/roadrunner-app/bin/roadrunner"), PosixFilePermissions.fromString("rwxr-xr-x"));
-        var process = new ProcessBuilder("target/roadrunner-app/bin/roadrunner")
+        var process = new ProcessBuilder("target/roadrunner-app/bin/roadrunner", "-V")
                 .redirectErrorStream(true)
-                .redirectInput(ProcessBuilder.Redirect.INHERIT)
-                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
                 .start();
         var exitCode = process.waitFor();
-        new BufferedReader(new InputStreamReader(process.getInputStream())).lines().forEach(System.out::println);
         assertThat(exitCode).isEqualTo(0);
+        assertThat(process.inputReader().lines()).containsExactly("Roadrunner, a simplistic load generator");
     }
 }
