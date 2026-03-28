@@ -13,31 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.protocols.zero;
-
-import io.roadrunner.api.events.ProtocolResponse;
-import io.roadrunner.api.protocol.Protocol;
+import io.roadrunner.protocols.neo4j.Neo4jProtocolProvider;
 import io.roadrunner.protocols.spi.ProtocolProvider;
-import picocli.CommandLine.Command;
 
-@Command(description = "Zero protocol")
-public class ZeroProtocolProvider implements ProtocolProvider {
+module io.roadrunner.protocol.neo4j {
+    requires java.net.http;
+    requires io.roadrunner.api;
+    requires io.roadrunner.protocols.spi;
+    requires info.picocli;
+    requires org.neo4j.driver;
 
-    public ZeroProtocolProvider() {}
+    exports io.roadrunner.protocols.neo4j;
 
-    @Override
-    public String name() {
-        return "zero";
-    }
+    provides ProtocolProvider with
+            Neo4jProtocolProvider;
 
-    @Override
-    public Protocol newProtocol() {
-        return () -> {
-            var nanoTime = System.nanoTime();
-            return ProtocolResponse.empty(nanoTime, nanoTime);
-        };
-    }
-
-    @Override
-    public void close() {}
+    opens io.roadrunner.protocols.neo4j to
+            info.picocli;
 }

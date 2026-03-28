@@ -13,11 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.protocols.vm;
+import io.roadrunner.protocols.neo4j.ZeroProtocolProvider;
+import io.roadrunner.protocols.spi.ProtocolProvider;
 
-final class None {
+module io.roadrunner.protocol.zero {
+    requires java.net.http;
+    requires io.roadrunner.api;
+    requires io.roadrunner.protocols.spi;
+    requires info.picocli;
 
-    static final None NONE = new None();
+    exports io.roadrunner.protocols.neo4j;
 
-    private None() {}
+    provides ProtocolProvider with
+            ZeroProtocolProvider;
+
+    opens io.roadrunner.protocols.neo4j to
+            info.picocli;
 }

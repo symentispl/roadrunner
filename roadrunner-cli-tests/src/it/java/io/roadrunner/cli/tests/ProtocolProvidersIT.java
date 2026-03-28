@@ -23,6 +23,7 @@ import io.roadrunner.cli.ProtocolProviders;
 import java.io.IOException;
 import java.nio.file.Paths;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class ProtocolProvidersIT {
@@ -33,8 +34,8 @@ class ProtocolProvidersIT {
         try (var providers = ProtocolProviders.load(preferences)) {
             assertThat(providers.all()).satisfiesExactlyInAnyOrder(
                     provider -> assertThat(provider.name()).isEqualTo("ab"),
-                    provider -> assertThat(provider.name()).isEqualTo("vm"),
-                    provider -> assertThat(provider.name()).isEqualTo("zero")
+                    provider -> assertThat(provider.name()).isEqualTo("neo4j"),
+                    provider -> assertThat(provider.name()).isEqualTo("vm")
             );
         }
     }

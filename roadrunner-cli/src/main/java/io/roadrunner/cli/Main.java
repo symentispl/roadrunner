@@ -24,7 +24,7 @@ import picocli.CommandLine;
 
 public class Main {
 
-    public static void main(String[] args) throws Exception {
+    static void main(String[] args) throws Exception {
         try (var protocolProviders =
                 ProtocolProviders.load(new Preferences(Paths.get(System.getProperty("user.home"))))) {
 
@@ -47,6 +47,11 @@ public class Main {
 
             if (parseResult.isUsageHelpRequested()) {
                 commandLine.usage(System.out);
+                return;
+            }
+
+            if (parseResult.isVersionHelpRequested()) {
+                commandLine.printVersionHelp(System.out);
                 return;
             }
 
@@ -73,7 +78,7 @@ public class Main {
 
     private static CommandSpec createCommandSpec(ProtocolProviders protocolProviders) {
         var commandSpec = CommandSpec.create();
-
+        commandSpec.versionProvider(() -> new String[] {"Roadrunner, a simplistic load generator"});
         var runCommand = forAnnotatedObject(new RunCommand()).mixinStandardHelpOptions(true);
 
         for (var protocolProvider : protocolProviders.all()) {
