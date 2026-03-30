@@ -38,16 +38,19 @@ public class AbSamplerProvider implements SamplerProvider {
     public Sampler newSampler() {
         var request = requestSupplier.get();
         return () -> {
+            var startTime = System.nanoTime();
             try {
-                var startTime = System.nanoTime();
                 var httpResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
                 var stopTime = System.nanoTime();
                 if (httpResponse.statusCode() == 200) {
                     return SamplerResponse.response(startTime, stopTime, httpResponse);
                 } else {
-                    return SamplerResponse.error(startTime, stopTime, "");
+                    return SamplerResponse.error(startTime, stopTime, Integer.toString(httpResponse.statusCode()));
                 }
-            } catch (IOException | InterruptedException e) {
+            } catch (IOException e) {
+                return SamplerResponse.error(startTime, System.nanoTime(), e.getMessage());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             }
         };

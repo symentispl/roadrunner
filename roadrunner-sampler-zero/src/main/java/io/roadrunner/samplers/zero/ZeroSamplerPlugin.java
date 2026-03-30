@@ -28,7 +28,7 @@ public class ZeroSamplerPlugin implements SamplerPlugin<ZeroSamplerProvider, Zer
 
     @Override
     public ZeroSamplerProvider newSamplerProvider(ZeroSamplerOptions options) {
-        return null;
+        return new ZeroSamplerProvider();
     }
 
     @Override

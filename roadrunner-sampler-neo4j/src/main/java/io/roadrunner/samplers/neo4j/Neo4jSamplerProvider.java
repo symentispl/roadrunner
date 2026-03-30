@@ -35,8 +35,8 @@ public class Neo4jSamplerProvider implements SamplerProvider {
         return () -> {
             var startTime = System.nanoTime();
             try (var session = driver.session()) {
-                session.run(query);
-                return SamplerResponse.response(startTime, System.nanoTime(), "OK");
+                var result = session.run(query);
+                return SamplerResponse.response(startTime, System.nanoTime(), result.consume());
             } catch (Exception e) {
                 return SamplerResponse.error(startTime, System.nanoTime(), e.getMessage());
             }

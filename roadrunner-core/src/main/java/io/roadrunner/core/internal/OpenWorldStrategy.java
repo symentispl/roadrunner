@@ -91,13 +91,13 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                         new RoadrunnerUser(journal, samplerSupplier.newSampler(), scheduledStartTime, phaser));
             }
         } finally {
-            // Deregister the main party; when the last in-flight user also deregisters the phaser
+            // Deregister the main party; when the last in-flight user also deregisters, the phaser
             // terminates and awaitAdvance returns, giving us a precise "all users have left"
             // barrier without an arbitrary timeout.
             int phase = phaser.arriveAndDeregister();
             phaser.awaitAdvance(phase);
             requestsExecutor.shutdown();
-            requestsExecutor.awaitTermination(1, TimeUnit.SECONDS);
+            requestsExecutor.awaitTermination(1, TimeUnit.MINUTES);
         }
 
         LOG.info("Roadrunner open-world stopped");
