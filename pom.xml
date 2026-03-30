@@ -138,6 +138,9 @@
                         <exclude>*.yaml</exclude>
                         <exclude>*.md</exclude>
                         <exclude>*.tmpl</exclude>
+                        <!-- LatencyUtils sources carry CC0 (public domain) headers — preserve as-is -->
+                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/internal/**</exclude>
+                        <exclude>roadrunner-latency-utils/src/test/java/io/roadrunner/latency/internal/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -348,6 +351,7 @@
         <module>roadrunner-protocol-zero</module>
         <module>roadrunner-api</module>
         <module>roadrunner-hdrhistogram</module>
+        <module>roadrunner-latency-utils</module>
         <module>roadrunner-microbenchmarks</module>
         <module>roadrunner-reports-html</module>
         <module>roadrunner-reports-console</module>
