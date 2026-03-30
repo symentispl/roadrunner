@@ -3,7 +3,7 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.internal;
+package io.roadrunner.latency.utils;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -12,13 +12,9 @@ import org.junit.jupiter.api.Test;
 
 
 /**
- * JUnit test for {@link io.roadrunner.latency.internal.TimeCappedMovingAverageIntervalEstimator}
+ * JUnit test for {@link io.roadrunner.latency.utils.TimeCappedMovingAverageIntervalEstimator}
  */
 public class TimeCappedMovingAverageIntervalEstimatorTest {
-
-    static {
-        System.setProperty("LatencyUtils.useActualTime", "false");
-    }
 
     @Test
     public void testWindowBehavior() throws Exception {
@@ -162,59 +158,61 @@ public class TimeCappedMovingAverageIntervalEstimatorTest {
 
     @Test
     public void testToString() throws Exception {
+        SimulatedTimeServices time = new SimulatedTimeServices();
         MyArtificialPauseDetector pauseDetector = new MyArtificialPauseDetector();
         TimeCappedMovingAverageIntervalEstimator estimator = new TimeCappedMovingAverageIntervalEstimator(1024, 10000000000L /* 10 sec */, pauseDetector);
 
         for (int i = 0; i < 2000; i++) {
-            estimator.recordInterval(TimeServices.nanoTime());
-            TimeServices.moveTimeForwardMsec(1);
+            estimator.recordInterval(time.nanoTime());
+            time.moveTimeForwardMsec(1);
             TimeUnit.NANOSECONDS.sleep(100000L); // let things propagate
         }
 
-        TimeServices.moveTimeForwardMsec(1000);
+        time.moveTimeForwardMsec(1000);
         TimeUnit.NANOSECONDS.sleep(1000000L); // let things propagate
 
-        estimator.getEstimatedInterval(TimeServices.nanoTime());
+        estimator.getEstimatedInterval(time.nanoTime());
         System.out.print("toString():\n" + estimator);
     }
 
     @Test
     public void testIntervalWithSleeping() throws Exception {
+        SimulatedTimeServices time = new SimulatedTimeServices();
         MyArtificialPauseDetector pauseDetector = new MyArtificialPauseDetector();
         TimeCappedMovingAverageIntervalEstimator estimator = new TimeCappedMovingAverageIntervalEstimator(128, 10000000000L /* 10 sec */, pauseDetector);
 
         System.out.println("\nTesting Interval Estimator with sleeps:\n");
-        long startTime = TimeServices.nanoTime();
+        long startTime = time.nanoTime();
         for (int i = 0; i < 5; i++) {
-            estimator.getEstimatedInterval(TimeServices.nanoTime());
-            System.out.println("Interval estimator " + (TimeServices.nanoTime() - startTime) + " in:\n" +
+            estimator.getEstimatedInterval(time.nanoTime());
+            System.out.println("Interval estimator " + (time.nanoTime() - startTime) + " in:\n" +
                     estimator.toString());
             if (i > 1) {
-                assertEquals(1000000, estimator.getEstimatedInterval(TimeServices.nanoTime()), "expected interval to be 1000000");
+                assertEquals(1000000, estimator.getEstimatedInterval(time.nanoTime()), "expected interval to be 1000000");
             }
             for (int j = 0; j < 64; j++) {
-                TimeServices.moveTimeForwardMsec(1);
+                time.moveTimeForwardMsec(1);
                 TimeUnit.NANOSECONDS.sleep(100000L); // let things propagate
-                estimator.recordInterval(TimeServices.nanoTime());
+                estimator.recordInterval(time.nanoTime());
             }
         }
-        long pauseStartTime = TimeServices.nanoTime();
-        TimeServices.moveTimeForwardMsec(500);
+        long pauseStartTime = time.nanoTime();
+        time.moveTimeForwardMsec(500);
         TimeUnit.NANOSECONDS.sleep(1000000L); // let things propagate
-        long pauseEndTime = TimeServices.nanoTime();
+        long pauseEndTime = time.nanoTime();
         pauseDetector.recordPause(pauseEndTime - pauseStartTime, pauseEndTime);
         System.out.println("\n*** Paused for " + (pauseEndTime - pauseStartTime) + " nsec\n");
         for (int i = 0; i < 5; i++) {
-            estimator.getEstimatedInterval(TimeServices.nanoTime());
-            System.out.println("Interval estimator " + (TimeServices.nanoTime() - startTime) + " in:\n" +
+            estimator.getEstimatedInterval(time.nanoTime());
+            System.out.println("Interval estimator " + (time.nanoTime() - startTime) + " in:\n" +
                     estimator.toString());
             if (i > 1) {
-                assertEquals(2000000, estimator.getEstimatedInterval(TimeServices.nanoTime()), "expected interval to be 2000000");
+                assertEquals(2000000, estimator.getEstimatedInterval(time.nanoTime()), "expected interval to be 2000000");
             }
             for (int j = 0; j < 64; j++) {
-                TimeServices.moveTimeForwardMsec(2);
+                time.moveTimeForwardMsec(2);
                 TimeUnit.NANOSECONDS.sleep(100000L); // let things propagate
-                estimator.recordInterval(TimeServices.nanoTime());
+                estimator.recordInterval(time.nanoTime());
             }
         }
 

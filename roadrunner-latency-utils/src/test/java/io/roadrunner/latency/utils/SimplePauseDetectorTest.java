@@ -3,7 +3,7 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.internal;
+package io.roadrunner.latency.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,26 +20,23 @@ import org.junit.jupiter.api.Test;
  */
 public class SimplePauseDetectorTest {
 
-    static {
-        System.setProperty("LatencyUtils.useActualTime", "false");
-    }
-
     @Test
     public void testSimpleSleepingPauseDetectorDetects() throws Exception {
         AtomicLong detectedPauseLength = new AtomicLong(0);
+        SimulatedTimeServices time = new SimulatedTimeServices();
 
         SimplePauseDetector pauseDetector = new SimplePauseDetector(1000000L /* 1 msec sleep */,
-                10000000L /* 10 msec reporting threshold */, 3 /* thread count */, true /* verbose */);
+                10000000L /* 10 msec reporting threshold */, 3 /* thread count */, true /* verbose */, time);
 
-        TimeServices.moveTimeForward(5000L);
+        time.moveTimeForward(5000L);
         TimeUnit.NANOSECONDS.sleep(1000000L); // Make sure things have some time to propagate
-        TimeServices.moveTimeForward(5000L);
+        time.moveTimeForward(5000L);
         TimeUnit.NANOSECONDS.sleep(1000000L); // Make sure things have some time to propagate
-        TimeServices.moveTimeForward(1000000L);
+        time.moveTimeForward(1000000L);
         TimeUnit.NANOSECONDS.sleep(1000000L); // Make sure things have some time to propagate
-        TimeServices.moveTimeForward(1000000L);
+        time.moveTimeForward(1000000L);
         TimeUnit.NANOSECONDS.sleep(1000000L); // Make sure things have some time to propagate
-        TimeServices.moveTimeForward(2000000L);
+        time.moveTimeForward(2000000L);
         TimeUnit.NANOSECONDS.sleep(1000000L); // Make sure things have some time to propagate
 
         System.out.println("Starting 1 msec, 3 thread sleeping pause detector:");
@@ -80,9 +77,7 @@ public class SimplePauseDetectorTest {
             Thread.sleep(100);
 
             assertTrue(detectedPauseLength.get() > 10000000L, "detected pause needs to be at least 10 msec, but was " + detectedPauseLength.get() / 1000000.0 + " msec instead.");
-            if (!TimeServices.useActualTime) {
-                assertEquals(19000000, detectedPauseLength.get(), "detected pause count should be 19000000");
-            }
+            assertEquals(19000000, detectedPauseLength.get(), "detected pause count should be 19000000");
         } catch (InterruptedException ex) {
 
         }
@@ -94,19 +89,20 @@ public class SimplePauseDetectorTest {
     @Test
     public void testSimpleShortSleepingPauseDetectorDetects() throws Exception {
         AtomicLong detectedPauseLength = new AtomicLong(0);
+        SimulatedTimeServices time = new SimulatedTimeServices();
 
         SimplePauseDetector pauseDetector = new SimplePauseDetector(20000L /* 20 usec sleep */,
-                2000000L /* 2 msec reporting threshold */, 3 /* thread count */, true /* verbose */);
+                2000000L /* 2 msec reporting threshold */, 3 /* thread count */, true /* verbose */, time);
 
-        TimeServices.moveTimeForward(5000L);
+        time.moveTimeForward(5000L);
         TimeUnit.NANOSECONDS.sleep(1000000L); // Make sure things have some time to propagate
-        TimeServices.moveTimeForward(20000L);
+        time.moveTimeForward(20000L);
         TimeUnit.NANOSECONDS.sleep(1000000L); // Make sure things have some time to propagate
-        TimeServices.moveTimeForward(20000L);
+        time.moveTimeForward(20000L);
         TimeUnit.NANOSECONDS.sleep(1000000L); // Make sure things have some time to propagate
-        TimeServices.moveTimeForward(1000000L);
+        time.moveTimeForward(1000000L);
         TimeUnit.NANOSECONDS.sleep(1000000L); // Make sure things have some time to propagate
-        TimeServices.moveTimeForward(2000000L);
+        time.moveTimeForward(2000000L);
         TimeUnit.NANOSECONDS.sleep(1000000L); // Make sure things have some time to propagate
 
         System.out.println("Starting 250 usec, 3 thread sleeping pause detector:");
@@ -132,11 +128,9 @@ public class SimplePauseDetectorTest {
 
             assertTrue(detectedPauseLength.get() > 2000000L, "detected pause needs to be at least 2000 usec, but was " + detectedPauseLength.get() / 1000000.0 + " msec instead.");
 
-            if (!TimeServices.useActualTime) {
-                long detected = detectedPauseLength.get();
-                assertTrue(detected >= 2000000L, "detected pause should be >= 2000000ns but was " + detected);
-                assertTrue(detected <= 3000000L, "detected pause should be <= 3000000ns but was " + detected);
-            }
+            long detected = detectedPauseLength.get();
+            assertTrue(detected >= 2000000L, "detected pause should be >= 2000000ns but was " + detected);
+            assertTrue(detected <= 3000000L, "detected pause should be <= 3000000ns but was " + detected);
 
         } catch (InterruptedException ex) {
 
@@ -149,15 +143,16 @@ public class SimplePauseDetectorTest {
     @Test
     public void testSimpleSpinningPauseDetectorDetects() throws Exception {
         AtomicLong detectedPauseLength = new AtomicLong(0);
+        SimulatedTimeServices time = new SimulatedTimeServices();
 
         SimplePauseDetector pauseDetector = new SimplePauseDetector(0 /* 0 msec sleep */,
-                50000L /* 250 usec reporting threshold */, 3 /* thread count */, true /* verbose */);
+                50000L /* 250 usec reporting threshold */, 3 /* thread count */, true /* verbose */, time);
 
-        TimeServices.moveTimeForward(5000L);
+        time.moveTimeForward(5000L);
         TimeUnit.NANOSECONDS.sleep(1000000L); // Make sure things have some time to propagate
-        TimeServices.moveTimeForward(5000L);
+        time.moveTimeForward(5000L);
         TimeUnit.NANOSECONDS.sleep(1000000L); // Make sure things have some time to propagate
-        TimeServices.moveTimeForward(50000L);
+        time.moveTimeForward(50000L);
         TimeUnit.NANOSECONDS.sleep(1000000L); // Make sure things have some time to propagate
 
         System.out.println("Starting 50 usec, 3 thread spinning pause detector:");
@@ -184,12 +179,10 @@ public class SimplePauseDetectorTest {
             assertTrue(detectedPauseLength.get() > 50000L, "detected pause needs to be at least 50 usec, but was " + detectedPauseLength.get() / 1000000.0 + " msec instead.");
 
 
-            if (!TimeServices.useActualTime) {
-                long detected = detectedPauseLength.get();
-                assertTrue(detected >= 50000L, "detected pause should be >= 50000ns but was " + detected);
-                // Optional upper bound if you want:
-                assertTrue(detected <= 150000L, "detected pause should be <= 150000ns but was " + detected);
-            }
+            long detected = detectedPauseLength.get();
+            assertTrue(detected >= 50000L, "detected pause should be >= 50000ns but was " + detected);
+            // Optional upper bound if you want:
+            assertTrue(detected <= 150000L, "detected pause should be <= 150000ns but was " + detected);
         } catch (InterruptedException ex) {
 
         }

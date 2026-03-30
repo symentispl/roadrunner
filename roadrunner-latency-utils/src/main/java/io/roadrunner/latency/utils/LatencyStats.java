@@ -3,7 +3,7 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.internal;
+package io.roadrunner.latency.utils;
 
 import io.roadrunner.shaded.hdrhistogram.AtomicHistogram;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
@@ -30,7 +30,7 @@ import java.lang.ref.WeakReference;
  * and {@link #getLatestUncorrectedIntervalHistogramInto} calls.
  * <p>
  * LatencyStats objects can be instantiated either directly via the provided constructors, or by
- * using the fluent API builder supported by {@link io.roadrunner.latency.internal.LatencyStats.Builder}.
+ * using the fluent API builder supported by {@link io.roadrunner.latency.utils.LatencyStats.Builder}.
  *
  * <h3>Correction Technique</h3>
  * In addition to tracking the raw latency recordings provided via {@link #recordLatency}, each
@@ -48,15 +48,15 @@ import java.lang.ref.WeakReference;
  * A configurable default pause detector is (by default) shared between LatencyStats instances
  * that are not provided with a specific pause detector at instantiation. If the default pause
  * detector is not explicitly set, it will itself default to creating (and starting) a single
- * instance of {@link io.roadrunner.latency.internal.SimplePauseDetector}, which uses consensus observation
+ * instance of {@link io.roadrunner.latency.utils.SimplePauseDetector}, which uses consensus observation
  * of a pause across multiple observing threads as a detection technique.
  * <p>
- * Custom pause detectors can be provided (by subclassing {@link io.roadrunner.latency.internal.PauseDetector}).
+ * Custom pause detectors can be provided (by subclassing {@link io.roadrunner.latency.utils.PauseDetector}).
  * E.g. a pause detector that pauses GC log output rather than directly measuring observations
  * can be constructed. A custom pause detector can be especially useful in situations where a
  * stall in the operation and latency measurement of an application's is known and detectable
  * by the application level, but would not be detectable as a process-wide stall in execution
- * (which {@link io.roadrunner.latency.internal.SimplePauseDetector} is built to detect).
+ * (which {@link io.roadrunner.latency.utils.SimplePauseDetector} is built to detect).
  * <p>
  * Interval estimation is done by using a time-capped moving window average estimator, with
  * the expected interval computed to be the average of measurement intervals within the window
@@ -68,8 +68,10 @@ import java.lang.ref.WeakReference;
  */
 public class LatencyStats {
     private static Builder defaultBuilder = new Builder();
-    private static final TimeServices.ScheduledExecutor latencyStatsScheduledExecutor = new TimeServices.ScheduledExecutor();
     private static volatile PauseDetector defaultPauseDetector;
+
+    private final TimeServices timeServices;
+    private final TimeServices.ScheduledExecutor latencyStatsScheduledExecutor;
 
     // All times and time units are in nanoseconds
 
@@ -129,7 +131,8 @@ public class LatencyStats {
                 defaultBuilder.numberOfSignificantValueDigits,
                 defaultBuilder.intervalEstimatorWindowLength,
                 defaultBuilder.intervalEstimatorTimeCap,
-                defaultBuilder.pauseDetector
+                defaultBuilder.pauseDetector,
+                defaultBuilder.timeServices
         );
     }
 
@@ -147,7 +150,8 @@ public class LatencyStats {
                         final int numberOfSignificantValueDigits,
                         final int intervalEstimatorWindowLength,
                         final long intervalEstimatorTimeCap,
-                        final PauseDetector pauseDetector) {
+                        final PauseDetector pauseDetector,
+                        final TimeServices timeServices) {
 
         if (pauseDetector == null) {
             // Lazy Initialization: Avoid double-checked locking race by using a local variable reading from a volatile:
@@ -168,6 +172,8 @@ public class LatencyStats {
             this.pauseDetector = pauseDetector;
         }
 
+        this.timeServices = timeServices;
+        this.latencyStatsScheduledExecutor = timeServices.newScheduledExecutor();
         this.lowestTrackableLatency = lowestTrackableLatency;
         this.highestTrackableLatency = highestTrackableLatency;
         this.numberOfSignificantValueDigits = numberOfSignificantValueDigits;
@@ -345,6 +351,7 @@ public class LatencyStats {
         private int intervalEstimatorWindowLength = 1024;
         private long intervalEstimatorTimeCap = 10000000000L; /* 10 sec */
         private PauseDetector pauseDetector = null;
+        private TimeServices timeServices = RealTimeServices.INSTANCE;
 
         public static Builder create() {
             return new Builder();
@@ -388,6 +395,10 @@ public class LatencyStats {
             return this;
         }
 
+        public Builder timeServices(TimeServices timeServices) {
+            this.timeServices = timeServices;
+            return this;
+        }
 
         public LatencyStats build() {
             return new LatencyStats(lowestTrackableLatency,
@@ -395,7 +406,8 @@ public class LatencyStats {
                     numberOfSignificantValueDigits,
                     intervalEstimatorWindowLength,
                     intervalEstimatorTimeCap,
-                    pauseDetector);
+                    pauseDetector,
+                    timeServices);
         }
     }
 
@@ -416,7 +428,7 @@ public class LatencyStats {
     }
 
     private void trackRecordingInterval() {
-        long now = TimeServices.nanoTime();
+        long now = timeServices.nanoTime();
         intervalEstimator.recordInterval(now);
     }
 

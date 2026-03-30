@@ -9,7 +9,7 @@
  * <p>
  * The LatencyUtils package includes useful utilities for tracking latencies. Especially in common in-process
  * recording scenarios, which can exhibit significant coordinated omission sensitivity without proper handling.
- * {@link io.roadrunner.latency.internal.LatencyStats} instances are used to track recorded latencies in the common
+ * {@link io.roadrunner.latency.utils.LatencyStats} instances are used to track recorded latencies in the common
  * use case the often follow this pattern:
  *
  * <pre>
@@ -52,15 +52,15 @@
  * </ul>
  * 
  * <h3>The Solution</h3>
- * The {@link io.roadrunner.latency.internal.LatencyStats} class is designed for simple, drop-in use as a latency behavior
+ * The {@link io.roadrunner.latency.utils.LatencyStats} class is designed for simple, drop-in use as a latency behavior
  * recording object in common in-process latency recording and tracking situations. LatencyStats includes
  * under-the-hood tracking and correction of pause effects, compensating for coordinated omission. It does
  * so by using pluggable pause detectors and interval estimators that together with
- * {@link io.roadrunner.latency.internal.LatencyStats} will transparently produce corrected histogram values for the
+ * {@link io.roadrunner.latency.utils.LatencyStats} will transparently produce corrected histogram values for the
  * recorded latency behavior.
  *
  */
 
-package io.roadrunner.latency.internal;
+package io.roadrunner.latency.utils;
 
 

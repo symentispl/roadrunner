@@ -3,7 +3,7 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.internal;
+package io.roadrunner.latency.utils;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,12 +24,13 @@ public class SimplePauseDetector extends PauseDetector {
 
     private final long sleepInterval;
     private final long pauseNotificationThreshold;
+    private final TimeServices timeServices;
     final AtomicLong consensusLatestTime = new AtomicLong();
 
     private volatile long stallThreadMask = 0;
     private volatile long stopThreadMask = 0;
 
-    private final SimplePauseDetectorThread detectors[];
+    private final SimplePauseDetectorThread[] detectors;
 
     private boolean verbose;
 
@@ -41,7 +42,7 @@ public class SimplePauseDetector extends PauseDetector {
      */
     public SimplePauseDetector(long sleepInterval, long pauseNotificationThreshold,
                                int numberOfDetectorThreads) {
-        this(sleepInterval, pauseNotificationThreshold, numberOfDetectorThreads, false);
+        this(sleepInterval, pauseNotificationThreshold, numberOfDetectorThreads, false, RealTimeServices.INSTANCE);
     }
 
     /**
@@ -53,9 +54,23 @@ public class SimplePauseDetector extends PauseDetector {
      */
     public SimplePauseDetector(long sleepInterval, long pauseNotificationThreshold,
                                int numberOfDetectorThreads, boolean verbose) {
+        this(sleepInterval, pauseNotificationThreshold, numberOfDetectorThreads, verbose, RealTimeServices.INSTANCE);
+    }
+
+    /**
+     * Creates a SimplePauseDetector
+     * @param sleepInterval sleep interval used by detector threads
+     * @param pauseNotificationThreshold minimum threshold for reporting detected pauses
+     * @param numberOfDetectorThreads number of consensus detector threads to use
+     * @param verbose provide verbose output when pauses are detected
+     * @param timeServices time services implementation to use
+     */
+    public SimplePauseDetector(long sleepInterval, long pauseNotificationThreshold,
+                               int numberOfDetectorThreads, boolean verbose, TimeServices timeServices) {
         this.sleepInterval = sleepInterval;
         this.pauseNotificationThreshold = pauseNotificationThreshold;
         this.verbose = verbose;
+        this.timeServices = timeServices;
         detectors = new SimplePauseDetectorThread[numberOfDetectorThreads];
         for (int i = 0 ; i < numberOfDetectorThreads; i++) {
             detectors[i] = new SimplePauseDetectorThread(i);
@@ -69,7 +84,7 @@ public class SimplePauseDetector extends PauseDetector {
      */
     public SimplePauseDetector() {
         this(DEFAULT_SleepInterval, DEFAULT_PauseNotificationThreshold,
-                DEFAULT_NumberOfDetectorThreads, DEFAULT_Verbose);
+                DEFAULT_NumberOfDetectorThreads, DEFAULT_Verbose, RealTimeServices.INSTANCE);
     }
 
     public void setVerbose(boolean verbose) {
@@ -98,7 +113,7 @@ public class SimplePauseDetector extends PauseDetector {
                 throw new IllegalArgumentException("threadNumber must be between 0 and 63.");
             }
             this.threadNumber = threadNumber;
-            this.threadMask = 1 << threadNumber;
+            this.threadMask = 1L << threadNumber;
             this.setDaemon(true);
             this.setName("SimplePauseDetectorThread_" + threadNumber);
         }
@@ -107,13 +122,13 @@ public class SimplePauseDetector extends PauseDetector {
             long shortestObservedTimeAroundLoop = Long.MAX_VALUE;
 
             observedLasUpdateTime = consensusLatestTime.get();
-            long now = TimeServices.nanoTime();
+            long now = timeServices.nanoTime();
             long prevNow = now;
             consensusLatestTime.compareAndSet(observedLasUpdateTime, now);
 
             while ((stopThreadMask & threadMask) == 0) {
                 if (sleepInterval != 0) {
-                    TimeServices.sleepNanos(sleepInterval);
+                    timeServices.sleepNanos(sleepInterval);
                 }
 
                 // This is ***TEST FUNCTIONALITY***: Spin as long as we are externally asked to stall:
@@ -121,7 +136,7 @@ public class SimplePauseDetector extends PauseDetector {
 
                 observedLasUpdateTime = consensusLatestTime.get();
                 // Volatile store above makes sure new "now" is measured after observedLasUpdateTime sample
-                now = TimeServices.nanoTime();
+                now = timeServices.nanoTime();
 
                 // Track shortest time around loop:
                 shortestObservedTimeAroundLoop = Math.min(now - prevNow, shortestObservedTimeAroundLoop);
@@ -170,13 +185,13 @@ public class SimplePauseDetector extends PauseDetector {
         long savedMask = stallThreadMask;
         stallThreadMask = threadNumberMask;
 
-        long startTime = TimeServices.nanoTime();
+        long startTime = timeServices.nanoTime();
         long endTime = startTime + stallLength;
         for (long remainingTime = stallLength;
              remainingTime > 0;
-             remainingTime = endTime - TimeServices.nanoTime()) {
+             remainingTime = endTime - timeServices.nanoTime()) {
             long timeDelta = Math.min(remainingTime, (pauseNotificationThreshold / 2));
-            TimeServices.moveTimeForward(timeDelta);
+            timeServices.moveTimeForward(timeDelta);
             TimeUnit.NANOSECONDS.sleep(50000); // give things a chance to propagate.
         }
 

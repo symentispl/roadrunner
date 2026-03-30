@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.latencyutils {
+module io.roadrunner.latency {
     requires io.roadrunner.hdrhistogram;
 
     exports io.roadrunner.latency;
-    exports io.roadrunner.latency.internal;
+    exports io.roadrunner.latency.utils;
 
-    opens io.roadrunner.latency.internal;
+    opens io.roadrunner.latency.utils;
 }

@@ -139,8 +139,8 @@
                         <exclude>*.md</exclude>
                         <exclude>*.tmpl</exclude>
                         <!-- LatencyUtils sources carry CC0 (public domain) headers — preserve as-is -->
-                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/internal/**</exclude>
-                        <exclude>roadrunner-latency-utils/src/test/java/io/roadrunner/latency/internal/**</exclude>
+                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/utils/**</exclude>
+                        <exclude>roadrunner-latency-utils/src/test/java/io/roadrunner/latency/utils/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
