@@ -58,7 +58,7 @@ public final class SimulatedTimeServices implements TimeServices {
             synchronized (timeUpdateMonitor) {
                 timeUpdateMonitor.notifyAll();
             }
-            Thread.sleep(0, 1); // yield so notified threads can run before next advance
+            Thread.sleep(0, 1); // yield so notified threads can run before the next advance
         }
     }
 
