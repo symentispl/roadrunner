@@ -3,7 +3,7 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.internal;
+package io.roadrunner.latency.utils;
 
 /**
  * IntervalEstimator is used to estimate intervals, potentially based on observed intervals recorded in it.

@@ -3,7 +3,7 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.internal;
+package io.roadrunner.latency.utils;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicLongArray;

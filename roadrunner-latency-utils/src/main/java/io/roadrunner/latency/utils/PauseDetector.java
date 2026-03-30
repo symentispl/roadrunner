@@ -3,7 +3,7 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.internal;
+package io.roadrunner.latency.utils;
 
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -13,10 +13,10 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public abstract class PauseDetector {
 
-    private final ArrayList<PauseDetectorListener> highPriorityListeners = new ArrayList<PauseDetectorListener>(32);
-    private final ArrayList<PauseDetectorListener> normalPriorityListeners = new ArrayList<PauseDetectorListener>(32);
+    private final ArrayList<PauseDetectorListener> highPriorityListeners = new ArrayList<>(32);
+    private final ArrayList<PauseDetectorListener> normalPriorityListeners = new ArrayList<>(32);
 
-    private final LinkedBlockingQueue<Object> messages = new LinkedBlockingQueue<Object>();
+    private final LinkedBlockingQueue<Object> messages = new LinkedBlockingQueue<>();
 
     private final PauseDetectorThread pauseDetectorThread = new PauseDetectorThread();
 
@@ -31,7 +31,8 @@ public abstract class PauseDetector {
 
     /**
      * Notify listeners about a pause
-     * @param pauseLengthNsec pause length (in nanoseconds)
+     *
+     * @param pauseLengthNsec  pause length (in nanoseconds)
      * @param pauseEndTimeNsec pause end time (in nanoTime)
      */
     protected synchronized void notifyListeners(final long pauseLengthNsec, final long pauseEndTimeNsec) {
@@ -39,8 +40,9 @@ public abstract class PauseDetector {
     }
 
     /**
-     * Add a {@link io.roadrunner.latency.internal.PauseDetectorListener} listener to be notified when pauses are detected.
+     * Add a {@link io.roadrunner.latency.utils.PauseDetectorListener} listener to be notified when pauses are detected.
      * Listener will be added to the normal priority listeners list.
+     *
      * @param listener Listener to add
      */
     public synchronized void addListener(PauseDetectorListener listener) {
@@ -48,11 +50,12 @@ public abstract class PauseDetector {
     }
 
     /**
-     * Add a {@link io.roadrunner.latency.internal.PauseDetectorListener} listener to be notified when pauses are detected
+     * Add a {@link io.roadrunner.latency.utils.PauseDetectorListener} listener to be notified when pauses are detected
      * Listener will be added to either the normal priority or high priority listeners list,
-     * @param listener Listener to add
+     *
+     * @param listener       Listener to add
      * @param isHighPriority If true, listener will be added to high priority list. If false, listener will
-     *                     be added to the normal priority list.
+     *                       be added to the normal priority list.
      */
     public synchronized void addListener(PauseDetectorListener listener, boolean isHighPriority) {
         messages.add(new ChangeListenersRequest(
@@ -63,7 +66,8 @@ public abstract class PauseDetector {
     }
 
     /**
-     * Remove a {@link io.roadrunner.latency.internal.PauseDetectorListener}
+     * Remove a {@link io.roadrunner.latency.utils.PauseDetectorListener}
+     *
      * @param listener Listener to remove
      */
     public synchronized void removeListener(PauseDetectorListener listener) {
@@ -85,8 +89,7 @@ public abstract class PauseDetector {
                 try {
                     Object message = messages.take();
 
-                    if (message instanceof ChangeListenersRequest) {
-                        final ChangeListenersRequest changeRequest = (ChangeListenersRequest) message;
+                    if (message instanceof ChangeListenersRequest changeRequest) {
                         if (changeRequest.command == ChangeListenersRequest.ChangeCommand.ADD_HIGH_PRIORITY) {
                             highPriorityListeners.add(changeRequest.listener);
                         } else if (changeRequest.command == ChangeListenersRequest.ChangeCommand.ADD_NORMAL_PRIORITY) {
@@ -96,8 +99,7 @@ public abstract class PauseDetector {
                             highPriorityListeners.remove(changeRequest.listener);
                         }
 
-                    } else if (message instanceof PauseNotification) {
-                        final PauseNotification pauseNotification = (PauseNotification) message;
+                    } else if (message instanceof PauseNotification pauseNotification) {
 
                         for (PauseDetectorListener listener : highPriorityListeners) {
                             listener.handlePauseEvent(
@@ -118,7 +120,7 @@ public abstract class PauseDetector {
     }
 
     static class ChangeListenersRequest {
-        static enum ChangeCommand {ADD_HIGH_PRIORITY, ADD_NORMAL_PRIORITY, REMOVE};
+        enum ChangeCommand {ADD_HIGH_PRIORITY, ADD_NORMAL_PRIORITY, REMOVE}
 
         final ChangeCommand command;
         final PauseDetectorListener listener;

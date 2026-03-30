@@ -3,8 +3,9 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.internal;
+package io.roadrunner.latency.utils;
 
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -13,7 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * window, and will return an impossibly long interval estimate until then.
  */
 public class MovingAverageIntervalEstimator extends IntervalEstimator {
-    protected final long intervalEndTimes[];
+    protected final long[] intervalEndTimes;
     protected final int windowMagnitude;
     protected final int windowLength;
     protected final int windowMask;
@@ -30,9 +31,7 @@ public class MovingAverageIntervalEstimator extends IntervalEstimator {
         this.windowLength = (int) Math.pow(2, windowMagnitude);
         this.windowMask = windowLength - 1;
         this.intervalEndTimes = new long[this.windowLength];
-        for (int i = 0; i < intervalEndTimes.length; i++) {
-            intervalEndTimes[i] = Long.MIN_VALUE;
-        }
+        Arrays.fill(intervalEndTimes, Long.MIN_VALUE);
     }
 
     @Override

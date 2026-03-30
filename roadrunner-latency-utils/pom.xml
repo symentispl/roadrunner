@@ -35,8 +35,8 @@
                             <include>src/test/java/**/*.java</include>
                         </includes>
                         <excludes>
-                            <exclude>src/main/java/io/roadrunner/latency/internal/**</exclude>
-                            <exclude>src/test/java/io/roadrunner/latency/internal/**</exclude>
+                            <exclude>src/main/java/io/roadrunner/latency/utils/**</exclude>
+                            <exclude>src/test/java/io/roadrunner/latency/utils/**</exclude>
                         </excludes>
                         <palantirJavaFormat>
                             <style>PALANTIR</style>
