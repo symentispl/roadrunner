@@ -9,8 +9,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * A Simple PauseDetector that detects pauses using a consensus observation across a configurable number of
- * detection thread. Detection threads can be set to periodically wakeup or continually spin.
+ * A Simple PauseDetector that detects pauses using a consensus observation across a configurable amount of
+ * detection thread. Detection threads can be set to periodically wake up or continually spin.
  * <p>
  * All times and time units are in nanoseconds
  */
@@ -104,7 +104,7 @@ public class SimplePauseDetector extends PauseDetector {
     }
 
     private class SimplePauseDetectorThread extends Thread {
-        volatile long observedLasUpdateTime;
+        volatile long observedLastUpdateTime;
         final int threadNumber;
         final long threadMask;
 
@@ -121,10 +121,10 @@ public class SimplePauseDetector extends PauseDetector {
         public void run() {
             long shortestObservedTimeAroundLoop = Long.MAX_VALUE;
 
-            observedLasUpdateTime = consensusLatestTime.get();
+            observedLastUpdateTime = consensusLatestTime.get();
             long now = timeServices.nanoTime();
             long prevNow = now;
-            consensusLatestTime.compareAndSet(observedLasUpdateTime, now);
+            consensusLatestTime.compareAndSet(observedLastUpdateTime, now);
 
             while ((stopThreadMask & threadMask) == 0) {
                 if (sleepInterval != 0) {
@@ -134,18 +134,18 @@ public class SimplePauseDetector extends PauseDetector {
                 // This is ***TEST FUNCTIONALITY***: Spin as long as we are externally asked to stall:
                 while ((stallThreadMask & threadMask) != 0);
 
-                observedLasUpdateTime = consensusLatestTime.get();
-                // Volatile store above makes sure new "now" is measured after observedLasUpdateTime sample
+                observedLastUpdateTime = consensusLatestTime.get();
+                // Volatile store above makes sure new "now" is measured after observedLastUpdateTime sample
                 now = timeServices.nanoTime();
 
                 // Track shortest time around loop:
                 shortestObservedTimeAroundLoop = Math.min(now - prevNow, shortestObservedTimeAroundLoop);
 
-                // Update consensus time as long as it is is the past:
-                while (now > observedLasUpdateTime) {
-                    if (consensusLatestTime.compareAndSet(observedLasUpdateTime, now)) {
+                // Update consensus time as long as it is the past:
+                while (now > observedLastUpdateTime) {
+                    if (consensusLatestTime.compareAndSet(observedLastUpdateTime, now)) {
                         // Successfully and atomically moved consensus time forward. Act on the known delta:
-                        final long deltaTimeNs = now - observedLasUpdateTime;
+                        final long deltaTimeNs = now - observedLastUpdateTime;
 
                         // Calculate hiccup time (accounting for known time around loop):
                         long hiccupTime = Math.max(deltaTimeNs - shortestObservedTimeAroundLoop, 0);
@@ -160,7 +160,7 @@ public class SimplePauseDetector extends PauseDetector {
                         }
                     } else {
                         // Failed to atomically move consensus time forward. Try again with current value:
-                        observedLasUpdateTime = consensusLatestTime.get();
+                        observedLastUpdateTime = consensusLatestTime.get();
                     }
                 }
 
