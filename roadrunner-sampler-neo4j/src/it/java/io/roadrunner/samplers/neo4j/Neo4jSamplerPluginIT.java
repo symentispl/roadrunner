@@ -34,8 +34,8 @@ public class Neo4jSamplerPluginIT {
 
     @Container
     private static final GenericContainer<?> neo4j = new GenericContainer<>("neo4j:community")
-            .withExposedPorts(7687,7474)
-            .withEnv("NEO4J_dbms_security_auth__enabled","false")
+            .withExposedPorts(7687, 7474)
+            .withEnv("NEO4J_dbms_security_auth__enabled", "false")
             .waitingFor(Wait.forListeningPort());
 
     @Test
@@ -48,7 +48,7 @@ public class Neo4jSamplerPluginIT {
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
                 var response = sampler.execute();
-                assertThat(response).asInstanceOf(type(SamplerResponse.Error.class)).satisfies(e -> assertThat(e.timestamp()).isGreaterThan(System.currentTimeMillis()));
+                assertThat(response).asInstanceOf(type(SamplerResponse.Error.class)).satisfies(e -> assertThat(e.timestamp()).isLessThanOrEqualTo(System.currentTimeMillis()));
             }
         }
     }
@@ -64,7 +64,7 @@ public class Neo4jSamplerPluginIT {
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
                 var response = sampler.execute();
-                assertThat(response).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(r -> assertThat(r.timestamp()).isGreaterThan(System.currentTimeMillis()));
+                assertThat(response).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(r -> assertThat(r.timestamp()).isLessThanOrEqualTo(System.currentTimeMillis()));
             }
         }
     }
