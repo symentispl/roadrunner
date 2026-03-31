@@ -17,6 +17,7 @@ package io.roadrunner.samplers.jdbc;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.pool.HikariPool;
+import io.roadrunner.samplers.spi.PluginInitializationException;
 import io.roadrunner.samplers.spi.SamplerPlugin;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -60,7 +61,7 @@ public class JDBCSamplerPlugin implements SamplerPlugin<JDBCSamplerProvider, JDB
                         .orElseThrow(() -> new RuntimeException("No JDBC driver found in: " + options.driverPath));
             }
         } catch (Exception e) {
-            throw new ProtocolInitializationException("Failed to initialize JDBC driver", e);
+            throw new PluginInitializationException("Failed to initialize JDBC driver", e);
         }
     }
 }
