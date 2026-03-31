@@ -19,7 +19,7 @@
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocols-spi</artifactId>
+            <artifactId>roadrunner-samplers-spi</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -28,19 +28,19 @@
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocol-ab</artifactId>
+            <artifactId>roadrunner-sampler-ab</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocol-vm</artifactId>
+            <artifactId>roadrunner-sampler-vm</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocol-zero</artifactId>
+            <artifactId>roadrunner-sampler-neo4j</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -91,7 +91,7 @@
                 <configuration>
                     <argLine>
                         @{argLine}
-                        --add-modules io.roadrunner.protocols.spi
+                        --add-modules io.roadrunner.samplers.spi
                         --patch-module io.roadrunner.cli.tests=${project.build.testOutputDirectory}
                     </argLine>
                 </configuration>

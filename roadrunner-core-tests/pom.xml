@@ -17,12 +17,12 @@
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocol-vm</artifactId>
+            <artifactId>roadrunner-sampler-vm</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocol-ab</artifactId>
+            <artifactId>roadrunner-sampler-ab</artifactId>
             <version>${project.version}</version>
         </dependency>
 

@@ -342,10 +342,12 @@
         <module>roadrunner-cli</module>
         <module>roadrunner-cli-tests</module>
         <module>roadrunner-app</module>
-        <module>roadrunner-protocols-spi</module>
-        <module>roadrunner-protocol-vm</module>
-        <module>roadrunner-protocol-ab</module>
-        <module>roadrunner-protocol-zero</module>
+        <module>roadrunner-app-tests</module>
+        <module>roadrunner-samplers-spi</module>
+        <module>roadrunner-sampler-vm</module>
+        <module>roadrunner-sampler-ab</module>
+        <module>roadrunner-sampler-neo4j</module>
+        <module>roadrunner-sampler-zero</module>
         <module>roadrunner-api</module>
         <module>roadrunner-hdrhistogram</module>
         <module>roadrunner-microbenchmarks</module>

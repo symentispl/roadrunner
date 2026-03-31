@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -15,6 +16,36 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.moditect</groupId>
+                <artifactId>moditect-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>reactivestreams-add-module-info</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>add-module-info</goal>
+                        </goals>
+                        <configuration>
+                            <modules>
+                                <module>
+                                    <artifact>
+                                        <groupId>org.reactivestreams</groupId>
+                                        <artifactId>reactive-streams</artifactId>
+                                        <version>1.0.4</version>
+                                    </artifact>
+                                    <moduleInfoSource>
+                                        module org.reactivestreams {
+                                        exports org.reactivestreams;
+                                        }
+                                    </moduleInfoSource>
+                                </module>
+                            </modules>
+                            <overwriteExistingFiles>true</overwriteExistingFiles>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jlink-plugin</artifactId>
                 <version>3.3.0</version>
@@ -23,10 +54,21 @@
                     <addModules>
                         <addModule>io.roadrunner.cli</addModule>
                     </addModules>
-                    <launcher>roadrunner=io.roadrunner.cli/io.roadrunner.cli.Main</launcher>
+                    <modulePaths>
+                        <modulePath>${project.build.directory}/modules</modulePath>
+                    </modulePaths>
                     <addOptions>
                         <addOption>-Djdk.tracePinnedThreads=full</addOption>
                     </addOptions>
+                    <additionalResources>
+                        <additionalResource>
+                            <directory>src/main/resources</directory>
+                            <includes>
+                                <include>**</include>
+                            </includes>
+                        </additionalResource>
+                    </additionalResources>
+                    <attach>true</attach>
                 </configuration>
             </plugin>
         </plugins>
@@ -46,12 +88,17 @@
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocol-vm</artifactId>
+            <artifactId>roadrunner-sampler-vm</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocol-ab</artifactId>
+            <artifactId>roadrunner-sampler-ab</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-sampler-neo4j</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

@@ -15,7 +15,7 @@
  */
 module io.roadrunner.cli.tests {
     requires io.roadrunner.cli;
-    requires io.roadrunner.protocols.spi;
+    requires io.roadrunner.samplers.spi;
     requires org.junit.jupiter.api;
     requires org.assertj.core;
 

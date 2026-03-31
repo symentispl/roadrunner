@@ -21,7 +21,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
-import io.roadrunner.api.events.ProtocolResponse;
+import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
 import java.time.Duration;
@@ -36,14 +36,14 @@ class OpenWorldStrategyTest {
     void fireRequestsAtTargetRate() throws InterruptedException {
         var listener = new CollectionEventListener();
 
-        try (var journal = new QueueingProtocolResponsesJournal(listener)) {
+        try (var journal = new QueueingSamplerResponsesJournal(listener)) {
             journal.start();
             var strategy = OpenWorldStrategy.of(5, Duration.ofSeconds(2));
             strategy.execute(
                     () -> () -> {
                         var start = System.nanoTime();
                         var stop = System.nanoTime();
-                        return ProtocolResponse.empty(start, stop);
+                        return SamplerResponse.empty(start, stop);
                     },
                     journal);
         }
@@ -56,8 +56,8 @@ class OpenWorldStrategyTest {
 
         // 5 rps * 2s = 10 expected requests; allow ±4 tolerance for scheduling jitter
         assertThat(listener.events)
-                .filteredOn(ProtocolResponse.class::isInstance)
-                .asInstanceOf(collection(ProtocolResponse.class))
+                .filteredOn(SamplerResponse.class::isInstance)
+                .asInstanceOf(collection(SamplerResponse.class))
                 .hasSizeBetween(6, 14)
                 .allSatisfy(r -> {
                     assertThat(r.scheduledStartTime()).isGreaterThan(0);

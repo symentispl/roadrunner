@@ -18,17 +18,16 @@ package io.roadrunner.cli;
 import static picocli.CommandLine.Model.CommandSpec;
 import static picocli.CommandLine.Model.CommandSpec.forAnnotatedObject;
 
-import io.roadrunner.protocols.spi.ProtocolProvider;
+import io.roadrunner.samplers.spi.SamplerOptions;
 import java.nio.file.Paths;
 import picocli.CommandLine;
 
 public class Main {
 
-    public static void main(String[] args) throws Exception {
-        try (var protocolProviders =
-                ProtocolProviders.load(new Preferences(Paths.get(System.getProperty("user.home"))))) {
+    static void main(String[] args) throws Exception {
+        try (var samplerProviders = SamplerPlugins.load(new Preferences(Paths.get(System.getProperty("user.home"))))) {
 
-            var commandSpec = createCommandSpec(protocolProviders);
+            var commandSpec = createCommandSpec(samplerProviders);
 
             var commandLine = new CommandLine(commandSpec);
 
@@ -50,6 +49,11 @@ public class Main {
                 return;
             }
 
+            if (parseResult.isVersionHelpRequested()) {
+                commandLine.printVersionHelp(System.out);
+                return;
+            }
+
             var subcommand = parseResult.subcommand();
             if (subcommand.isUsageHelpRequested()) {
                 subcommand.commandSpec().commandLine().usage(System.out);
@@ -57,28 +61,30 @@ public class Main {
             }
 
             if (subcommand.commandSpec().userObject() instanceof RunCommand runCommand) {
-                var protocolSubCmd = subcommand.subcommand();
-                if (protocolSubCmd != null) {
-                    if (protocolSubCmd.isUsageHelpRequested()) {
-                        protocolSubCmd.commandSpec().commandLine().usage(System.out);
+                var samplerSubCmd = subcommand.subcommand();
+                if (samplerSubCmd != null) {
+                    if (samplerSubCmd.isUsageHelpRequested()) {
+                        samplerSubCmd.commandSpec().commandLine().usage(System.out);
                         return;
                     }
-                    if (protocolSubCmd.commandSpec().userObject() instanceof ProtocolProvider protocolProvider) {
-                        runCommand.run(protocolProvider);
+                    if (samplerSubCmd.commandSpec().userObject() instanceof SamplerOptions samplerOptions) {
+                        try (var samplerProvider = samplerOptions.samplerProvider()) {
+                            runCommand.run(samplerProvider);
+                        }
                     }
                 }
             }
         }
     }
 
-    private static CommandSpec createCommandSpec(ProtocolProviders protocolProviders) {
+    private static CommandSpec createCommandSpec(SamplerPlugins samplerPlugins) {
         var commandSpec = CommandSpec.create();
-
+        commandSpec.versionProvider(() -> new String[] {"Roadrunner, a simplistic load generator"});
         var runCommand = forAnnotatedObject(new RunCommand()).mixinStandardHelpOptions(true);
 
-        for (var protocolProvider : protocolProviders.all()) {
+        for (var samplerPlugin : samplerPlugins.all()) {
             runCommand
-                    .addSubcommand(protocolProvider.name(), forAnnotatedObject(protocolProvider))
+                    .addSubcommand(samplerPlugin.name(), forAnnotatedObject(samplerPlugin.options()))
                     .mixinStandardHelpOptions(true);
         }
 

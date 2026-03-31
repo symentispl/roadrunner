@@ -18,7 +18,7 @@ package io.roadrunner.output.csv;
 import static java.lang.Long.parseLong;
 
 import io.roadrunner.api.events.Event;
-import io.roadrunner.api.events.ProtocolResponse;
+import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.measurments.Sample;
@@ -76,11 +76,11 @@ public class CsvOutputEventReader implements EventReader {
         var status = Sample.Status.valueOf(record.get(5));
         return switch (status) {
             case Sample.Status.OK ->
-                new ProtocolResponse.Response<>(timestamp, stopTime, null)
+                new SamplerResponse.Response<>(timestamp, stopTime, null)
                         .withLatency(latency)
                         .withScheduledStartTime(scheduledStartTime);
             case Sample.Status.KO ->
-                new ProtocolResponse.Error(timestamp, stopTime, null)
+                new SamplerResponse.Error(timestamp, stopTime, null)
                         .withLatency(latency)
                         .withScheduledStartTime(scheduledStartTime);
         };

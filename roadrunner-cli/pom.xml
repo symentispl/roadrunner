@@ -20,7 +20,7 @@
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocols-spi</artifactId>
+            <artifactId>roadrunner-samplers-spi</artifactId>
             <version>${project.version}</version>
         </dependency>
 

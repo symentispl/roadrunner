@@ -15,7 +15,7 @@
  */
 package io.roadrunner.reports.console;
 
-import io.roadrunner.api.events.ProtocolResponse;
+import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.reports.ReportGenerator;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
@@ -52,12 +52,12 @@ final class ConsoleReportGenerator implements ReportGenerator {
         var errorRequests = 0L;
 
         for (var event : eventReader) {
-            if (event instanceof ProtocolResponse<?> response) {
+            if (event instanceof SamplerResponse<?> response) {
                 totalRequests++;
                 histogram.recordValue(response.latency());
                 firstStartTime = Math.min(firstStartTime, response.scheduledStartTime());
                 lastStopTime = Math.max(lastStopTime, response.stopTime());
-                if (response instanceof ProtocolResponse.Error) {
+                if (response instanceof SamplerResponse.Error) {
                     errorRequests++;
                 }
             }

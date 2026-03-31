@@ -1,0 +1,12 @@
+#!/bin/sh
+JLINK_VM_OPTIONS=
+DIR=$(dirname "$0")
+
+provided_modules_dir="$HOME/.roadrunner/provided"
+
+upgrade_module_path=
+if [ -f "$provided_modules_dir" ]; then
+  upgrade_module_path=$(find $(pwd) -maxdepth 1 -type f  -print | paste -sd ':' -)
+fi
+
+$DIR/java $JLINK_VM_OPTIONS -m io.roadrunner.cli/io.roadrunner.cli.Main $@

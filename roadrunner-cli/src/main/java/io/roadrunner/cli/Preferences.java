@@ -23,7 +23,7 @@ import java.nio.file.Path;
 
 public final class Preferences {
 
-    private static final String PLUGINS_DIR = "plugins/protocols";
+    private static final String PLUGINS_DIR = "plugins/samplers";
 
     private final Path baseDir;
 

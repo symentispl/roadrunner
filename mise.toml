@@ -28,7 +28,10 @@ outputs = [
 
 [tasks."lint:sh"]
 description = "Lint shell scripts with shellcheck"
-run = "shellcheck -x --source-path=SCRIPTDIR benchmarks/scripts/**/*.sh benchmarks/scripts/*.sh"
+run = """
+shellcheck -x --source-path=SCRIPTDIR benchmarks/scripts/**/*.sh benchmarks/scripts/*.sh
+shellcheck roadrunner-app/src/main/resources/bin/roadrunner
+"""
 
 [tasks.benchmarks]
 description = "Run JMH benchmarks (quick run without metadata)"

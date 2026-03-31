@@ -15,16 +15,16 @@
  */
 package io.roadrunner.core.internal;
 
-import io.roadrunner.api.events.ProtocolResponse;
+import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
-import io.roadrunner.api.protocol.Protocol;
+import io.roadrunner.api.samplers.Sampler;
+import io.roadrunner.api.samplers.SamplerProvider;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 
 public final class ClosedWorldStrategy implements ExecutionStrategy {
 
@@ -47,9 +47,9 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
     }
 
     @Override
-    public void execute(Supplier<Protocol> protocolFactory, QueueingProtocolResponsesJournal journal)
+    public void execute(SamplerProvider samplerProvider, QueueingSamplerResponsesJournal journal)
             throws InterruptedException {
-        var delayedSupplier = new DelayedSupplier<>(protocolFactory, () -> 20L);
+        var delayedSupplier = new DelayedSupplier<>(samplerProvider::newSampler, () -> 20L);
         try (var usersExecutor = Executors.newThreadPerTaskExecutor(
                         Thread.ofVirtual().name("roadrunner-users-").factory());
                 var requestsExecutor = Executors.newCachedThreadPool(
@@ -67,13 +67,13 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
 
     private static class RoadrunnerUser implements Runnable {
         private final MeasurementControl measurementControl;
-        private final Protocol protocol;
+        private final Sampler sampler;
         private final ExecutorService requestsExecutor;
 
         private RoadrunnerUser(
-                MeasurementControl measurementControl, Protocol protocol, ExecutorService requestsExecutor) {
+                MeasurementControl measurementControl, Sampler sampler, ExecutorService requestsExecutor) {
             this.measurementControl = measurementControl;
-            this.protocol = protocol;
+            this.sampler = sampler;
             this.requestsExecutor = requestsExecutor;
         }
 
@@ -86,8 +86,7 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
                         // when the next request should start
                         long scheduledStartTime = System.nanoTime();
                         // execute the request
-                        var response =
-                                requestsExecutor.submit(protocol::execute).get();
+                        var response = requestsExecutor.submit(sampler::execute).get();
                         // calculate delay from the intended start time
                         var inQueueTime = response.timestamp() - scheduledStartTime;
                         // calculate the service time (actual execution time)
@@ -115,10 +114,10 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
     private static class MeasurementControl {
 
         private final AtomicLong counter;
-        private final QueueingProtocolResponsesJournal responsesJournal;
+        private final QueueingSamplerResponsesJournal responsesJournal;
         private final CountDownLatch latch;
 
-        MeasurementControl(long requests, QueueingProtocolResponsesJournal responsesJournal, CountDownLatch latch) {
+        MeasurementControl(long requests, QueueingSamplerResponsesJournal responsesJournal, CountDownLatch latch) {
             this.counter = new AtomicLong(requests);
             this.responsesJournal = responsesJournal;
             this.latch = latch;
@@ -132,7 +131,7 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
             responsesJournal.userEnters(UserEvent.enter());
         }
 
-        public void request(ProtocolResponse response) {
+        public void request(SamplerResponse response) {
             counter.decrementAndGet();
             responsesJournal.response(response);
         }

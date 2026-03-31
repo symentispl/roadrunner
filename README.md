@@ -32,9 +32,9 @@ NOTICE: Binary builds will come, someday.
 
 # How to run it
 
-First let's use a simple protocol called `vm`. This is a testing/baseline protocol, which sleeps X ms per each request. I use it mostly for testing overhead of Roadrunner.
+First let's use a simple sampler called `vm`. This is a testing/baseline protocol, which sleeps X ms per each request. I use it mostly for testing overhead of Roadrunner.
 
-    ./roadrunner-preferences/target/maven-jlink/default/bin/roadrunner -c 50 -n 500 vm -sleep-time 10
+    ./roadrunner-preferences/target/maven-jlink/default/bin/roadrunner -c 50 -n 500 vm --sleep-time 10
 
 This will execute 500 requests using 50 concurrent users, and each user will sleep for 10 ms per each request.
 

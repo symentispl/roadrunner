@@ -15,8 +15,8 @@
  */
 package io.roadrunner.cli;
 
+import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.core.Bootstrap;
-import io.roadrunner.protocols.spi.ProtocolProvider;
 import java.nio.file.Path;
 import java.time.Duration;
 import org.slf4j.Logger;
@@ -67,7 +67,7 @@ class RunCommand {
     @Option(names = "-r", description = "Report format type")
     String report;
 
-    public void run(ProtocolProvider protocolProvider) throws Exception {
+    public void run(SamplerProvider samplerProvider) throws Exception {
         var bootstrap = new Bootstrap().withOutputDir(outputDir);
 
         if (loadModel.closedWorld != null) {
@@ -95,7 +95,7 @@ class RunCommand {
                                 reportConfiguration.reportFormat(), chartGeneratorProviders.supportedReportFormats()));
             }
             var chartGenerator = reportGeneratorProvider.create(reportConfiguration.configuration());
-            var measurements = roadrunner.execute(() -> protocolProvider.newProtocol());
+            var measurements = roadrunner.execute(samplerProvider);
             chartGenerator.generateChart(measurements.samplesReader());
         }
     }

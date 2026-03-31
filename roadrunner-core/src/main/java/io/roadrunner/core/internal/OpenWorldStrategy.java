@@ -16,13 +16,13 @@
 package io.roadrunner.core.internal;
 
 import io.roadrunner.api.events.UserEvent;
-import io.roadrunner.api.protocol.Protocol;
+import io.roadrunner.api.samplers.Sampler;
+import io.roadrunner.api.samplers.SamplerProvider;
 import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
-import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +49,7 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
     }
 
     @Override
-    public void execute(Supplier<Protocol> protocolFactory, QueueingProtocolResponsesJournal journal)
+    public void execute(SamplerProvider samplerSupplier, QueueingSamplerResponsesJournal journal)
             throws InterruptedException {
         long intervalNanos = 1_000_000_000L / usersArrivalRate;
         if (intervalNanos <= 0) {
@@ -87,31 +87,32 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 }
                 var scheduledStartTime = nextScheduledStartTime;
                 phaser.register();
-                requestsExecutor.submit(new RoadrunnerUser(journal, protocolFactory.get(), scheduledStartTime, phaser));
+                requestsExecutor.submit(
+                        new RoadrunnerUser(journal, samplerSupplier.newSampler(), scheduledStartTime, phaser));
             }
         } finally {
-            // Deregister the main party; when the last in-flight user also deregisters the phaser
+            // Deregister the main party; when the last in-flight user also deregisters, the phaser
             // terminates and awaitAdvance returns, giving us a precise "all users have left"
             // barrier without an arbitrary timeout.
             int phase = phaser.arriveAndDeregister();
             phaser.awaitAdvance(phase);
             requestsExecutor.shutdown();
-            requestsExecutor.awaitTermination(1, TimeUnit.SECONDS);
+            requestsExecutor.awaitTermination(1, TimeUnit.MINUTES);
         }
 
         LOG.info("Roadrunner open-world stopped");
     }
 
     private static class RoadrunnerUser implements Runnable {
-        private final QueueingProtocolResponsesJournal journal;
-        private final Protocol protocol;
+        private final QueueingSamplerResponsesJournal journal;
+        private final Sampler sampler;
         private final long scheduledStartTime;
         private final Phaser phaser;
 
         public RoadrunnerUser(
-                QueueingProtocolResponsesJournal journal, Protocol protocol, long scheduledStartTime, Phaser phaser) {
+                QueueingSamplerResponsesJournal journal, Sampler sampler, long scheduledStartTime, Phaser phaser) {
             this.journal = journal;
-            this.protocol = protocol;
+            this.sampler = sampler;
             this.scheduledStartTime = scheduledStartTime;
             this.phaser = phaser;
         }
@@ -120,7 +121,7 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
         public void run() {
             try {
                 journal.userEnters(UserEvent.enter());
-                var response = protocol.execute();
+                var response = sampler.execute();
                 var inQueueTime = response.timestamp() - scheduledStartTime;
                 var serviceTime = response.stopTime() - response.timestamp();
                 var correctedLatency = serviceTime + inQueueTime;
