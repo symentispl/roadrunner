@@ -30,8 +30,16 @@ public class RoadrunnerAppIT {
 
     @Test
     void cliVersion() throws Exception {
-        Files.setPosixFilePermissions(Path.of("target/roadrunner-app/bin/roadrunner"), PosixFilePermissions.fromString("rwxr-xr-x"));
-        var process = new ProcessBuilder("target/roadrunner-app/bin/roadrunner", "-V")
+        // JReleaser archives use a versioned root directory (e.g. roadrunner-0.0.4-SNAPSHOT/bin/roadrunner),
+        // so we locate the binary by walking the unpacked directory tree.
+        Path appDir = Path.of("target/roadrunner-app");
+        Path roadrunnerBin = Files.walk(appDir, 3)
+                .filter(p -> p.getFileName().toString().equals("roadrunner") && Files.isRegularFile(p))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("roadrunner binary not found under " + appDir));
+
+        Files.setPosixFilePermissions(roadrunnerBin, PosixFilePermissions.fromString("rwxr-xr-x"));
+        var process = new ProcessBuilder(roadrunnerBin.toString(), "-V")
                 .redirectErrorStream(true)
                 .start();
         var exitCode = process.waitFor();
