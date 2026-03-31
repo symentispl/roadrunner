@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.samplers.jdbc;
+package io.roadrunner.samplers.spi;
 
-public class ProtocolInitializationException extends RuntimeException {
-    public ProtocolInitializationException(String message, Exception e) {
+public class PluginInitializationException extends RuntimeException {
+    public PluginInitializationException(String message, Exception e) {
         super(message, e);
     }
 }
