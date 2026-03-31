@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-open module io.roadrunner.protocol.jdbc.tests {
-    requires io.roadrunner.api;
-    requires io.roadrunner.protocol.jdbc;
-    requires org.assertj.core;
-    requires org.junit.jupiter.api;
-    requires transitive org.junit.jupiter.engine;
+package io.roadrunner.samplers.jdbc;
 
-    exports io.roadrunner.protocols.jdbc.tests;
+public class ProtocolInitializationException extends RuntimeException {
+    public ProtocolInitializationException(String message, Exception e) {
+        super(message, e);
+    }
 }

@@ -8,12 +8,12 @@
         <version>0.0.4-SNAPSHOT</version>
     </parent>
 
-    <artifactId>roadrunner-protocol-jdbc</artifactId>
+    <artifactId>roadrunner-sampler-jdbc</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-protocols-spi</artifactId>
+            <artifactId>roadrunner-samplers-spi</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
