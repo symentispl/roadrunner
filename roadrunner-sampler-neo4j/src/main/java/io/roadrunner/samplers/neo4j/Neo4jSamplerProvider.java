@@ -38,7 +38,6 @@ public class Neo4jSamplerProvider implements SamplerProvider {
                 var result = session.run(query);
                 return SamplerResponse.response(startTime, System.nanoTime(), result.consume());
             } catch (Exception e) {
-                e.printStackTrace();
                 return SamplerResponse.error(startTime, System.nanoTime(), e.getMessage());
             }
         };

@@ -34,15 +34,15 @@ public class Neo4jSamplerPluginIT {
 
     @Container
     private static final GenericContainer<?> neo4j = new GenericContainer<>("neo4j:community")
-            .withExposedPorts(7687)
-            .withExposedPorts(7474)
+            .withExposedPorts(7687,7474)
+            .withEnv("NEO4J_dbms_security_auth__enabled","false")
             .waitingFor(Wait.forListeningPort());
 
     @Test
     void invalidQuery() throws Exception {
         try (var plugin = new Neo4jSamplerPlugin()) {
             var options = plugin.options();
-            options.uri = new URI("neo4j://%s:%d".formatted(neo4j.getHost(), neo4j.getMappedPort(7474)));
+            options.uri = new URI("neo4j://%s:%d".formatted(neo4j.getHost(), neo4j.getMappedPort(7687)));
             options.username = "neo4j";
             options.password = "";
             try (var samplerProvider = options.samplerProvider()) {
@@ -57,7 +57,7 @@ public class Neo4jSamplerPluginIT {
     void validQuery() throws Exception {
         try (var plugin = new Neo4jSamplerPlugin()) {
             var options = plugin.options();
-            options.uri = new URI("neo4j://%s:%d".formatted(neo4j.getHost(), neo4j.getMappedPort(7474)));
+            options.uri = new URI("neo4j://%s:%d".formatted(neo4j.getHost(), neo4j.getMappedPort(7687)));
             options.username = "neo4j";
             options.password = "";
             options.query = "RETURN 1";
