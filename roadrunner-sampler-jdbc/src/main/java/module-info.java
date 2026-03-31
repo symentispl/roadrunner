@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.protocols.jdbc.JdbcProtocolProvider;
-import io.roadrunner.protocols.spi.ProtocolProvider;
+import io.roadrunner.samplers.jdbc.JDBCSamplerPlugin;
+import io.roadrunner.samplers.spi.SamplerPlugin;
 
-module io.roadrunner.protocol.jdbc {
+module io.roadrunner.sampler.jdbc {
     requires java.sql;
     requires io.roadrunner.api;
-    requires io.roadrunner.protocols.spi;
+    requires io.roadrunner.samplers.spi;
     requires info.picocli;
     requires com.zaxxer.hikari;
 
     uses java.sql.Driver;
 
-    exports io.roadrunner.protocols.jdbc;
+    exports io.roadrunner.samplers.jdbc;
 
-    provides ProtocolProvider with
-            JdbcProtocolProvider;
+    provides SamplerPlugin with
+            JDBCSamplerPlugin;
 
-    opens io.roadrunner.protocols.jdbc to
+    opens io.roadrunner.samplers.jdbc to
             info.picocli;
 }
