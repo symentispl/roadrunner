@@ -33,10 +33,13 @@ public class RoadrunnerAppIT {
         // JReleaser archives use a versioned root directory (e.g. roadrunner-0.0.4-SNAPSHOT/bin/roadrunner),
         // so we locate the binary by walking the unpacked directory tree.
         Path appDir = Path.of("target/roadrunner-app");
-        Path roadrunnerBin = Files.walk(appDir, 3)
-                .filter(p -> p.getFileName().toString().equals("roadrunner") && Files.isRegularFile(p))
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("roadrunner binary not found under " + appDir));
+        Path roadrunnerBin;
+        try (var paths = Files.walk(appDir, 3)) {
+            roadrunnerBin = paths
+                    .filter(p -> p.getFileName().toString().equals("roadrunner") && Files.isRegularFile(p))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("roadrunner binary not found under " + appDir));
+        }
 
         Files.setPosixFilePermissions(roadrunnerBin, PosixFilePermissions.fromString("rwxr-xr-x"));
         var process = new ProcessBuilder(roadrunnerBin.toString(), "-V")
