@@ -15,4 +15,5 @@
  */
 module io.roadrunner.core.tests {
     requires io.roadrunner.core;
+    requires io.roadrunner.api;
 }

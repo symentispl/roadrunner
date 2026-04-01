@@ -17,6 +17,7 @@ package io.roadrunner.core;
 
 import io.roadrunner.api.Roadrunner;
 import io.roadrunner.api.measurments.MeasurementProgress;
+import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.core.internal.ClosedWorldStrategy;
 import io.roadrunner.core.internal.DefaultRoadrunner;
 import io.roadrunner.core.internal.ExecutionStrategy;
@@ -39,6 +40,7 @@ public class Bootstrap {
     private ExecutionStrategy strategy;
     private MeasurementProgress measurementProgress = MeasurementProgress.NO_OP;
     private Path outputDir;
+    private ParameterSource parameterSource = ParameterSource.empty();
     private EnumSet<PauseDetectorKind> pauseDetectors = EnumSet.noneOf(PauseDetectorKind.class);
 
     /**
@@ -69,6 +71,11 @@ public class Bootstrap {
         return this;
     }
 
+    public Bootstrap withParameterSource(ParameterSource parameterSource) {
+        this.parameterSource = parameterSource;
+        return this;
+    }
+
     public Bootstrap withPauseDetectorKinds(EnumSet<PauseDetectorKind> pauseDetectorKinds) {
         this.pauseDetectors = Objects.requireNonNull(pauseDetectorKinds, "pause detectors kinds cannot be null");
         return this;
@@ -86,6 +93,6 @@ public class Bootstrap {
         if (strategy == null) {
             throw new IllegalStateException("Load strategy must be configured");
         }
-        return new DefaultRoadrunner(strategy, measurementProgress, outputDir, pauseDetectors);
+        return new DefaultRoadrunner(strategy, measurementProgress, outputDir, parameterSource,pauseDetectors);
     }
 }

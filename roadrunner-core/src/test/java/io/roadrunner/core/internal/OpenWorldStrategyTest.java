@@ -29,6 +29,8 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import io.roadrunner.api.parameters.ParameterFeed;
 import org.junit.jupiter.api.Test;
 
 class OpenWorldStrategyTest {
@@ -46,6 +48,7 @@ class OpenWorldStrategyTest {
                         var stop = System.nanoTime();
                         return SamplerResponse.empty(start, stop);
                     },
+                    ParameterFeed.empty(),
                     journal,
                     LatencyRecorder.noop());
         }

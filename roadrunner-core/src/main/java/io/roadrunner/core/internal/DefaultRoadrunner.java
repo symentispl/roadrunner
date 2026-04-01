@@ -22,15 +22,18 @@ import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
+import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.samplers.SamplerProvider;
-import io.roadrunner.latency.recording.LatencyRecorders;
 import io.roadrunner.latency.recording.PauseDetectorKind;
+import io.roadrunner.latency.recording.LatencyRecorders;
 import io.roadrunner.output.csv.CsvOutputEventListener;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,16 +44,20 @@ public class DefaultRoadrunner implements Roadrunner {
     private final ExecutionStrategy strategy;
     private final MeasurementProgress measurementProgress;
     private final Path outputDir;
+    private final ParameterSource parameterSource;
     private final EnumSet<PauseDetectorKind> pauseDetectorKinds;
 
     public DefaultRoadrunner(
             ExecutionStrategy strategy,
             MeasurementProgress measurementProgress,
             Path outputDir,
-            EnumSet<PauseDetectorKind> pauseDetectorKinds) {
+            ParameterSource parameterSource,
+            EnumSet<PauseDetectorKind> pauseDetectorKinds
+            ) {
         this.strategy = strategy;
         this.measurementProgress = measurementProgress;
         this.outputDir = outputDir;
+        this.parameterSource = parameterSource;
         this.pauseDetectorKinds = pauseDetectorKinds;
     }
 
@@ -58,17 +65,20 @@ public class DefaultRoadrunner implements Roadrunner {
     public Measurements execute(SamplerProvider samplerSupplier) {
         LOG.info("Roadrunner started");
         var csvOutputFile = outputDir.resolve("output.csv");
-        LOG.info("writing responses to {}", csvOutputFile);
+        LOG.info("Writing responses to {}", csvOutputFile);
 
-        try (var responsesJournal = new QueueingSamplerResponsesJournal(new ProgressTrackingResponseListener(
-                        new CsvOutputEventListener(csvOutputFile), measurementProgress));
-                var gcProfiler = new GCProfiler();
+        var progressTrackingResponseListener = new ProgressTrackingResponseListener(new CsvOutputEventListener(csvOutputFile), measurementProgress);
+        try (var responsesJournal = new QueueingSamplerResponsesJournal(progressTrackingResponseListener);
+             var preloadedParameterSource = PreloadedParameterSource.from(parameterSource);
+             var gcProfiler = new GCProfiler();
                 var latencyRecorder = LatencyRecorders.create(pauseDetectorKinds)) {
             gcProfiler.start();
             responsesJournal.start();
+            var parameterFeed = preloadedParameterSource.load();
             try {
-                strategy.execute(samplerSupplier, responsesJournal, latencyRecorder);
+                strategy.execute(samplerSupplier, parameterFeed, responsesJournal, latencyRecorder);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             } finally {
                 try {
@@ -78,11 +88,15 @@ public class DefaultRoadrunner implements Roadrunner {
                 }
             }
             return DefaultMeasurements.from(responsesJournal.measurementsReader());
+        } catch (
+                Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void close() {}
+    public void close() {
+    }
 
     private static class ProgressTrackingResponseListener implements EventListener {
         private final EventListener delegate;

@@ -16,9 +16,18 @@
 package io.roadrunner.api.samplers;
 
 import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.parameters.SamplerParameters;
 
 public interface Sampler extends AutoCloseable {
     SamplerResponse execute();
+
+    /**
+     * Executes one request with the given parameters.
+     * Default implementation delegates to {@link #execute()} for backward compatibility.
+     */
+    default SamplerResponse execute(SamplerParameters parameters) {
+        return execute();
+    }
 
     default void close() {}
 }

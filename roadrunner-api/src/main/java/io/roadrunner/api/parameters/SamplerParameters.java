@@ -13,13 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.api {
-    exports io.roadrunner.api;
-    exports io.roadrunner.api.samplers;
-    exports io.roadrunner.api.metrics;
-    exports io.roadrunner.api.measurments;
-    exports io.roadrunner.api.reports;
-    exports io.roadrunner.api.events;
-    exports io.roadrunner.api.latency;
-    exports io.roadrunner.api.parameters;
+package io.roadrunner.api.parameters;
+
+import java.util.Collections;
+import java.util.Map;
+
+public final class SamplerParameters {
+
+    public static final SamplerParameters EMPTY = new SamplerParameters(Collections.emptyMap());
+
+    private final Map<String, String> parameters;
+
+    public SamplerParameters(Map<String, String> parameters) {
+        this.parameters = parameters;
+    }
+
+    public String get(String key) {
+        return parameters.get(key);
+    }
 }

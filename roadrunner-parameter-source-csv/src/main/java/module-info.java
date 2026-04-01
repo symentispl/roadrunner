@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.api {
-    exports io.roadrunner.api;
-    exports io.roadrunner.api.samplers;
-    exports io.roadrunner.api.metrics;
-    exports io.roadrunner.api.measurments;
-    exports io.roadrunner.api.reports;
-    exports io.roadrunner.api.events;
-    exports io.roadrunner.api.latency;
-    exports io.roadrunner.api.parameters;
+import io.roadrunner.api.parameters.ParameterSourceProvider;
+import io.roadrunner.parameters.csv.CsvParameterSourceProvider;
+
+module io.roadrunner.parameters.csv {
+    requires io.roadrunner.api;
+    requires org.apache.commons.csv;
+    requires org.slf4j;
+
+    provides ParameterSourceProvider with
+            CsvParameterSourceProvider;
+
+    exports io.roadrunner.parameters.csv;
 }
