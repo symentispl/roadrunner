@@ -15,6 +15,7 @@
  */
 package io.roadrunner.cli;
 
+import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.core.Bootstrap;
 import java.nio.file.Path;
@@ -67,8 +68,25 @@ class RunCommand {
     @Option(names = "-r", description = "Report format type")
     String report;
 
+    @Option(
+            names = "--parameters-source",
+            description = "Parameter source in 'type:key=value' format (e.g. csv:file=data.csv)")
+    String parametersSource;
+
     public void run(SamplerProvider samplerProvider) throws Exception {
         var bootstrap = new Bootstrap().withOutputDir(outputDir);
+
+        if (parametersSource != null) {
+            var config = ParameterSourceConfiguration.parse(parametersSource);
+            var paramProviders = ParameterSourceProviders.load();
+            var paramProvider = paramProviders.get(config.sourceType());
+            if (paramProvider == null) {
+                throw new IllegalArgumentException("Unknown parameter source type '%s', supported types: %s"
+                        .formatted(config.sourceType(), paramProviders.supportedSourceTypes()));
+            }
+            ParameterSource source = paramProvider.create(config.configuration());
+            bootstrap.withParameterSource(source);
+        }
 
         if (loadModel.closedWorld != null) {
             bootstrap

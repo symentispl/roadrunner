@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api.samplers;
+package io.roadrunner.api.parameters;
 
-import io.roadrunner.api.events.SamplerResponse;
-import io.roadrunner.api.parameters.SamplerParameters;
+import java.util.Collections;
+import java.util.Map;
 
-public interface Sampler extends AutoCloseable {
-    SamplerResponse execute();
+public final class SamplerParameters {
 
-    /**
-     * Executes one request with the given parameters.
-     * Default implementation delegates to {@link #execute()} for backward compatibility.
-     */
-    default SamplerResponse execute(SamplerParameters parameters) {
-        return execute();
+    public static final SamplerParameters EMPTY = new SamplerParameters(Collections.emptyMap());
+
+    private final Map<String, String> parameters;
+
+    public SamplerParameters(Map<String, String> parameters) {
+        this.parameters = parameters;
     }
 
-    default void close() {}
+    public String get(String key) {
+        return parameters.get(key);
+    }
 }

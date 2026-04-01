@@ -14,24 +14,15 @@
  * limitations under the License.
  */
 import io.roadrunner.api.parameters.ParameterSourceProvider;
-import io.roadrunner.api.reports.ReportGeneratorProvider;
-import io.roadrunner.samplers.spi.SamplerPlugin;
+import io.roadrunner.parameters.csv.CsvParameterSourceProvider;
 
-module io.roadrunner.cli {
+module io.roadrunner.parameters.csv {
     requires io.roadrunner.api;
-    requires io.roadrunner.samplers.spi;
-    requires io.roadrunner.core;
+    requires org.apache.commons.csv;
     requires org.slf4j;
-    requires org.apache.commons.io;
-    requires org.apache.commons.lang3;
-    requires info.picocli;
 
-    uses SamplerPlugin;
-    uses ReportGeneratorProvider;
-    uses ParameterSourceProvider;
+    provides ParameterSourceProvider with
+            CsvParameterSourceProvider;
 
-    opens io.roadrunner.cli to
-            info.picocli;
-
-    exports io.roadrunner.cli;
+    exports io.roadrunner.parameters.csv;
 }

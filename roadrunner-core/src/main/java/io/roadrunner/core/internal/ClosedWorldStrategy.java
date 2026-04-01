@@ -17,11 +17,11 @@ package io.roadrunner.core.internal;
 
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
+import io.roadrunner.api.parameters.ParameterFeed;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
+
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -47,17 +47,18 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
     }
 
     @Override
-    public void execute(SamplerProvider samplerProvider, QueueingSamplerResponsesJournal journal)
+    public void execute(
+            SamplerProvider samplerProvider,
+            ParameterFeed parameterFeed,
+            QueueingSamplerResponsesJournal journal)
             throws InterruptedException {
         var delayedSupplier = new DelayedSupplier<>(samplerProvider::newSampler, () -> 20L);
-        try (var usersExecutor = Executors.newThreadPerTaskExecutor(
-                        Thread.ofVirtual().name("roadrunner-users-").factory());
-                var requestsExecutor = Executors.newCachedThreadPool(
-                        Thread.ofVirtual().name("roadrunner-requests-").factory())) {
+        try (var usersExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("roadrunner-users-").factory())) {
             var latch = new CountDownLatch(concurrentUsers);
             var measurementControl = new MeasurementControl(requests, journal, latch);
             for (int i = 0; i < concurrentUsers; i++) {
-                usersExecutor.submit(new RoadrunnerUser(measurementControl, delayedSupplier.get(), requestsExecutor));
+                usersExecutor.submit(
+                        new RoadrunnerUser(measurementControl, delayedSupplier.get(), parameterFeed));
             }
             latch.await();
             usersExecutor.shutdown();
@@ -68,25 +69,29 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
     private static class RoadrunnerUser implements Runnable {
         private final MeasurementControl measurementControl;
         private final Sampler sampler;
-        private final ExecutorService requestsExecutor;
+        private final ParameterFeed parameterFeed;
 
         private RoadrunnerUser(
-                MeasurementControl measurementControl, Sampler sampler, ExecutorService requestsExecutor) {
+                MeasurementControl measurementControl,
+                Sampler sampler,
+                ParameterFeed parameterFeed) {
             this.measurementControl = measurementControl;
             this.sampler = sampler;
-            this.requestsExecutor = requestsExecutor;
+            this.parameterFeed = parameterFeed;
         }
 
         @Override
         public void run() {
+            var params = parameterFeed.iterator();
             measurementControl.userEnters();
             try {
                 while (measurementControl.isRunning()) {
                     try {
                         // when the next request should start
                         long scheduledStartTime = System.nanoTime();
+                        // fetch parameters before submitting — non-blocking
                         // execute the request
-                        var response = requestsExecutor.submit(sampler::execute).get();
+                        var response = sampler.execute(params.next());
                         // calculate delay from the intended start time
                         var inQueueTime = response.timestamp() - scheduledStartTime;
                         // calculate the service time (actual execution time)
@@ -97,11 +102,7 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
                         var correctedLatency = serviceTime + inQueueTime;
                         measurementControl.request(response.withScheduledStartTime(scheduledStartTime)
                                 .withLatency(correctedLatency));
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        measurementControl.error(e);
-                        break;
-                    } catch (ExecutionException e) {
+                    } catch (Exception e) {
                         measurementControl.error(e);
                     }
                 }
@@ -131,7 +132,7 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
             responsesJournal.userEnters(UserEvent.enter());
         }
 
-        public void request(SamplerResponse response) {
+        public void request(SamplerResponse<?> response) {
             counter.decrementAndGet();
             responsesJournal.response(response);
         }
