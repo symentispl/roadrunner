@@ -33,7 +33,6 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,10 +66,11 @@ public class DefaultRoadrunner implements Roadrunner {
         var csvOutputFile = outputDir.resolve("output.csv");
         LOG.info("Writing responses to {}", csvOutputFile);
 
-        var progressTrackingResponseListener = new ProgressTrackingResponseListener(new CsvOutputEventListener(csvOutputFile), measurementProgress);
+        var progressTrackingResponseListener =
+                new ProgressTrackingResponseListener(new CsvOutputEventListener(csvOutputFile), measurementProgress);
         try (var responsesJournal = new QueueingSamplerResponsesJournal(progressTrackingResponseListener);
-             var preloadedParameterSource = PreloadedParameterSource.from(parameterSource);
-             var gcProfiler = new GCProfiler();
+                var preloadedParameterSource = PreloadedParameterSource.from(parameterSource);
+                var gcProfiler = new GCProfiler();
                 var latencyRecorder = LatencyRecorders.create(pauseDetectorKinds)) {
             gcProfiler.start();
             responsesJournal.start();
@@ -88,15 +88,13 @@ public class DefaultRoadrunner implements Roadrunner {
                 }
             }
             return DefaultMeasurements.from(responsesJournal.measurementsReader());
-        } catch (
-                Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void close() {
-    }
+    public void close() {}
 
     private static class ProgressTrackingResponseListener implements EventListener {
         private final EventListener delegate;

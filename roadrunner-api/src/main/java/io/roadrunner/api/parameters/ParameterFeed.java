@@ -16,7 +16,6 @@
 package io.roadrunner.api.parameters;
 
 import java.util.Collections;
-import java.util.Iterator;
 
 /**
  * Thread-safe, non-blocking dispatcher of {@link SamplerParameters} to sampler threads.
@@ -27,8 +26,7 @@ import java.util.Iterator;
  */
 public interface ParameterFeed extends AutoCloseable, Iterable<SamplerParameters> {
 
-    default void close() throws Exception {
-    }
+    default void close() throws Exception {}
 
     static ParameterFeed empty() {
         return () -> Collections.singletonList(SamplerParameters.EMPTY).iterator();

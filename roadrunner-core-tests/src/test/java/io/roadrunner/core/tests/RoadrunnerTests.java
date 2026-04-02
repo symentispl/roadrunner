@@ -1,4 +1,5 @@
-package io.roadrunner.core.tests; /**
+package io.roadrunner.core.tests;
+/**
  * Copyright 2024 Symentis.pl
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
