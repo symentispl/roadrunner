@@ -19,8 +19,10 @@ import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.parameters.ParameterFeed;
+import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
+import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -51,12 +53,13 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
             SamplerProvider samplerProvider, ParameterFeed parameterFeed, QueueingSamplerResponsesJournal journal, LatencyRecorder recorder)
             throws InterruptedException {
         var delayedSupplier = new DelayedSupplier<>(samplerProvider::newSampler, () -> 20L);
+        Iterator<SamplerParameters> parameters = parameterFeed.iterator();
         try (var usersExecutor = Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("roadrunner-users-").factory())) {
             var latch = new CountDownLatch(concurrentUsers);
             var measurementControl = new MeasurementControl(requests, journal, latch);
             for (int i = 0; i < concurrentUsers; i++) {
-                usersExecutor.submit(new RoadrunnerUser(measurementControl, delayedSupplier.get(), parameterFeed));
+                usersExecutor.submit(new RoadrunnerUser(measurementControl, delayedSupplier.get(), parameters));
             }
             latch.await();
             usersExecutor.shutdown();
@@ -67,17 +70,17 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
     private static class RoadrunnerUser implements Runnable {
         private final MeasurementControl measurementControl;
         private final Sampler sampler;
-        private final ParameterFeed parameterFeed;
+        private final Iterator<SamplerParameters> parameters;
 
-        private RoadrunnerUser(MeasurementControl measurementControl, Sampler sampler, ParameterFeed parameterFeed) {
+        private RoadrunnerUser(
+                MeasurementControl measurementControl, Sampler sampler, Iterator<SamplerParameters> parameters) {
             this.measurementControl = measurementControl;
             this.sampler = sampler;
-            this.parameterFeed = parameterFeed;
+            this.parameters = parameters;
         }
 
         @Override
         public void run() {
-            var params = parameterFeed.iterator();
             measurementControl.userEnters();
             try {
                 while (measurementControl.isRunning()) {
@@ -86,7 +89,7 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
                         long scheduledStartTime = System.nanoTime();
                         // fetch parameters before submitting — non-blocking
                         // execute the request
-                        var response = sampler.execute(params.next());
+                        var response = sampler.execute(parameters.next());
                         // calculate delay from the intended start time
                         var inQueueTime = response.timestamp() - scheduledStartTime;
                         // calculate the service time (actual execution time)

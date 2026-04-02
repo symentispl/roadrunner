@@ -21,11 +21,9 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * {@link ParameterFeed} backed by a pre-loaded array of {@link SamplerParameters}.
+ * {@link ParameterFeed} backed by a preloaded array of {@link SamplerParameters}.
  * <p>
  * Rows are delivered round-robin using an {@link AtomicLong} counter.
- * Hot-path cost: one {@code getAndIncrement()} CAS + two array dereferences.
- * No object allocation per {@link Iterator#next()} call.
  */
 final class PreloadedParameterFeed implements ParameterFeed {
 

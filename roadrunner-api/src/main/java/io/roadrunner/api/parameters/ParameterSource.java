@@ -15,6 +15,8 @@
  */
 package io.roadrunner.api.parameters;
 
+import java.util.Collections;
+
 /**
  * Source of parameter data for sampler invocations.
  * <p>
@@ -38,7 +40,7 @@ public interface ParameterSource extends AutoCloseable {
     /**
      * Returns a parameters source that produces only empty parameters.
      */
-    static ParameterSource empty() {
-        return ParameterFeed::empty;
+    static ParameterSource onlyEmptyParameters() {
+        return () -> () -> Collections.singletonList(SamplerParameters.EMPTY).iterator();
     }
 }

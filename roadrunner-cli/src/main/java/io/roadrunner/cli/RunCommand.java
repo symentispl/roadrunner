@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.EnumSet;
 import java.util.HashMap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.ArgGroup;
@@ -87,7 +86,8 @@ class RunCommand {
 
     @Option(
             names = "--parameters-source",
-            description = "Parameter source in 'type:key=value' format (e.g. csv:file=data.csv)", converter = PrefixedMap.Converter.class)
+            description = "Parameter source in 'type:key=value' format (e.g. csv:file=data.csv)",
+            converter = PrefixedMap.Converter.class)
     PrefixedMap parametersSource;
 
     public void run(SamplerProvider samplerProvider) throws Exception {

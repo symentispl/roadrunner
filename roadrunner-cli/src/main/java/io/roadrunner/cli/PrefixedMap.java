@@ -15,13 +15,12 @@
  */
 package io.roadrunner.cli;
 
-import picocli.CommandLine;
-
 import java.io.IOException;
 import java.io.PushbackReader;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
+import picocli.CommandLine;
 
 record PrefixedMap(String prefix, Map<String, String> parameters) {
     static PrefixedMap parse(String input) throws IOException {

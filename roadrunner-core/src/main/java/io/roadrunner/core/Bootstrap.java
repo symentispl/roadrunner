@@ -40,7 +40,7 @@ public class Bootstrap {
     private ExecutionStrategy strategy;
     private MeasurementProgress measurementProgress = MeasurementProgress.NO_OP;
     private Path outputDir;
-    private ParameterSource parameterSource = ParameterSource.empty();
+    private ParameterSource parameterSource = ParameterSource.onlyEmptyParameters();
     private EnumSet<PauseDetectorKind> pauseDetectors = EnumSet.noneOf(PauseDetectorKind.class);
 
     /**
