@@ -37,7 +37,7 @@ public class Bootstrap {
     private ExecutionStrategy strategy;
     private MeasurementProgress measurementProgress = MeasurementProgress.NO_OP;
     private Path outputDir;
-    private ParameterSource parameterSource = ParameterSource.empty();
+    private ParameterSource parameterSource = ParameterSource.onlyEmptyParameters();
 
     /**
      * Configure the closed-world load model: N concurrent users each loop until the total
