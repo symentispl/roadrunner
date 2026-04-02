@@ -19,14 +19,12 @@ import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
-
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

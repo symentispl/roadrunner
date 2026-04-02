@@ -20,7 +20,6 @@ import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.parameters.ParameterFeed;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -48,17 +47,15 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
 
     @Override
     public void execute(
-            SamplerProvider samplerProvider,
-            ParameterFeed parameterFeed,
-            QueueingSamplerResponsesJournal journal)
+            SamplerProvider samplerProvider, ParameterFeed parameterFeed, QueueingSamplerResponsesJournal journal)
             throws InterruptedException {
         var delayedSupplier = new DelayedSupplier<>(samplerProvider::newSampler, () -> 20L);
-        try (var usersExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("roadrunner-users-").factory())) {
+        try (var usersExecutor = Executors.newThreadPerTaskExecutor(
+                Thread.ofVirtual().name("roadrunner-users-").factory())) {
             var latch = new CountDownLatch(concurrentUsers);
             var measurementControl = new MeasurementControl(requests, journal, latch);
             for (int i = 0; i < concurrentUsers; i++) {
-                usersExecutor.submit(
-                        new RoadrunnerUser(measurementControl, delayedSupplier.get(), parameterFeed));
+                usersExecutor.submit(new RoadrunnerUser(measurementControl, delayedSupplier.get(), parameterFeed));
             }
             latch.await();
             usersExecutor.shutdown();
@@ -71,10 +68,7 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
         private final Sampler sampler;
         private final ParameterFeed parameterFeed;
 
-        private RoadrunnerUser(
-                MeasurementControl measurementControl,
-                Sampler sampler,
-                ParameterFeed parameterFeed) {
+        private RoadrunnerUser(MeasurementControl measurementControl, Sampler sampler, ParameterFeed parameterFeed) {
             this.measurementControl = measurementControl;
             this.sampler = sampler;
             this.parameterFeed = parameterFeed;

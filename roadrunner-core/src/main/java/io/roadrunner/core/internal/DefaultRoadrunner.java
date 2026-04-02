@@ -25,11 +25,9 @@ import io.roadrunner.api.measurments.Measurements;
 import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.output.csv.CsvOutputEventListener;
-
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,10 +57,11 @@ public class DefaultRoadrunner implements Roadrunner {
         var csvOutputFile = outputDir.resolve("output.csv");
         LOG.info("Writing responses to {}", csvOutputFile);
 
-        var progressTrackingResponseListener = new ProgressTrackingResponseListener(new CsvOutputEventListener(csvOutputFile), measurementProgress);
+        var progressTrackingResponseListener =
+                new ProgressTrackingResponseListener(new CsvOutputEventListener(csvOutputFile), measurementProgress);
         try (var responsesJournal = new QueueingSamplerResponsesJournal(progressTrackingResponseListener);
-             var preloadedParameterSource = PreloadedParameterSource.from(parameterSource);
-             var gcProfiler = new GCProfiler()) {
+                var preloadedParameterSource = PreloadedParameterSource.from(parameterSource);
+                var gcProfiler = new GCProfiler()) {
             gcProfiler.start();
             responsesJournal.start();
             var parameterFeed = preloadedParameterSource.load();
@@ -73,15 +72,13 @@ public class DefaultRoadrunner implements Roadrunner {
                 throw new RuntimeException(e);
             }
             return DefaultMeasurements.from(responsesJournal.measurementsReader());
-        } catch (
-                Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void close() {
-    }
+    public void close() {}
 
     private static class ProgressTrackingResponseListener implements EventListener {
         private final EventListener delegate;

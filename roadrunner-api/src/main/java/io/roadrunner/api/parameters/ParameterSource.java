@@ -33,8 +33,7 @@ public interface ParameterSource extends AutoCloseable {
      */
     ParameterFeed load() throws Exception;
 
-    default void close() throws Exception {
-    }
+    default void close() throws Exception {}
 
     /**
      * Returns a parameters source that produces only empty parameters.

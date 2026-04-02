@@ -24,12 +24,11 @@ import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
+import io.roadrunner.api.parameters.ParameterFeed;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import io.roadrunner.api.parameters.ParameterFeed;
 import org.junit.jupiter.api.Test;
 
 class OpenWorldStrategyTest {
