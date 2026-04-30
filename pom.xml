@@ -346,6 +346,7 @@
         <module>roadrunner-samplers-spi</module>
         <module>roadrunner-sampler-vm</module>
         <module>roadrunner-sampler-ab</module>
+        <module>roadrunner-sampler-jdbc</module>
         <module>roadrunner-sampler-neo4j</module>
         <module>roadrunner-sampler-zero</module>
         <module>roadrunner-api</module>

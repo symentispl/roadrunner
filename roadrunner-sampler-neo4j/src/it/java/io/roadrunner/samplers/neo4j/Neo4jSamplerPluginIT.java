@@ -16,10 +16,8 @@
 package io.roadrunner.samplers.neo4j;
 
 import io.roadrunner.api.events.SamplerResponse;
-import io.roadrunner.api.samplers.Sampler;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.startupcheck.StartupCheckStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -48,7 +46,11 @@ public class Neo4jSamplerPluginIT {
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
                 var response = sampler.execute();
-                assertThat(response).asInstanceOf(type(SamplerResponse.Error.class)).satisfies(e -> assertThat(e.timestamp()).isLessThanOrEqualTo(System.currentTimeMillis()));
+                assertThat(response).asInstanceOf(type(SamplerResponse.Error.class)).satisfies(e -> {
+                    assertThat(e.timestamp()).isLessThanOrEqualTo(e.stopTime());
+                    assertThat(e.stopTime()).isLessThanOrEqualTo(System.nanoTime());
+                    assertThat(e.message()).isEqualTo("Cypher query text should not be null");
+                });
             }
         }
     }
@@ -64,7 +66,11 @@ public class Neo4jSamplerPluginIT {
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
                 var response = sampler.execute();
-                assertThat(response).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(r -> assertThat(r.timestamp()).isLessThanOrEqualTo(System.currentTimeMillis()));
+                assertThat(response).asInstanceOf(type(SamplerResponse.Response.class))
+                        .satisfies(r -> {
+                            assertThat(r.timestamp()).isLessThanOrEqualTo(r.stopTime());
+                            assertThat(r.stopTime()).isLessThanOrEqualTo(System.nanoTime());
+                        });
             }
         }
     }

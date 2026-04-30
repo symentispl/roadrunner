@@ -13,10 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api.samplers;
+import io.roadrunner.samplers.jdbc.JDBCSamplerPlugin;
+import io.roadrunner.samplers.spi.SamplerPlugin;
 
-public interface SamplerProvider extends AutoCloseable {
-    Sampler newSampler();
+module io.roadrunner.sampler.jdbc {
+    requires java.sql;
+    requires io.roadrunner.api;
+    requires io.roadrunner.samplers.spi;
+    requires info.picocli;
+    requires com.zaxxer.hikari;
 
-    default void close() throws Exception {}
+    uses java.sql.Driver;
+
+    exports io.roadrunner.samplers.jdbc;
+
+    provides SamplerPlugin with
+            JDBCSamplerPlugin;
+
+    opens io.roadrunner.samplers.jdbc to
+            info.picocli;
 }

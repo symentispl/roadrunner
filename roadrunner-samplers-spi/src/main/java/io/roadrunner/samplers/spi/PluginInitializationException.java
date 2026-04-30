@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api.samplers;
+package io.roadrunner.samplers.spi;
 
-public interface SamplerProvider extends AutoCloseable {
-    Sampler newSampler();
-
-    default void close() throws Exception {}
+public class PluginInitializationException extends RuntimeException {
+    public PluginInitializationException(String message, Exception e) {
+        super(message, e);
+    }
 }
