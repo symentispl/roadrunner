@@ -24,5 +24,9 @@ public interface ExecutionStrategy {
      * recording UserEvent.Enter/Exit, submitting Sampler.execute() calls,
      * computing corrected latency, and blocking until the test is complete.
      */
-    void execute(SamplerProvider samplerProvider, QueueingSamplerResponsesJournal journal) throws InterruptedException;
+    void execute(
+            SamplerProvider samplerProvider,
+            io.roadrunner.api.parameters.ParameterFeed parameterFeed,
+            QueueingSamplerResponsesJournal journal)
+            throws InterruptedException;
 }

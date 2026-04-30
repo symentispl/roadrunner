@@ -20,6 +20,7 @@ module io.roadrunner.core {
     requires io.roadrunner.api;
     requires org.slf4j;
     requires jdk.jfr;
+    requires java.logging;
 
     exports io.roadrunner.core;
 }

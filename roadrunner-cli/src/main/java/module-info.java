@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import io.roadrunner.api.parameters.ParameterSourceProvider;
 import io.roadrunner.api.reports.ReportGeneratorProvider;
 import io.roadrunner.samplers.spi.SamplerPlugin;
 
@@ -27,6 +28,7 @@ module io.roadrunner.cli {
 
     uses SamplerPlugin;
     uses ReportGeneratorProvider;
+    uses ParameterSourceProvider;
 
     opens io.roadrunner.cli to
             info.picocli;

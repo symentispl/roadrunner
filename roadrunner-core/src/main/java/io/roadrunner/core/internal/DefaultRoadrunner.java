@@ -22,6 +22,7 @@ import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
+import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.output.csv.CsvOutputEventListener;
 import java.nio.file.Path;
@@ -37,30 +38,42 @@ public class DefaultRoadrunner implements Roadrunner {
     private final ExecutionStrategy strategy;
     private final MeasurementProgress measurementProgress;
     private final Path outputDir;
+    private final ParameterSource parameterSource;
 
-    public DefaultRoadrunner(ExecutionStrategy strategy, MeasurementProgress measurementProgress, Path outputDir) {
+    public DefaultRoadrunner(
+            ExecutionStrategy strategy,
+            MeasurementProgress measurementProgress,
+            Path outputDir,
+            ParameterSource parameterSource) {
         this.strategy = strategy;
         this.measurementProgress = measurementProgress;
         this.outputDir = outputDir;
+        this.parameterSource = parameterSource;
     }
 
     @Override
     public Measurements execute(SamplerProvider samplerSupplier) {
         LOG.info("Roadrunner started");
         var csvOutputFile = outputDir.resolve("output.csv");
-        LOG.info("writing responses to {}", csvOutputFile);
+        LOG.info("Writing responses to {}", csvOutputFile);
 
-        try (var responsesJournal = new QueueingSamplerResponsesJournal(new ProgressTrackingResponseListener(
-                        new CsvOutputEventListener(csvOutputFile), measurementProgress));
+        var progressTrackingResponseListener =
+                new ProgressTrackingResponseListener(new CsvOutputEventListener(csvOutputFile), measurementProgress);
+        try (var responsesJournal = new QueueingSamplerResponsesJournal(progressTrackingResponseListener);
+                var preloadedParameterSource = PreloadedParameterSource.from(parameterSource);
                 var gcProfiler = new GCProfiler()) {
             gcProfiler.start();
             responsesJournal.start();
+            var parameterFeed = preloadedParameterSource.load();
             try {
-                strategy.execute(samplerSupplier, responsesJournal);
+                strategy.execute(samplerSupplier, parameterFeed, responsesJournal);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             }
             return DefaultMeasurements.from(responsesJournal.measurementsReader());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

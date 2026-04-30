@@ -16,9 +16,12 @@
 package io.roadrunner.core.internal;
 
 import io.roadrunner.api.events.UserEvent;
+import io.roadrunner.api.parameters.ParameterFeed;
+import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
 import java.time.Duration;
+import java.util.Iterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
@@ -49,7 +52,8 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
     }
 
     @Override
-    public void execute(SamplerProvider samplerSupplier, QueueingSamplerResponsesJournal journal)
+    public void execute(
+            SamplerProvider samplerSupplier, ParameterFeed parameterFeed, QueueingSamplerResponsesJournal journal)
             throws InterruptedException {
         long intervalNanos = 1_000_000_000L / usersArrivalRate;
         if (intervalNanos <= 0) {
@@ -62,15 +66,17 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
         var requestsExecutor = Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("roadrunner-users-").factory());
 
-        var startNanos = System.nanoTime();
-        var deadlineNanos = startNanos + durationNanos;
-        // Track the next arrival as an absolute nanos value to avoid drift accumulation
-        var nextScheduledStartTime = startNanos;
+        var parameters = parameterFeed.iterator();
 
         // Phaser tracks in-flight users; registered parties = concurrent users in the system.
         // Phaser supports at most 65535 simultaneous parties, which bounds max concurrency, not
         // total request count.
         var phaser = new Phaser(1);
+
+        var startNanos = System.nanoTime();
+        var deadlineNanos = startNanos + durationNanos;
+        // Track the next arrival as an absolute nanos value to avoid drift accumulation
+        var nextScheduledStartTime = startNanos;
 
         try {
             while (true) {
@@ -87,8 +93,8 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 }
                 var scheduledStartTime = nextScheduledStartTime;
                 phaser.register();
-                requestsExecutor.submit(
-                        new RoadrunnerUser(journal, samplerSupplier.newSampler(), scheduledStartTime, phaser));
+                requestsExecutor.submit(new RoadrunnerUser(
+                        journal, samplerSupplier.newSampler(), scheduledStartTime, phaser, parameters));
             }
         } finally {
             // Deregister the main party; when the last in-flight user also deregisters, the phaser
@@ -108,20 +114,27 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
         private final Sampler sampler;
         private final long scheduledStartTime;
         private final Phaser phaser;
+        private final Iterator<SamplerParameters> parameters;
 
         public RoadrunnerUser(
-                QueueingSamplerResponsesJournal journal, Sampler sampler, long scheduledStartTime, Phaser phaser) {
+                QueueingSamplerResponsesJournal journal,
+                Sampler sampler,
+                long scheduledStartTime,
+                Phaser phaser,
+                Iterator<SamplerParameters> parameters) {
             this.journal = journal;
             this.sampler = sampler;
             this.scheduledStartTime = scheduledStartTime;
             this.phaser = phaser;
+            this.parameters = parameters;
         }
 
         @Override
         public void run() {
             try {
+
                 journal.userEnters(UserEvent.enter());
-                var response = sampler.execute();
+                var response = sampler.execute(parameters.next());
                 var inQueueTime = response.timestamp() - scheduledStartTime;
                 var serviceTime = response.stopTime() - response.timestamp();
                 var correctedLatency = serviceTime + inQueueTime;
