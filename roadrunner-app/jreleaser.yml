@@ -1,0 +1,50 @@
+assemble:
+  # Jlink assembler: self-contained runtime image (bundled JDK).
+  # JARs in target/modules/ are used as module path; JReleaser auto-detects all modules.
+  # No targetJdks -> JReleaser uses the current JDK (the one running the build).
+  # Note: jlink uses 'archiveFormat' (singular string).
+  jlink:
+    roadrunner:
+      active: ALWAYS
+      executable: roadrunner
+      mainJar:
+        path: '{{basedir}}/roadrunner-app/target/modules/roadrunner-cli-{{projectVersion}}.jar'
+      java:
+        mainModule: io.roadrunner.cli
+        mainClass: io.roadrunner.cli.Main
+        jvmOptions:
+          universal:
+            - '-Djdk.tracePinnedThreads=full'
+      jars:
+        - pattern: 'glob:{{basedir}}/roadrunner-app/target/modules/*.jar'
+      jdeps:
+        multiRelease: '25'
+        ignoreMissingDeps: false
+      args:
+        - --no-header-files
+        - --no-man-pages
+      archiveFormat: ZIP
+      imageName: 'roadrunner-app-{{projectVersion}}'
+
+  # JavaArchive assembler: plain JAR distribution (requires user-supplied JDK).
+  # Named 'roadrunner-jars' to avoid distribution conflict with the jlink assembler.
+  # mainJar is roadrunner-cli; all other runtime deps go into lib/.
+  # Note: javaArchive uses 'formats' (list).
+  javaArchive:
+    roadrunner-jars:
+      active: ALWAYS
+      executable:
+        name: roadrunner
+        windowsExtension: cmd
+      mainJar:
+        path: '{{basedir}}/roadrunner-app/target/modules/roadrunner-cli-{{projectVersion}}.jar'
+      jars:
+        - pattern: 'glob:{{basedir}}/roadrunner-app/target/lib/*.jar'
+      java:
+        mainModule: io.roadrunner.cli
+        mainClass: io.roadrunner.cli.Main
+        jvmOptions:
+          universal:
+            - '-Djdk.tracePinnedThreads=full'
+      formats:
+        - ZIP

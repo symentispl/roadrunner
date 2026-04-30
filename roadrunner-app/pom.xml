@@ -11,21 +11,51 @@
 
     <artifactId>roadrunner-app</artifactId>
     <name>roadrunner-app</name>
-    <packaging>jlink</packaging>
+    <packaging>jar</packaging>
 
     <build>
         <plugins>
+            <!--
+              Patch reactive-streams with a module-info so jlink can include it.
+              Output goes to target/modules/ (jlink) and target/lib/ (javaArchive lib dir).
+            -->
             <plugin>
                 <groupId>org.moditect</groupId>
                 <artifactId>moditect-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>reactivestreams-add-module-info</id>
+                        <id>reactivestreams-add-module-info-modules</id>
                         <phase>prepare-package</phase>
                         <goals>
                             <goal>add-module-info</goal>
                         </goals>
                         <configuration>
+                            <outputDirectory>${project.build.directory}/modules</outputDirectory>
+                            <modules>
+                                <module>
+                                    <artifact>
+                                        <groupId>org.reactivestreams</groupId>
+                                        <artifactId>reactive-streams</artifactId>
+                                        <version>1.0.4</version>
+                                    </artifact>
+                                    <moduleInfoSource>
+                                        module org.reactivestreams {
+                                        exports org.reactivestreams;
+                                        }
+                                    </moduleInfoSource>
+                                </module>
+                            </modules>
+                            <overwriteExistingFiles>true</overwriteExistingFiles>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>reactivestreams-add-module-info-lib</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>add-module-info</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
                             <modules>
                                 <module>
                                     <artifact>
@@ -45,31 +75,90 @@
                     </execution>
                 </executions>
             </plugin>
+            <!--
+              Collect all runtime JARs for both assemblers:
+              - copy-modules: everything (except reactive-streams, patched by moditect) → target/modules/
+                Used by the JReleaser jlink assembler (ALL-MODULE-PATH).
+              - copy-lib: everything except roadrunner-cli and reactive-streams → target/lib/
+                Used by the JReleaser javaArchive assembler as the lib directory.
+                roadrunner-cli is excluded here because it is the mainJar in javaArchive.
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jlink-plugin</artifactId>
-                <version>3.3.0</version>
-                <extensions>true</extensions>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.10.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-modules</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/modules</outputDirectory>
+                            <includeScope>runtime</includeScope>
+                            <excludeArtifactIds>reactive-streams</excludeArtifactIds>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-lib</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <includeScope>runtime</includeScope>
+                            <excludeArtifactIds>roadrunner-cli,reactive-streams</excludeArtifactIds>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jreleaser</groupId>
+                <artifactId>jreleaser-maven-plugin</artifactId>
+                <version>1.23.0</version>
+                <executions>
+                    <execution>
+                        <id>assemble</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>assemble</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
-                    <addModules>
-                        <addModule>io.roadrunner.cli</addModule>
-                    </addModules>
-                    <modulePaths>
-                        <modulePath>${project.build.directory}/modules</modulePath>
-                    </modulePaths>
-                    <addOptions>
-                        <addOption>-Djdk.tracePinnedThreads=full</addOption>
-                    </addOptions>
-                    <additionalResources>
-                        <additionalResource>
-                            <directory>src/main/resources</directory>
-                            <includes>
-                                <include>**</include>
-                            </includes>
-                        </additionalResource>
-                    </additionalResources>
-                    <attach>true</attach>
+                    <configFile>${project.basedir}/jreleaser.yml</configFile>
                 </configuration>
+            </plugin>
+            <!--
+              Attach the jlink ZIP as a Maven artifact so that roadrunner-app-tests can resolve it
+              via <type>zip</type> in its dependency declaration.
+              NOTE: the exact path depends on JReleaser's output structure; adjust if the build
+              reports the file at a different location.
+            -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-jlink-zip</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>
+                                        ${project.build.directory}/jreleaser/assemble/roadrunner-jars/java-archive/roadrunner-jars-${project.version}.zip
+                                    </file>
+                                    <type>zip</type>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
