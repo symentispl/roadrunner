@@ -3,7 +3,7 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.utils;
+package io.roadrunner.latency;
 
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -40,7 +40,7 @@ public abstract class PauseDetector {
     }
 
     /**
-     * Add a {@link io.roadrunner.latency.utils.PauseDetectorListener} listener to be notified when pauses are detected.
+     * Add a {@link io.roadrunner.latency.PauseDetectorListener} listener to be notified when pauses are detected.
      * Listener will be added to the normal priority listeners list.
      *
      * @param listener Listener to add
@@ -50,7 +50,7 @@ public abstract class PauseDetector {
     }
 
     /**
-     * Add a {@link io.roadrunner.latency.utils.PauseDetectorListener} listener to be notified when pauses are detected
+     * Add a {@link io.roadrunner.latency.PauseDetectorListener} listener to be notified when pauses are detected
      * Listener will be added to either the normal priority or high priority listeners list,
      *
      * @param listener       Listener to add
@@ -66,7 +66,7 @@ public abstract class PauseDetector {
     }
 
     /**
-     * Remove a {@link io.roadrunner.latency.utils.PauseDetectorListener}
+     * Remove a {@link io.roadrunner.latency.PauseDetectorListener}
      *
      * @param listener Listener to remove
      */

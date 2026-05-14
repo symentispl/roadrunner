@@ -3,7 +3,7 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.utils;
+package io.roadrunner.latency;
 
 import io.roadrunner.shaded.hdrhistogram.AtomicHistogram;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
@@ -30,7 +30,7 @@ import java.lang.ref.WeakReference;
  * and {@link #getLatestUncorrectedIntervalHistogramInto} calls.
  * <p>
  * LatencyStats objects can be instantiated either directly via the provided constructors, or by
- * using the fluent API builder supported by {@link io.roadrunner.latency.utils.LatencyStats.Builder}.
+ * using the fluent API builder supported by {@link io.roadrunner.latency.LatencyStats.Builder}.
  *
  * <h3>Correction Technique</h3>
  * In addition to tracking the raw latency recordings provided via {@link #recordLatency}, each
@@ -48,15 +48,15 @@ import java.lang.ref.WeakReference;
  * A configurable default pause detector is (by default) shared between LatencyStats instances
  * that are not provided with a specific pause detector at instantiation. If the default pause
  * detector is not explicitly set, it will itself default to creating (and starting) a single
- * instance of {@link io.roadrunner.latency.utils.SimplePauseDetector}, which uses consensus observation
+ * instance of {@link io.roadrunner.latency.SimplePauseDetector}, which uses consensus observation
  * of a pause across multiple observing threads as a detection technique.
  * <p>
- * Custom pause detectors can be provided (by subclassing {@link io.roadrunner.latency.utils.PauseDetector}).
+ * Custom pause detectors can be provided (by subclassing {@link io.roadrunner.latency.PauseDetector}).
  * E.g. a pause detector that pauses GC log output rather than directly measuring observations
  * can be constructed. A custom pause detector can be especially useful in situations where a
  * stall in the operation and latency measurement of an application's is known and detectable
  * by the application level, but would not be detectable as a process-wide stall in execution
- * (which {@link io.roadrunner.latency.utils.SimplePauseDetector} is built to detect).
+ * (which {@link io.roadrunner.latency.SimplePauseDetector} is built to detect).
  * <p>
  * Interval estimation is done by using a time-capped moving window average estimator, with
  * the expected interval computed to be the average of measurement intervals within the window

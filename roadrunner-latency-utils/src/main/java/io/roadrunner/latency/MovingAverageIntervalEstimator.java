@@ -3,7 +3,7 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.utils;
+package io.roadrunner.latency;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;

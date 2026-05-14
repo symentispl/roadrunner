@@ -17,7 +17,4 @@ module io.roadrunner.latency {
     requires io.roadrunner.hdrhistogram;
 
     exports io.roadrunner.latency;
-    exports io.roadrunner.latency.utils;
-
-    opens io.roadrunner.latency.utils;
 }

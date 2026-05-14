@@ -3,12 +3,11 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.utils;
+package io.roadrunner.latency;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.roadrunner.shaded.hdrhistogram.Histogram;
-import java.lang.reflect.Field;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -17,7 +16,7 @@ import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.Test;
 
 /**
- * JUnit test for {@link io.roadrunner.latency.utils.SimplePauseDetector}
+ * JUnit test for {@link io.roadrunner.latency.LatencyStats}
  */
 public class LatencyStatsTest {
 
@@ -302,20 +301,9 @@ public class LatencyStatsTest {
                 Boolean response = future.get(5, TimeUnit.SECONDS);
                 assertEquals(Boolean.TRUE, response);
             } catch (TimeoutException e) {
-                System.err.println("\nFuture timed out.\n");
-                System.out.println("\nMaking sure the thread dies.\n");
-                try {
-                    Field f = LatencyStats.class.getDeclaredField("recordingEndEpoch");
-                    f.setAccessible(true);
-                    f.set(latencyStats, (Long)f.get(latencyStats) + 1);
-                    System.out.println(":" + future.get(5, TimeUnit.SECONDS));
-                } catch (Throwable t) {
-                    t.printStackTrace();
-                }
                 fail("Timed out trying to force interval sample.");
             } finally {
                 executorService.shutdownNow();
-                System.out.println("\nSuccessfully forced interval sample to complete on test failure.\n");
             }
 
         } catch (InterruptedException ex) {

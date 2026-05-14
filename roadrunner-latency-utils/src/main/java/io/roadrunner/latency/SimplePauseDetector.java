@@ -3,7 +3,7 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.utils;
+package io.roadrunner.latency;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -132,7 +132,12 @@ public class SimplePauseDetector extends PauseDetector {
                 }
 
                 // This is ***TEST FUNCTIONALITY***: Spin as long as we are externally asked to stall:
-                while ((stallThreadMask & threadMask) != 0);
+                while ((stallThreadMask & threadMask) != 0) {
+                    if ((stopThreadMask & threadMask) != 0 || Thread.currentThread().isInterrupted()) {
+                        break;
+                    }
+                    Thread.onSpinWait();
+                }
 
                 observedLastUpdateTime = consensusLatestTime.get();
                 // Volatile store above makes sure new "now" is measured after observedLastUpdateTime sample

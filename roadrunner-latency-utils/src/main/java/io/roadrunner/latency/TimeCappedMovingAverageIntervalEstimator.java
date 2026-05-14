@@ -3,7 +3,7 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.utils;
+package io.roadrunner.latency;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicLongArray;
@@ -167,28 +167,33 @@ public class TimeCappedMovingAverageIntervalEstimator extends MovingAverageInter
 
     @Override
     public String toString() {
-        long when = timeOfLastEstimatedInterval;
+        final long when;
+        final long snapshotTimeCap;
+        final long sampledCount;
+        final int currentPosition;
+        final int numberOfWindowPositionsOutsideOfTimeCap;
+        final long windowStartTime;
 
-        eliminateStalePauses(when);
-
-        int numberOfWindowPositionsOutsideOfTimeCap = determineNumberOfWindowPositionsOutsideOfTimeCap(when);
-
-        long windowStartTime = determineEarliestQualifyingTimeInWindow(when);
-
-        long windowTimeSpan = when - windowStartTime;
-        long totalPauseTimeInWindow = timeCap - baseTimeCap;
-        int positionDelta = (windowLength - numberOfWindowPositionsOutsideOfTimeCap) - 1;
-
-        long averageInterval = Long.MAX_VALUE;
-
-        if (positionDelta > 0) {
-            averageInterval = (windowTimeSpan - totalPauseTimeInWindow)  / positionDelta;
+        synchronized (this) {
+            when = timeOfLastEstimatedInterval;
+            snapshotTimeCap = timeCap;
+            sampledCount = count.get();
+            currentPosition = getCurrentPosition();
+            numberOfWindowPositionsOutsideOfTimeCap = determineNumberOfWindowPositionsOutsideOfTimeCap(when);
+            windowStartTime = determineEarliestQualifyingTimeInWindow(when);
         }
 
+        long windowTimeSpan = when - windowStartTime;
+        long totalPauseTimeInWindow = snapshotTimeCap - baseTimeCap;
+        int positionDelta = (windowLength - numberOfWindowPositionsOutsideOfTimeCap) - 1;
+        long averageInterval = (positionDelta > 0)
+                ? (windowTimeSpan - totalPauseTimeInWindow) / positionDelta
+                : Long.MAX_VALUE;
+
         return "IntervalEstimator: \n" +
-                "Estimated Interval: " + getEstimatedInterval(when) + " (calculated at time " + when + ")\n" +
-                "Time cap: " + timeCap + ", count = " + count.get() + ", currentPosition = " + getCurrentPosition() + "\n" +
-                "timeCapStartTime = " + (when - timeCap) + ", numberOfWindowPositionsSkipped = " + numberOfWindowPositionsOutsideOfTimeCap + "\n" +
+                "Estimated Interval: " + averageInterval + " (calculated at time " + when + ")\n" +
+                "Time cap: " + snapshotTimeCap + ", count = " + sampledCount + ", currentPosition = " + currentPosition + "\n" +
+                "timeCapStartTime = " + (when - snapshotTimeCap) + ", numberOfWindowPositionsSkipped = " + numberOfWindowPositionsOutsideOfTimeCap + "\n" +
                 "windowStartTime = " + windowStartTime + ", windowTimeSpan = " + windowTimeSpan + ", positionDelta = " + positionDelta + "\n" +
                 "totalPauseTimeInWindow = " + totalPauseTimeInWindow + ", averageInterval = " + averageInterval + "\n";
     }

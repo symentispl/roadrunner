@@ -139,8 +139,21 @@
                         <exclude>*.md</exclude>
                         <exclude>*.tmpl</exclude>
                         <!-- LatencyUtils sources carry CC0 (public domain) headers — preserve as-is -->
-                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/utils/**</exclude>
-                        <exclude>roadrunner-latency-utils/src/test/java/io/roadrunner/latency/utils/**</exclude>
+                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/LatencyStats.java</exclude>
+                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/PauseDetector.java</exclude>
+                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/SimplePauseDetector.java</exclude>
+                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/PauseDetectorListener.java</exclude>
+                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/IntervalEstimator.java</exclude>
+                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/MovingAverageIntervalEstimator.java</exclude>
+                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/TimeCappedMovingAverageIntervalEstimator.java</exclude>
+                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/TimeServices.java</exclude>
+                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/RealTimeServices.java</exclude>
+                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/SimulatedTimeServices.java</exclude>
+                        <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/package-info.java</exclude>
+                        <exclude>roadrunner-latency-utils/src/test/java/io/roadrunner/latency/LatencyStatsTest.java</exclude>
+                        <exclude>roadrunner-latency-utils/src/test/java/io/roadrunner/latency/MovingAverageIntervalEstimatorTest.java</exclude>
+                        <exclude>roadrunner-latency-utils/src/test/java/io/roadrunner/latency/SimplePauseDetectorTest.java</exclude>
+                        <exclude>roadrunner-latency-utils/src/test/java/io/roadrunner/latency/TimeCappedMovingAverageIntervalEstimatorTest.java</exclude>
                     </excludes>
                 </configuration>
                 <executions>

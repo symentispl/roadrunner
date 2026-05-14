@@ -3,7 +3,7 @@
  * as explained at http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package io.roadrunner.latency.utils;
+package io.roadrunner.latency;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 
 /**
- * JUnit test for {@link io.roadrunner.latency.utils.TimeCappedMovingAverageIntervalEstimator}
+ * JUnit test for {@link io.roadrunner.latency.TimeCappedMovingAverageIntervalEstimator}
  */
 public class TimeCappedMovingAverageIntervalEstimatorTest {
 
