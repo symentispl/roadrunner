@@ -15,12 +15,38 @@
  */
 package io.roadrunner.latency.recording;
 
+import io.roadrunner.api.latency.LatencyRecorder;
+import io.roadrunner.latency.PauseDetector;
+import io.roadrunner.latency.SimplePauseDetector;
+import io.roadrunner.latency.VirtualThreadSchedulingDetector;
+import java.util.ArrayList;
+import java.util.EnumSet;
+
 /**
- * Factory for building {@link io.roadrunner.api.latency.LatencyRecorder} instances.
- * Methods are added in subsequent commits; this stub exists so the module's exported
- * package is non-empty (required by javac for the {@code exports} directive in
- * module-info.java).
+ * Builds {@link LatencyRecorder} instances configured with the requested pause detectors.
  */
 public final class LatencyRecorders {
+
     private LatencyRecorders() {}
+
+    /**
+     * @param kinds which pause detectors to wire in. An empty set returns {@link LatencyRecorder#noop()}.
+     */
+    public static LatencyRecorder create(EnumSet<PauseDetectorKind> kinds) {
+        if (kinds.isEmpty()) {
+            return LatencyRecorder.noop();
+        }
+
+        var detectors = new ArrayList<PauseDetector>();
+        for (PauseDetectorKind kind : kinds) {
+            detectors.add(
+                    switch (kind) {
+                        case VT_SCHEDULING -> new VirtualThreadSchedulingDetector();
+                        case JVM_PAUSE -> new SimplePauseDetector();
+                    });
+        }
+
+        PauseDetector pauseDetector = detectors.size() == 1 ? detectors.get(0) : new CompositePauseDetector(detectors);
+        return new LatencyStatsRecorder(pauseDetector);
+    }
 }
