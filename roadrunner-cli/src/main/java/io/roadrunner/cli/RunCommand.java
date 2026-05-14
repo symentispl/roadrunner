@@ -17,8 +17,14 @@ package io.roadrunner.cli;
 
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.core.Bootstrap;
+import io.roadrunner.latency.recording.LatencyRecorders;
+import io.roadrunner.latency.recording.PauseDetectorKind;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.ArgGroup;
@@ -67,8 +73,24 @@ class RunCommand {
     @Option(names = "-r", description = "Report format type")
     String report;
 
+    @Option(
+            names = "--pause-detectors",
+            description =
+                    "Comma-separated list of pause detectors to record into the corrected-latency histogram: vt, jvm, or vt,jvm. Empty / unset disables pause-corrected recording.",
+            defaultValue = "")
+    String pauseDetectors;
+
+    @Option(
+            names = "--raw-latency",
+            description =
+                    "Reports use the per-event CSV histogram even when a pause-corrected histogram.hgrm is present.")
+    boolean rawLatency;
+
     public void run(SamplerProvider samplerProvider) throws Exception {
-        var bootstrap = new Bootstrap().withOutputDir(outputDir);
+        var detectorKinds = parsePauseDetectors(pauseDetectors);
+        var recorder = LatencyRecorders.create(detectorKinds);
+
+        var bootstrap = new Bootstrap().withOutputDir(outputDir).withLatencyRecorder(recorder);
 
         if (loadModel.closedWorld != null) {
             bootstrap
@@ -94,9 +116,31 @@ class RunCommand {
                         .formatted(
                                 reportConfiguration.reportFormat(), chartGeneratorProviders.supportedReportFormats()));
             }
-            var chartGenerator = reportGeneratorProvider.create(reportConfiguration.configuration());
+
+            var reportConfig = new HashMap<>(reportConfiguration.configuration());
+            reportConfig.put("outputDir", bootstrap.outputDir().toString());
+            reportConfig.put("rawLatency", Boolean.toString(rawLatency));
+
+            var chartGenerator = reportGeneratorProvider.create(reportConfig);
             var measurements = roadrunner.execute(samplerProvider);
             chartGenerator.generateChart(measurements.samplesReader());
         }
+    }
+
+    private static EnumSet<PauseDetectorKind> parsePauseDetectors(String spec) {
+        if (spec == null || spec.isBlank() || "none".equalsIgnoreCase(spec.trim())) {
+            return EnumSet.noneOf(PauseDetectorKind.class);
+        }
+        var kinds = EnumSet.noneOf(PauseDetectorKind.class);
+        for (String token : Arrays.stream(spec.split(",")).map(String::trim).toList()) {
+            switch (token.toLowerCase(Locale.ROOT)) {
+                case "vt" -> kinds.add(PauseDetectorKind.VT_SCHEDULING);
+                case "jvm" -> kinds.add(PauseDetectorKind.JVM_PAUSE);
+                default ->
+                    throw new IllegalArgumentException(
+                            "unknown pause detector '" + token + "', expected one of: vt, jvm, none");
+            }
+        }
+        return kinds;
     }
 }
