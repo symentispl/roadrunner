@@ -18,7 +18,6 @@ package io.roadrunner.latency.recording;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.roadrunner.latency.PauseDetector;
-import io.roadrunner.latency.PauseDetectorListener;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.Test;
