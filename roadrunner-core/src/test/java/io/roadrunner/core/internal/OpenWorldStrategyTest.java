@@ -23,6 +23,7 @@ import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
+import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.measurments.EventReader;
 import java.time.Duration;
 import java.util.Collection;
@@ -45,7 +46,8 @@ class OpenWorldStrategyTest {
                         var stop = System.nanoTime();
                         return SamplerResponse.empty(start, stop);
                     },
-                    journal);
+                    journal,
+                    LatencyRecorder.noop());
         }
 
         assertThat(listener.events).first(type(UserEvent.Enter.class)).satisfies(e -> assertThat(e.timestamp())

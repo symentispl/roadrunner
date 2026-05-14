@@ -15,6 +15,7 @@
  */
 package io.roadrunner.core.internal;
 
+import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.samplers.SamplerProvider;
 
 public interface ExecutionStrategy {
@@ -24,5 +25,5 @@ public interface ExecutionStrategy {
      * recording UserEvent.Enter/Exit, submitting Sampler.execute() calls,
      * computing corrected latency, and blocking until the test is complete.
      */
-    void execute(SamplerProvider samplerProvider, QueueingSamplerResponsesJournal journal) throws InterruptedException;
+    void execute(SamplerProvider samplerProvider, QueueingSamplerResponsesJournal journal, LatencyRecorder recorder) throws InterruptedException;
 }

@@ -19,6 +19,7 @@ import io.roadrunner.api.Roadrunner;
 import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
@@ -37,11 +38,17 @@ public class DefaultRoadrunner implements Roadrunner {
     private final ExecutionStrategy strategy;
     private final MeasurementProgress measurementProgress;
     private final Path outputDir;
+    private final LatencyRecorder latencyRecorder;
 
-    public DefaultRoadrunner(ExecutionStrategy strategy, MeasurementProgress measurementProgress, Path outputDir) {
+    public DefaultRoadrunner(
+            ExecutionStrategy strategy,
+            MeasurementProgress measurementProgress,
+            Path outputDir,
+            LatencyRecorder latencyRecorder) {
         this.strategy = strategy;
         this.measurementProgress = measurementProgress;
         this.outputDir = outputDir;
+        this.latencyRecorder = latencyRecorder;
     }
 
     @Override
@@ -56,7 +63,7 @@ public class DefaultRoadrunner implements Roadrunner {
             gcProfiler.start();
             responsesJournal.start();
             try {
-                strategy.execute(samplerSupplier, responsesJournal);
+                strategy.execute(samplerSupplier, responsesJournal, latencyRecorder);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }

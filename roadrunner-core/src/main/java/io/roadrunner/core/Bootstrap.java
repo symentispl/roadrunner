@@ -16,6 +16,7 @@
 package io.roadrunner.core;
 
 import io.roadrunner.api.Roadrunner;
+import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.core.internal.ClosedWorldStrategy;
 import io.roadrunner.core.internal.DefaultRoadrunner;
@@ -36,6 +37,7 @@ public class Bootstrap {
     private ExecutionStrategy strategy;
     private MeasurementProgress measurementProgress = MeasurementProgress.NO_OP;
     private Path outputDir;
+    private LatencyRecorder latencyRecorder = LatencyRecorder.noop();
 
     /**
      * Configure the closed-world load model: N concurrent users each loop until the total
@@ -60,6 +62,11 @@ public class Bootstrap {
         return this;
     }
 
+    public Bootstrap withLatencyRecorder(LatencyRecorder latencyRecorder) {
+        this.latencyRecorder = latencyRecorder;
+        return this;
+    }
+
     public Bootstrap withOutputDir(Path outputDir) {
         this.outputDir = outputDir;
         return this;
@@ -77,6 +84,6 @@ public class Bootstrap {
         if (strategy == null) {
             throw new IllegalStateException("Load strategy must be configured");
         }
-        return new DefaultRoadrunner(strategy, measurementProgress, outputDir);
+        return new DefaultRoadrunner(strategy, measurementProgress, outputDir, latencyRecorder);
     }
 }

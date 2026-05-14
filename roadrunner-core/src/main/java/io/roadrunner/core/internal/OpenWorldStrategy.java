@@ -16,6 +16,7 @@
 package io.roadrunner.core.internal;
 
 import io.roadrunner.api.events.UserEvent;
+import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
 import java.time.Duration;
@@ -49,7 +50,8 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
     }
 
     @Override
-    public void execute(SamplerProvider samplerSupplier, QueueingSamplerResponsesJournal journal)
+    public void execute(
+            SamplerProvider samplerSupplier, QueueingSamplerResponsesJournal journal, LatencyRecorder recorder)
             throws InterruptedException {
         long intervalNanos = 1_000_000_000L / usersArrivalRate;
         if (intervalNanos <= 0) {
