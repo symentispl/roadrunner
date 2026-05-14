@@ -25,6 +25,7 @@ import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.output.csv.CsvOutputEventListener;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
@@ -59,13 +60,19 @@ public class DefaultRoadrunner implements Roadrunner {
 
         try (var responsesJournal = new QueueingSamplerResponsesJournal(new ProgressTrackingResponseListener(
                         new CsvOutputEventListener(csvOutputFile), measurementProgress));
-                var gcProfiler = new GCProfiler()) {
+                var gcProfiler = new GCProfiler();
+                var recorder = latencyRecorder) {
             gcProfiler.start();
             responsesJournal.start();
             try {
                 strategy.execute(samplerSupplier, responsesJournal, latencyRecorder);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
+            }
+            try {
+                latencyRecorder.writeSnapshot(outputDir);
+            } catch (IOException e) {
+                LOG.error("failed to write latency snapshot to {}", outputDir, e);
             }
             return DefaultMeasurements.from(responsesJournal.measurementsReader());
         }

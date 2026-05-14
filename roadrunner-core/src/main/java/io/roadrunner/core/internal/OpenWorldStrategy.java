@@ -90,7 +90,7 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 var scheduledStartTime = nextScheduledStartTime;
                 phaser.register();
                 requestsExecutor.submit(
-                        new RoadrunnerUser(journal, samplerSupplier.newSampler(), scheduledStartTime, phaser));
+                        new RoadrunnerUser(journal, samplerSupplier.newSampler(), scheduledStartTime, phaser, recorder));
             }
         } finally {
             // Deregister the main party; when the last in-flight user also deregisters, the phaser
@@ -110,13 +110,19 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
         private final Sampler sampler;
         private final long scheduledStartTime;
         private final Phaser phaser;
+        private final LatencyRecorder recorder;
 
         public RoadrunnerUser(
-                QueueingSamplerResponsesJournal journal, Sampler sampler, long scheduledStartTime, Phaser phaser) {
+                QueueingSamplerResponsesJournal journal,
+                Sampler sampler,
+                long scheduledStartTime,
+                Phaser phaser,
+                LatencyRecorder recorder) {
             this.journal = journal;
             this.sampler = sampler;
             this.scheduledStartTime = scheduledStartTime;
             this.phaser = phaser;
+            this.recorder = recorder;
         }
 
         @Override
@@ -129,6 +135,7 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 var correctedLatency = serviceTime + inQueueTime;
                 journal.response(
                         response.withScheduledStartTime(scheduledStartTime).withLatency(correctedLatency));
+                recorder.record(correctedLatency);
             } catch (Exception e) {
                 journal.error(e);
             } finally {
