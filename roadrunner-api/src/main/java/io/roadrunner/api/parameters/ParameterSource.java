@@ -20,8 +20,8 @@ import java.util.Collections;
 /**
  * Source of parameter data for sampler invocations.
  * <p>
- * Responsible only for loading raw data — buffering, prefetching, and
- * thread-safe delivery are handled separately by the execution engine.
+ * Responsible only for loading raw data — the execution engine
+ * handles buffering, prefetching, and thread-safe delivery separately.
  * <p>
  * {@link #load()} is called once before the benchmark loop begins; all I/O
  * must happen there. The returned {@code Iterable} may be lazy (streaming)

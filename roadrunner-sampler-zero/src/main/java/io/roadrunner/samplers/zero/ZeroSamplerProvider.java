@@ -25,7 +25,7 @@ public class ZeroSamplerProvider implements SamplerProvider {
 
     @Override
     public Sampler newSampler() {
-        return () -> {
+        return (parameters) -> {
             var nanoTime = System.nanoTime();
             return SamplerResponse.empty(nanoTime, nanoTime);
         };

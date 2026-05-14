@@ -40,7 +40,7 @@ public class VmSamplerProvider implements SamplerProvider {
 
     @Override
     public Sampler newSampler() {
-        return () -> CompletableFuture.supplyAsync(
+        return (parameters) -> CompletableFuture.supplyAsync(
                         () -> {
                             var startTime = System.nanoTime();
                             try {

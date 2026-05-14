@@ -42,7 +42,7 @@ class OpenWorldStrategyTest {
             journal.start();
             var strategy = OpenWorldStrategy.of(5, Duration.ofSeconds(2));
             strategy.execute(
-                    () -> () -> {
+                    () -> (parameters) -> {
                         var start = System.nanoTime();
                         var stop = System.nanoTime();
                         return SamplerResponse.empty(start, stop);

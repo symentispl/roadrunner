@@ -40,7 +40,7 @@ class ClosedWorldStrategyTest {
             journal.start();
             var strategy = ClosedWorldStrategy.of(5, 10);
             strategy.execute(
-                    () -> () -> {
+                    () -> (parameters) -> {
                         var start = System.nanoTime();
                         var stop = System.nanoTime();
                         return SamplerResponse.empty(start, stop);

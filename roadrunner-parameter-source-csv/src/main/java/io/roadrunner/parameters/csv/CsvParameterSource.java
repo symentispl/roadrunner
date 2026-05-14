@@ -15,6 +15,8 @@
  */
 package io.roadrunner.parameters.csv;
 
+import static java.util.Collections.unmodifiableMap;
+
 import io.roadrunner.api.parameters.ParameterFeed;
 import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.parameters.SamplerParameters;
@@ -31,8 +33,7 @@ import org.slf4j.LoggerFactory;
  * {@link ParameterSource} that reads parameters from a CSV file.
  * <p>
  * The first row is treated as the header (parameter names). All subsequent rows
- * are data rows. The header array is shared across all {@link SamplerParameters}
- * instances to minimise heap allocation.
+ * are data rows.
  * <p>
  * All I/O happens inside {@link #load()} — the file is fully read before the
  * benchmark loop begins.
@@ -78,7 +79,7 @@ public final class CsvParameterSource implements ParameterSource {
         @Override
         public Iterator<SamplerParameters> iterator() {
             return csvParser.stream()
-                    .map(record -> new SamplerParameters(record.toMap()))
+                    .map(record -> new SamplerParameters(unmodifiableMap(record.toMap())))
                     .iterator();
         }
 

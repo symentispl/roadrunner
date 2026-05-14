@@ -37,7 +37,7 @@ public class AbSamplerProvider implements SamplerProvider {
     @Override
     public Sampler newSampler() {
         var request = requestSupplier.get();
-        return () -> {
+        return (parameters) -> {
             var startTime = System.nanoTime();
             try {
                 var httpResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());

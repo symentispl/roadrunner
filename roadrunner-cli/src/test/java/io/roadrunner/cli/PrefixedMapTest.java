@@ -16,10 +16,12 @@
 package io.roadrunner.cli;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -28,6 +30,7 @@ class PrefixedMapTest {
 
     static Stream<Arguments> parseInputs() {
         return Stream.of(
+                Arguments.of("console", "console", Map.of()),
                 Arguments.of("csv:file=filename.csv", "csv", Map.of("file", "filename.csv")),
                 Arguments.of(
                         "csv:file=filename.csv,separator=;", "csv", Map.of("file", "filename.csv", "separator", ";")),
@@ -42,7 +45,9 @@ class PrefixedMapTest {
                 Arguments.of(
                         "csv:file=data.csv,separator=;,skip=1",
                         "csv",
-                        Map.of("file", "data.csv", "separator", ";", "skip", "1")));
+                        Map.of("file", "data.csv", "separator", ";", "skip", "1")),
+                Arguments.of(
+                        "csv:skip-rows=1,skip_header=true", "csv", Map.of("skip-rows", "1", "skip_header", "true")));
     }
 
     @ParameterizedTest
@@ -51,5 +56,19 @@ class PrefixedMapTest {
         var result = PrefixedMap.parse(input);
         assertThat(result.prefix()).isEqualTo(expectedType);
         assertThat(result.parameters()).containsExactlyInAnyOrderEntriesOf(expectedParameters);
+    }
+
+    @Test
+    void emptyKeyThrows() {
+        assertThatThrownBy(() -> PrefixedMap.parse("csv:=value"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Empty key is not allowed");
+    }
+
+    @Test
+    void emptyPrefixThrows() {
+        assertThatThrownBy(() -> PrefixedMap.parse(":key=value"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Empty prefix is not allowed");
     }
 }

@@ -22,13 +22,21 @@ public final class SamplerParameters {
 
     public static final SamplerParameters EMPTY = new SamplerParameters(Collections.emptyMap());
 
-    private final Map<String, String> parameters;
+    private final Map<String, Object> parameters;
 
-    public SamplerParameters(Map<String, String> parameters) {
-        this.parameters = parameters;
+    public SamplerParameters(Map<String, Object> parameters) {
+        this.parameters = Map.copyOf(parameters);
     }
 
-    public String get(String key) {
+    public static SamplerParameters of(String key, Object value) {
+        return new SamplerParameters(Map.of(key, value));
+    }
+
+    public Object get(String key) {
         return parameters.get(key);
+    }
+
+    public Map<String, Object> asMap() {
+        return parameters;
     }
 }

@@ -148,6 +148,9 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 recorder.record(correctedLatency);
             } catch (Exception e) {
                 journal.error(e);
+                if (e instanceof InterruptedException || e.getCause() instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
             } finally {
                 journal.userExits(UserEvent.exit());
                 phaser.arriveAndDeregister();

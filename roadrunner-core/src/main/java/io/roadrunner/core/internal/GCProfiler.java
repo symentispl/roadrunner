@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Events are delivered asynchronously to an {@code onEvent} handler by the JFR dispatch thread.
  * {@link #close()} blocks until all in-flight handlers have completed, so aggregation after close
- * is safe without additional synchronisation.
+ * is safe without additional synchronization.
  *
  * <p>Usage:
  * <pre>{@code

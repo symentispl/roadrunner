@@ -22,6 +22,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.samplers.ab.AbSamplerOptions;
 import io.roadrunner.samplers.ab.AbSamplerPlugin;
 
@@ -65,7 +66,7 @@ class AbSamplerProviderIT {
             options.uri = URI.create("http://localhost:" + PORT + "/test");
             options.headers = new String[]{"Accept-Encoding: gzip"};
             try (var provider = plugin.newSamplerProvider(options); var sampler = provider.newSampler()) {
-                var event = sampler.execute();
+                var event = sampler.execute(SamplerParameters.EMPTY);
                 assertThat(event).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(response -> {
                     assertThat(response.timestamp()).isGreaterThan(0);
                     assertThat(response.stopTime()).isGreaterThan(response.timestamp());
@@ -81,7 +82,7 @@ class AbSamplerProviderIT {
             var options = plugin.options();
             options.uri = URI.create("http://localhost:" + PORT + "/not-existing-endpoint");
             try (var provider = plugin.newSamplerProvider(options); var sampler = provider.newSampler()) {
-                var event = sampler.execute();
+                var event = sampler.execute(SamplerParameters.EMPTY);
                 assertThat(event).asInstanceOf(type(SamplerResponse.Error.class)).satisfies(response -> {
                     assertThat(response.timestamp()).isGreaterThan(0);
                     assertThat(response.stopTime()).isGreaterThan(response.timestamp());
@@ -101,7 +102,7 @@ class AbSamplerProviderIT {
             options.fileContent = new AbSamplerOptions.FileContent();
             options.fileContent.postFile = tempFile;
             try (var provider = plugin.newSamplerProvider(options); var sampler = provider.newSampler()) {
-                var event = sampler.execute();
+                var event = sampler.execute(SamplerParameters.EMPTY);
 
                 assertThat(event).isInstanceOf(SamplerResponse.Response.class);
                 assertThat(lastMethod.get()).isEqualTo("POST");
@@ -125,7 +126,7 @@ class AbSamplerProviderIT {
             options.contentType = "application/json";
             try (var provider = plugin.newSamplerProvider(options);
                  var sampler = provider.newSampler()) {
-                var event = sampler.execute();
+                var event = sampler.execute(SamplerParameters.EMPTY);
                 assertThat(event).isInstanceOf(SamplerResponse.Response.class);
                 assertThat(lastMethod.get()).isEqualTo("PUT");
                 assertThat(lastContentType.get()).isEqualTo("application/json");
@@ -143,7 +144,7 @@ class AbSamplerProviderIT {
             options.method = "DELETE";
             try (var provider = plugin.newSamplerProvider(options);
                  var sampler = provider.newSampler()) {
-                var event = sampler.execute();
+                var event = sampler.execute(SamplerParameters.EMPTY);
                 assertThat(event).isInstanceOf(SamplerResponse.Response.class);
                 assertThat(lastMethod.get()).isEqualTo("DELETE");
             }
@@ -159,7 +160,7 @@ class AbSamplerProviderIT {
             options.method = "HEAD";
             try (var provider = plugin.newSamplerProvider(options);
                  var sampler = provider.newSampler()) {
-                var event = sampler.execute();
+                var event = sampler.execute(SamplerParameters.EMPTY);
                 assertThat(event).isInstanceOf(SamplerResponse.Response.class);
                 assertThat(lastMethod.get()).isEqualTo("HEAD");
             }

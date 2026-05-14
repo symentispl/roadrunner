@@ -87,8 +87,6 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
                     try {
                         // when the next request should start
                         long scheduledStartTime = System.nanoTime();
-                        // fetch parameters before submitting — non-blocking
-                        // execute the request
                         var response = sampler.execute(parameters.next());
                         // calculate delay from the intended start time
                         var inQueueTime = response.timestamp() - scheduledStartTime;
@@ -102,6 +100,10 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
                                 .withLatency(correctedLatency));
                     } catch (Exception e) {
                         measurementControl.error(e);
+                        if (e instanceof InterruptedException || e.getCause() instanceof InterruptedException) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
                     }
                 }
             } finally {

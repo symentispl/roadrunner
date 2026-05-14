@@ -42,6 +42,9 @@ record PrefixedMap(String prefix, Map<String, String> parameters) {
                         if (Character.isAlphabetic(ch)) {
                             buffer.append((char) ch);
                         } else if (ch == ':') {
+                            if (buffer.isEmpty()) {
+                                throw new IllegalStateException("Empty prefix is not allowed");
+                            }
                             type = buffer.toString();
                             buffer.setLength(0);
                             state = State.key;
@@ -52,9 +55,12 @@ record PrefixedMap(String prefix, Map<String, String> parameters) {
                         break;
                     }
                     case key: {
-                        if (Character.isLetterOrDigit(ch)) {
+                        if (Character.isLetterOrDigit(ch) || ch == '-' || ch == '_') {
                             buffer.append((char) ch);
                         } else if (ch == '=') {
+                            if (buffer.isEmpty()) {
+                                throw new IllegalStateException("Empty key is not allowed");
+                            }
                             currentKey = buffer.toString();
                             buffer.setLength(0);
                             state = State.value;
@@ -85,6 +91,9 @@ record PrefixedMap(String prefix, Map<String, String> parameters) {
                     }
                 }
             }
+        }
+        if (state == State.prefix) {
+            type = buffer.toString();
         }
         if (state == State.value && currentKey != null) {
             parameters.put(currentKey, buffer.toString());

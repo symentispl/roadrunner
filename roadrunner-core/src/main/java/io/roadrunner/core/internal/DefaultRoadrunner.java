@@ -70,11 +70,11 @@ public class DefaultRoadrunner implements Roadrunner {
                 new ProgressTrackingResponseListener(new CsvOutputEventListener(csvOutputFile), measurementProgress);
         try (var responsesJournal = new QueueingSamplerResponsesJournal(progressTrackingResponseListener);
                 var preloadedParameterSource = PreloadedParameterSource.from(parameterSource);
+                var parameterFeed = preloadedParameterSource.load();
                 var gcProfiler = new GCProfiler();
                 var latencyRecorder = LatencyRecorders.create(pauseDetectorKinds)) {
             gcProfiler.start();
             responsesJournal.start();
-            var parameterFeed = preloadedParameterSource.load();
             try {
                 strategy.execute(samplerSupplier, parameterFeed, responsesJournal, latencyRecorder);
             } catch (InterruptedException e) {

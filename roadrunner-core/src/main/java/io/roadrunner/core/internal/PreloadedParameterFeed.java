@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 final class PreloadedParameterFeed implements ParameterFeed {
 
     private final SamplerParameters[] rows;
+    private final AtomicLong counter = new AtomicLong(0);
 
     PreloadedParameterFeed(SamplerParameters[] rows) {
         if (rows.length == 0) {
@@ -39,8 +40,6 @@ final class PreloadedParameterFeed implements ParameterFeed {
     @Override
     public Iterator<SamplerParameters> iterator() {
         return new Iterator<>() {
-            private final AtomicLong counter = new AtomicLong(0);
-
             @Override
             public boolean hasNext() {
                 return true;
@@ -49,7 +48,7 @@ final class PreloadedParameterFeed implements ParameterFeed {
             @Override
             public SamplerParameters next() {
                 long idx = counter.getAndIncrement();
-                return rows[(int) (idx % rows.length)];
+                return rows[Math.floorMod(idx, rows.length)];
             }
         };
     }
