@@ -49,7 +49,7 @@ public class RoadrunnerRunIT {
     void closedWorldRunWithoutPauseDetectors(@TempDir Path outputDir) throws Exception {
         // Regression: passing no --pause-detectors used to NPE because the EnumSet field was null.
         var process = new ProcessBuilder(
-                        ROADRUNNER_BIN.toString(),
+                        roadrunnerBin.toString(),
                         "run",
                         "-n",
                         "10",
