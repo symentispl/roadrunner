@@ -17,8 +17,11 @@ package io.roadrunner.cli;
 
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.core.Bootstrap;
+import io.roadrunner.latency.recording.PauseDetectorKind;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.EnumSet;
+import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.ArgGroup;
@@ -67,8 +70,26 @@ class RunCommand {
     @Option(names = "-r", description = "Report format type")
     String report;
 
+    @Option(
+            names = "--pause-detectors",
+            description =
+                    "Comma-separated list of pause detectors to record into the corrected-latency histogram: vt, jvm, or vt,jvm. Empty / unset disables pause-corrected recording.",
+            converter = PauseDetectorKindConverter.class)
+    EnumSet<PauseDetectorKind> pauseDetectors = EnumSet.noneOf(PauseDetectorKind.class);
+
+    @Option(
+            names = "--raw-latency",
+            description =
+                    "Reports use the per-event CSV histogram even when a pause-corrected latency.hgrm is present.")
+    boolean rawLatency;
+
     public void run(SamplerProvider samplerProvider) throws Exception {
-        var bootstrap = new Bootstrap().withOutputDir(outputDir);
+        if (!pauseDetectors.isEmpty() && loadModel.closedWorld != null) {
+            throw new IllegalArgumentException(
+                    "--pause-detectors is only supported with the open-world load model (--rate/--duration)");
+        }
+
+        var bootstrap = new Bootstrap().withOutputDir(outputDir).withPauseDetectorKinds(pauseDetectors);
 
         if (loadModel.closedWorld != null) {
             bootstrap
@@ -94,7 +115,12 @@ class RunCommand {
                         .formatted(
                                 reportConfiguration.reportFormat(), chartGeneratorProviders.supportedReportFormats()));
             }
-            var chartGenerator = reportGeneratorProvider.create(reportConfiguration.configuration());
+
+            var reportConfig = new HashMap<>(reportConfiguration.configuration());
+            reportConfig.put("outputDir", bootstrap.outputDir().toString());
+            reportConfig.put("rawLatency", Boolean.toString(rawLatency));
+
+            var chartGenerator = reportGeneratorProvider.create(reportConfig);
             var measurements = roadrunner.execute(samplerProvider);
             chartGenerator.generateChart(measurements.samplesReader());
         }

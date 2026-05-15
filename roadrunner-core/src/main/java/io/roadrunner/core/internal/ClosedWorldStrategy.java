@@ -17,6 +17,7 @@ package io.roadrunner.core.internal;
 
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
+import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
 import java.util.concurrent.CountDownLatch;
@@ -47,7 +48,8 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
     }
 
     @Override
-    public void execute(SamplerProvider samplerProvider, QueueingSamplerResponsesJournal journal)
+    public void execute(
+            SamplerProvider samplerProvider, QueueingSamplerResponsesJournal journal, LatencyRecorder recorder)
             throws InterruptedException {
         var delayedSupplier = new DelayedSupplier<>(samplerProvider::newSampler, () -> 20L);
         try (var usersExecutor = Executors.newThreadPerTaskExecutor(

@@ -18,10 +18,15 @@ package io.roadrunner.reports.console;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.reports.ReportGenerator;
+import io.roadrunner.shaded.hdrhistogram.EncodableHistogram;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
+import io.roadrunner.shaded.hdrhistogram.HistogramLogReader;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +46,14 @@ final class ConsoleReportGenerator implements ReportGenerator {
     public void generateChart(EventReader eventReader) throws IOException {
         // Ensure the progress bar line is terminated before the report starts
         System.out.println();
-        var histogram = new Histogram(3);
+
+        var rawLatency = Boolean.parseBoolean(properties.getOrDefault("rawLatency", "false"));
+        var outputDirProp = properties.get("outputDir");
+        var snapshotPath =
+                outputDirProp == null ? null : Paths.get(outputDirProp).resolve("latency.hgrm");
+        var useSnapshot = !rawLatency && snapshotPath != null && Files.isRegularFile(snapshotPath);
+
+        Histogram histogram = useSnapshot ? readSnapshotHistogram(snapshotPath) : new Histogram(3);
 
         // Track the first and last measurement timestamps to calculate total duration
         long firstStartTime = Long.MAX_VALUE;
@@ -54,7 +66,9 @@ final class ConsoleReportGenerator implements ReportGenerator {
         for (var event : eventReader) {
             if (event instanceof SamplerResponse<?> response) {
                 totalRequests++;
-                histogram.recordValue(response.latency());
+                if (!useSnapshot) {
+                    histogram.recordValue(response.latency());
+                }
                 firstStartTime = Math.min(firstStartTime, response.scheduledStartTime());
                 lastStopTime = Math.max(lastStopTime, response.stopTime());
                 if (response instanceof SamplerResponse.Error) {
@@ -70,7 +84,7 @@ final class ConsoleReportGenerator implements ReportGenerator {
         double requestsPerSecond = totalRequests / totalDurationSeconds;
 
         // Calculate error percentage
-        double errorPercentage = (double) errorRequests / totalRequests * 100;
+        double errorPercentage = totalRequests == 0 ? 0.0 : (double) errorRequests / totalRequests * 100;
 
         // Calculate error rate (errors per second)
         double errorRate = errorRequests / totalDurationSeconds;
@@ -101,6 +115,19 @@ final class ConsoleReportGenerator implements ReportGenerator {
                 stringSubstitutor))) {
             reader.lines().forEach(System.out::println);
         }
+    }
+
+    private static Histogram readSnapshotHistogram(Path snapshotPath) throws IOException {
+        var combined = new Histogram(1_000L, 3_600_000_000_000L, 3);
+        try (var reader = new HistogramLogReader(snapshotPath.toFile())) {
+            EncodableHistogram next;
+            while ((next = reader.nextIntervalHistogram()) != null) {
+                if (next instanceof Histogram h) {
+                    combined.add(h);
+                }
+            }
+        }
+        return combined;
     }
 
     private static long percentileOf(Histogram histogram, double percentile) {

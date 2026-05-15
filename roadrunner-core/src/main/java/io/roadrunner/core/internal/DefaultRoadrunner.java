@@ -23,9 +23,13 @@ import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
 import io.roadrunner.api.samplers.SamplerProvider;
+import io.roadrunner.latency.recording.LatencyRecorders;
+import io.roadrunner.latency.recording.PauseDetectorKind;
 import io.roadrunner.output.csv.CsvOutputEventListener;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,11 +41,17 @@ public class DefaultRoadrunner implements Roadrunner {
     private final ExecutionStrategy strategy;
     private final MeasurementProgress measurementProgress;
     private final Path outputDir;
+    private final EnumSet<PauseDetectorKind> pauseDetectorKinds;
 
-    public DefaultRoadrunner(ExecutionStrategy strategy, MeasurementProgress measurementProgress, Path outputDir) {
+    public DefaultRoadrunner(
+            ExecutionStrategy strategy,
+            MeasurementProgress measurementProgress,
+            Path outputDir,
+            EnumSet<PauseDetectorKind> pauseDetectorKinds) {
         this.strategy = strategy;
         this.measurementProgress = measurementProgress;
         this.outputDir = outputDir;
+        this.pauseDetectorKinds = pauseDetectorKinds;
     }
 
     @Override
@@ -52,13 +62,20 @@ public class DefaultRoadrunner implements Roadrunner {
 
         try (var responsesJournal = new QueueingSamplerResponsesJournal(new ProgressTrackingResponseListener(
                         new CsvOutputEventListener(csvOutputFile), measurementProgress));
-                var gcProfiler = new GCProfiler()) {
+                var gcProfiler = new GCProfiler();
+                var latencyRecorder = LatencyRecorders.create(pauseDetectorKinds)) {
             gcProfiler.start();
             responsesJournal.start();
             try {
-                strategy.execute(samplerSupplier, responsesJournal);
+                strategy.execute(samplerSupplier, responsesJournal, latencyRecorder);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
+            } finally {
+                try {
+                    latencyRecorder.writeSnapshot(outputDir);
+                } catch (IOException e) {
+                    LOG.error("failed to write latency snapshot to {}", outputDir, e);
+                }
             }
             return DefaultMeasurements.from(responsesJournal.measurementsReader());
         }

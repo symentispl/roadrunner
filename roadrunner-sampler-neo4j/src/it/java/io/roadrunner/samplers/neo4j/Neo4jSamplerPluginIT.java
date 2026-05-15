@@ -48,7 +48,7 @@ public class Neo4jSamplerPluginIT {
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
                 var response = sampler.execute();
-                assertThat(response).asInstanceOf(type(SamplerResponse.Error.class)).satisfies(e -> assertThat(e.timestamp()).isLessThanOrEqualTo(System.currentTimeMillis()));
+                assertThat(response).asInstanceOf(type(SamplerResponse.Error.class)).satisfies(e -> assertThat(e.timestamp()).isLessThanOrEqualTo(System.nanoTime()));
             }
         }
     }
@@ -64,7 +64,7 @@ public class Neo4jSamplerPluginIT {
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
                 var response = sampler.execute();
-                assertThat(response).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(r -> assertThat(r.timestamp()).isLessThanOrEqualTo(System.currentTimeMillis()));
+                assertThat(response).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(r -> assertThat(r.timestamp()).isLessThanOrEqualTo(System.nanoTime()));
             }
         }
     }

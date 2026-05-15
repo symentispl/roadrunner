@@ -27,6 +27,13 @@
         </dependency>
 
         <dependency>
+            <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-latency-recording</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <scope>test</scope>
@@ -44,4 +51,22 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <argLine>
+                        @{argLine}
+                        --add-reads io.roadrunner.core.tests=io.roadrunner.api
+                        --add-reads io.roadrunner.core.tests=io.roadrunner.hdrhistogram
+                        --add-reads io.roadrunner.core.tests=io.roadrunner.latency.recording
+                        --add-reads io.roadrunner.core.tests=ALL-UNNAMED
+                    </argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
