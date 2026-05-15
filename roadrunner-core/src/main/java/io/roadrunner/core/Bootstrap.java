@@ -21,11 +21,14 @@ import io.roadrunner.core.internal.ClosedWorldStrategy;
 import io.roadrunner.core.internal.DefaultRoadrunner;
 import io.roadrunner.core.internal.ExecutionStrategy;
 import io.roadrunner.core.internal.OpenWorldStrategy;
+import io.roadrunner.latency.recording.PauseDetectorKind;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.EnumSet;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +39,7 @@ public class Bootstrap {
     private ExecutionStrategy strategy;
     private MeasurementProgress measurementProgress = MeasurementProgress.NO_OP;
     private Path outputDir;
+    private EnumSet<PauseDetectorKind> pauseDetectors = EnumSet.noneOf(PauseDetectorKind.class);
 
     /**
      * Configure the closed-world load model: N concurrent users each loop until the total
@@ -65,6 +69,11 @@ public class Bootstrap {
         return this;
     }
 
+    public Bootstrap withPauseDetectorKinds(EnumSet<PauseDetectorKind> pauseDetectorKinds) {
+        this.pauseDetectors = Objects.requireNonNull(pauseDetectorKinds, "pause detectors kinds cannot be null");
+        return this;
+    }
+
     public Path outputDir() {
         return outputDir;
     }
@@ -77,6 +86,6 @@ public class Bootstrap {
         if (strategy == null) {
             throw new IllegalStateException("Load strategy must be configured");
         }
-        return new DefaultRoadrunner(strategy, measurementProgress, outputDir);
+        return new DefaultRoadrunner(strategy, measurementProgress, outputDir, pauseDetectors);
     }
 }

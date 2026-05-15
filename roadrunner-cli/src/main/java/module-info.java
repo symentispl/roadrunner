@@ -20,6 +20,7 @@ module io.roadrunner.cli {
     requires io.roadrunner.api;
     requires io.roadrunner.samplers.spi;
     requires io.roadrunner.core;
+    requires io.roadrunner.latency.recording;
     requires org.slf4j;
     requires org.apache.commons.io;
     requires org.apache.commons.lang3;
