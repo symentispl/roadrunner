@@ -16,6 +16,7 @@ release:
   github:
     owner: symentispl
     name: roadrunner
+    branch: master
     overwrite: false
     draft: false
     skipTag: true
