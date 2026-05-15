@@ -61,8 +61,13 @@ jobs:
       # left a fresh, already-built checkout of that tag under target/checkout.
       # Run JReleaser from there to publish a GitHub Release and upload the
       # jlink + javaArchive ZIPs assembled during the release build.
+      #
+      # The jreleaser-maven-plugin is only declared in roadrunner-app/pom.xml,
+      # so we point Maven at that module directly with -f and use the full GAV
+      # (the short `jreleaser:release` prefix would fail to resolve against
+      # the root pom which has no <pluginGroups> entry for org.jreleaser).
       - name: Publish GitHub release with JReleaser
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: target/checkout
-        run: ./mvnw -pl roadrunner-app -am -B -DskipTests jreleaser:release
+        run: ./mvnw -f roadrunner-app/pom.xml -B -DskipTests org.jreleaser:jreleaser-maven-plugin:release
