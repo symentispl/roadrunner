@@ -22,11 +22,14 @@ import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.reports.ReportGenerator;
+import io.roadrunner.shaded.hdrhistogram.EncodableHistogram;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
+import io.roadrunner.shaded.hdrhistogram.HistogramLogReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -39,10 +42,15 @@ import org.apache.commons.text.lookup.StringLookupFactory;
 public class HtmlReportGenerator implements ReportGenerator {
 
     private final Path outputPath;
+    private final Path snapshotPath;
+    private final boolean rawLatency;
 
     public HtmlReportGenerator(Map<String, String> configuration) {
         outputPath = Paths.get(
                 requireNonNull(configuration.get("outputPath"), "missing required outputPath configuration property"));
+        var outputDirCfg = configuration.get("outputDir");
+        snapshotPath = outputDirCfg == null ? null : Paths.get(outputDirCfg).resolve("latency.hgrm");
+        rawLatency = Boolean.parseBoolean(configuration.getOrDefault("rawLatency", "false"));
     }
 
     @Override
@@ -51,7 +59,8 @@ public class HtmlReportGenerator implements ReportGenerator {
         var datapointsJs = outputPath.resolve("data.js");
         var usersJs = outputPath.resolve("users.js");
 
-        var histogram = new Histogram(3);
+        var useSnapshot = !rawLatency && snapshotPath != null && Files.isRegularFile(snapshotPath);
+        Histogram histogram = useSnapshot ? loadSnapshot(snapshotPath) : new Histogram(3);
 
         int u = 0;
         try (PrintStream datapoints = new PrintStream(datapointsJs.toFile());
@@ -61,7 +70,9 @@ public class HtmlReportGenerator implements ReportGenerator {
             for (Event event : eventReader) {
                 switch (event) {
                     case SamplerResponse<?> r: {
-                        histogram.recordValue(r.latency());
+                        if (!useSnapshot) {
+                            histogram.recordValue(r.latency());
+                        }
                         datapoints.printf("\t{x : %d,y : %d},%n", r.timestamp(), r.latency());
                         break;
                     }
@@ -101,5 +112,18 @@ public class HtmlReportGenerator implements ReportGenerator {
                 var writer = new FileWriter(indexHtml.toFile())) {
             IOUtils.copy(reader, writer);
         }
+    }
+
+    private static Histogram loadSnapshot(Path path) throws IOException {
+        var combined = new Histogram(1_000L, 3_600_000_000_000L, 3);
+        try (var reader = new HistogramLogReader(path.toFile())) {
+            EncodableHistogram next;
+            while ((next = reader.nextIntervalHistogram()) != null) {
+                if (next instanceof Histogram h) {
+                    combined.add(h);
+                }
+            }
+        }
+        return combined;
     }
 }
