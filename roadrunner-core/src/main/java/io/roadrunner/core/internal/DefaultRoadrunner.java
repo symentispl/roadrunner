@@ -70,11 +70,12 @@ public class DefaultRoadrunner implements Roadrunner {
                 strategy.execute(samplerSupplier, responsesJournal, latencyRecorder);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
-            }
-            try {
-                latencyRecorder.writeSnapshot(outputDir);
-            } catch (IOException e) {
-                LOG.error("failed to write latency snapshot to {}", outputDir, e);
+            } finally {
+                try {
+                    latencyRecorder.writeSnapshot(outputDir);
+                } catch (IOException e) {
+                    LOG.error("failed to write latency snapshot to {}", outputDir, e);
+                }
             }
             return DefaultMeasurements.from(responsesJournal.measurementsReader());
         }

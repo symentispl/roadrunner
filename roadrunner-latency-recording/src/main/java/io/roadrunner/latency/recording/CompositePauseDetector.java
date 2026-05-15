@@ -39,6 +39,7 @@ final class CompositePauseDetector extends PauseDetector {
     @Override
     public void shutdown() {
         for (PauseDetector detector : underlying) {
+            detector.removeListener(forwarding);
             detector.shutdown();
         }
         super.shutdown();
