@@ -18,6 +18,7 @@ package io.roadrunner.latency.recording;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.roadrunner.latency.SimplePauseDetector;
+import io.roadrunner.shaded.hdrhistogram.EncodableHistogram;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
 import io.roadrunner.shaded.hdrhistogram.HistogramLogReader;
 import java.io.IOException;
@@ -41,11 +42,13 @@ class LatencyStatsRecorderTest {
         var hgrm = tmp.resolve("latency.hgrm");
         assertThat(hgrm).exists();
 
-        var combined = new Histogram(1L, 3_600_000_000_000L, 3);
+        var combined = new Histogram(1_000L, 3_600_000_000_000L, 3);
         try (var reader = new HistogramLogReader(hgrm.toFile())) {
-            Histogram h;
-            while ((h = (Histogram) reader.nextIntervalHistogram()) != null) {
-                combined.add(h);
+            EncodableHistogram next;
+            while ((next = reader.nextIntervalHistogram()) != null) {
+                if (next instanceof Histogram h) {
+                    combined.add(h);
+                }
             }
         }
 

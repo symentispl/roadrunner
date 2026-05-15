@@ -83,11 +83,15 @@ class RunCommand {
     @Option(
             names = "--raw-latency",
             description =
-                    "Reports use the per-event CSV histogram even when a pause-corrected histogram.hgrm is present.")
+                    "Reports use the per-event CSV histogram even when a pause-corrected latency.hgrm is present.")
     boolean rawLatency;
 
     public void run(SamplerProvider samplerProvider) throws Exception {
         var detectorKinds = parsePauseDetectors(pauseDetectors);
+        if (!detectorKinds.isEmpty() && loadModel.closedWorld != null) {
+            throw new IllegalArgumentException(
+                    "--pause-detectors is only supported with the open-world load model (--rate/--duration)");
+        }
         var recorder = LatencyRecorders.create(detectorKinds);
 
         var bootstrap = new Bootstrap().withOutputDir(outputDir).withLatencyRecorder(recorder);
