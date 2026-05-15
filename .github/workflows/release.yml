@@ -37,7 +37,7 @@ jobs:
           server-password: MAVEN_PASSWORD
 
       - name: Set up mise
-        uses: jdx/mise-action@v2
+        uses: jdx/mise-action@v4
 
       # Loads SSH_PRIVATE_KEY so maven-release-plugin can push [release] commits
       # and the vX.Y.Z tag via the SSH developerConnection in pom.xml.
