@@ -56,3 +56,13 @@ jobs:
           MAVEN_USERNAME: ${{ github.actor }}
           MAVEN_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: mise run release:${{ github.event.inputs.bump }}
+
+      # maven-release-plugin has just created and pushed the vX.Y.Z tag and
+      # left a fresh, already-built checkout of that tag under target/checkout.
+      # Run JReleaser from there to publish a GitHub Release and upload the
+      # jlink + javaArchive ZIPs assembled during the release build.
+      - name: Publish GitHub release with JReleaser
+        env:
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: target/checkout
+        run: ./mvnw -pl roadrunner-app -am -B -DskipTests jreleaser:release

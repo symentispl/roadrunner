@@ -1,3 +1,25 @@
+project:
+  name: roadrunner
+  description: A Java load generator built on virtual threads
+  authors:
+    - Symentis.pl
+  license: Apache-2.0
+  inceptionYear: '2024'
+  java:
+    groupId: io.roadrunner
+    version: '25'
+
+# The vX.Y.Z tag is already created and pushed by maven-release-plugin during
+# release:prepare; JReleaser only needs to publish a GitHub Release on top of
+# it and upload the assembled archives.
+release:
+  github:
+    owner: symentispl
+    name: roadrunner
+    overwrite: false
+    draft: false
+    skipTag: true
+
 assemble:
   # Jlink assembler: self-contained runtime image (bundled JDK).
   # JARs in target/modules/ are used as module path; JReleaser auto-detects all modules.
