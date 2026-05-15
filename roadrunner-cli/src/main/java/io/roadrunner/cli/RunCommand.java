@@ -75,7 +75,7 @@ class RunCommand {
             description =
                     "Comma-separated list of pause detectors to record into the corrected-latency histogram: vt, jvm, or vt,jvm. Empty / unset disables pause-corrected recording.",
             converter = PauseDetectorKindConverter.class)
-    EnumSet<PauseDetectorKind> pauseDetectors;
+    EnumSet<PauseDetectorKind> pauseDetectors = EnumSet.noneOf(PauseDetectorKind.class);
 
     @Option(
             names = "--raw-latency",
