@@ -29,18 +29,27 @@ import org.junit.jupiter.api.io.TempDir;
 @EnabledOnOs(OS.LINUX)
 public class RoadrunnerRunIT {
 
-    private static final Path ROADRUNNER_BIN = Path.of("target/roadrunner-app/bin/roadrunner");
+    private Path roadrunnerBin;
 
     @BeforeEach
     void ensureExecutable() throws Exception {
-        Files.setPosixFilePermissions(ROADRUNNER_BIN, PosixFilePermissions.fromString("rwxr-xr-x"));
+        // JReleaser archives use a versioned root directory (e.g. roadrunner-0.1.0/bin/roadrunner),
+        // so we locate the binary by walking the unpacked directory tree.
+        Path appDir = Path.of("target/roadrunner-app");
+        try (var paths = Files.walk(appDir, 3)) {
+            roadrunnerBin = paths.filter(p -> p.getFileName().toString().equals("roadrunner")
+                            && Files.isRegularFile(p))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("roadrunner binary not found under " + appDir));
+        }
+        Files.setPosixFilePermissions(roadrunnerBin, PosixFilePermissions.fromString("rwxr-xr-x"));
     }
 
     @Test
     void closedWorldRunWithoutPauseDetectors(@TempDir Path outputDir) throws Exception {
         // Regression: passing no --pause-detectors used to NPE because the EnumSet field was null.
         var process = new ProcessBuilder(
-                        ROADRUNNER_BIN.toString(),
+                        roadrunnerBin.toString(),
                         "run",
                         "-n",
                         "10",
@@ -64,7 +73,7 @@ public class RoadrunnerRunIT {
     @Test
     void openWorldRunWithVtPauseDetector(@TempDir Path outputDir) throws Exception {
         var process = new ProcessBuilder(
-                        ROADRUNNER_BIN.toString(),
+                        roadrunnerBin.toString(),
                         "run",
                         "--rate",
                         "20",
@@ -89,7 +98,7 @@ public class RoadrunnerRunIT {
     @Test
     void closedWorldRejectsPauseDetectors(@TempDir Path outputDir) throws Exception {
         var process = new ProcessBuilder(
-                        ROADRUNNER_BIN.toString(),
+                        roadrunnerBin.toString(),
                         "run",
                         "-n",
                         "10",
