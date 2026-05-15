@@ -19,15 +19,17 @@ import io.roadrunner.api.Roadrunner;
 import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.SamplerResponse;
-import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
 import io.roadrunner.api.samplers.SamplerProvider;
+import io.roadrunner.latency.recording.LatencyRecorders;
+import io.roadrunner.latency.recording.PauseDetectorKind;
 import io.roadrunner.output.csv.CsvOutputEventListener;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,17 +41,17 @@ public class DefaultRoadrunner implements Roadrunner {
     private final ExecutionStrategy strategy;
     private final MeasurementProgress measurementProgress;
     private final Path outputDir;
-    private final LatencyRecorder latencyRecorder;
+    private final EnumSet<PauseDetectorKind> pauseDetectorKinds;
 
     public DefaultRoadrunner(
             ExecutionStrategy strategy,
             MeasurementProgress measurementProgress,
             Path outputDir,
-            LatencyRecorder latencyRecorder) {
+            EnumSet<PauseDetectorKind> pauseDetectorKinds) {
         this.strategy = strategy;
         this.measurementProgress = measurementProgress;
         this.outputDir = outputDir;
-        this.latencyRecorder = latencyRecorder;
+        this.pauseDetectorKinds = pauseDetectorKinds;
     }
 
     @Override
@@ -61,7 +63,7 @@ public class DefaultRoadrunner implements Roadrunner {
         try (var responsesJournal = new QueueingSamplerResponsesJournal(new ProgressTrackingResponseListener(
                         new CsvOutputEventListener(csvOutputFile), measurementProgress));
                 var gcProfiler = new GCProfiler();
-                var recorder = latencyRecorder) {
+                var latencyRecorder = LatencyRecorders.create(pauseDetectorKinds)) {
             gcProfiler.start();
             responsesJournal.start();
             try {

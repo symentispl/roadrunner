@@ -17,14 +17,11 @@ package io.roadrunner.cli;
 
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.core.Bootstrap;
-import io.roadrunner.latency.recording.LatencyRecorders;
 import io.roadrunner.latency.recording.PauseDetectorKind;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.ArgGroup;
@@ -77,8 +74,8 @@ class RunCommand {
             names = "--pause-detectors",
             description =
                     "Comma-separated list of pause detectors to record into the corrected-latency histogram: vt, jvm, or vt,jvm. Empty / unset disables pause-corrected recording.",
-            defaultValue = "")
-    String pauseDetectors;
+            converter = PauseDetectorKindConverter.class)
+    EnumSet<PauseDetectorKind> pauseDetectors;
 
     @Option(
             names = "--raw-latency",
@@ -87,14 +84,12 @@ class RunCommand {
     boolean rawLatency;
 
     public void run(SamplerProvider samplerProvider) throws Exception {
-        var detectorKinds = parsePauseDetectors(pauseDetectors);
-        if (!detectorKinds.isEmpty() && loadModel.closedWorld != null) {
+        if (!pauseDetectors.isEmpty() && loadModel.closedWorld != null) {
             throw new IllegalArgumentException(
                     "--pause-detectors is only supported with the open-world load model (--rate/--duration)");
         }
-        var recorder = LatencyRecorders.create(detectorKinds);
 
-        var bootstrap = new Bootstrap().withOutputDir(outputDir).withLatencyRecorder(recorder);
+        var bootstrap = new Bootstrap().withOutputDir(outputDir).withPauseDetectorKinds(pauseDetectors);
 
         if (loadModel.closedWorld != null) {
             bootstrap
@@ -129,22 +124,5 @@ class RunCommand {
             var measurements = roadrunner.execute(samplerProvider);
             chartGenerator.generateChart(measurements.samplesReader());
         }
-    }
-
-    private static EnumSet<PauseDetectorKind> parsePauseDetectors(String spec) {
-        if (spec == null || spec.isBlank() || "none".equalsIgnoreCase(spec.trim())) {
-            return EnumSet.noneOf(PauseDetectorKind.class);
-        }
-        var kinds = EnumSet.noneOf(PauseDetectorKind.class);
-        for (String token : Arrays.stream(spec.split(",")).map(String::trim).toList()) {
-            switch (token.toLowerCase(Locale.ROOT)) {
-                case "vt" -> kinds.add(PauseDetectorKind.VT_SCHEDULING);
-                case "jvm" -> kinds.add(PauseDetectorKind.JVM_PAUSE);
-                default ->
-                    throw new IllegalArgumentException(
-                            "unknown pause detector '" + token + "', expected one of: vt, jvm, none");
-            }
-        }
-        return kinds;
     }
 }

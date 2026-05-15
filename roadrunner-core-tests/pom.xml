@@ -62,6 +62,7 @@
                         @{argLine}
                         --add-reads io.roadrunner.core.tests=io.roadrunner.api
                         --add-reads io.roadrunner.core.tests=io.roadrunner.hdrhistogram
+                        --add-reads io.roadrunner.core.tests=io.roadrunner.latency.recording
                         --add-reads io.roadrunner.core.tests=ALL-UNNAMED
                     </argLine>
                 </configuration>

@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.roadrunner.api.events.ProtocolResponse;
 import io.roadrunner.api.protocol.Protocol;
 import io.roadrunner.core.Bootstrap;
-import io.roadrunner.latency.recording.LatencyRecorders;
 import io.roadrunner.latency.recording.PauseDetectorKind;
 import io.roadrunner.shaded.hdrhistogram.EncodableHistogram;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
@@ -36,11 +35,9 @@ class OpenWorldRecorderIT {
 
     @Test
     void openWorldWritesLatencyHgrmWhenVtDetectorEnabled(@TempDir Path tmp) throws Exception {
-        var recorder = LatencyRecorders.create(EnumSet.of(PauseDetectorKind.VT_SCHEDULING));
-
         var bootstrap = new Bootstrap()
                 .withOutputDir(tmp)
-                .withLatencyRecorder(recorder)
+                .withPauseDetectorKinds(EnumSet.of(PauseDetectorKind.VT_SCHEDULING))
                 .withOpenWorldModel(10, Duration.ofMillis(500));
 
         try (var roadrunner = bootstrap.build()) {
