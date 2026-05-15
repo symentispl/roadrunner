@@ -89,8 +89,8 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 }
                 var scheduledStartTime = nextScheduledStartTime;
                 phaser.register();
-                requestsExecutor.submit(
-                        new RoadrunnerUser(journal, samplerSupplier.newSampler(), scheduledStartTime, phaser, recorder));
+                requestsExecutor.submit(new RoadrunnerUser(
+                        journal, samplerSupplier.newSampler(), scheduledStartTime, phaser, recorder));
             }
         } finally {
             // Deregister the main party; when the last in-flight user also deregisters, the phaser

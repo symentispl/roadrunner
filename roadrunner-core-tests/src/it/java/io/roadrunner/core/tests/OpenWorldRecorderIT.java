@@ -17,8 +17,8 @@ package io.roadrunner.core.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.roadrunner.api.events.ProtocolResponse;
-import io.roadrunner.api.protocol.Protocol;
+import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.latency.recording.PauseDetectorKind;
 import io.roadrunner.shaded.hdrhistogram.EncodableHistogram;
@@ -41,10 +41,10 @@ class OpenWorldRecorderIT {
                 .withOpenWorldModel(10, Duration.ofMillis(500));
 
         try (var roadrunner = bootstrap.build()) {
-            Protocol fastProtocol = () -> {
+            Sampler fastProtocol = () -> {
                 long start = System.nanoTime();
                 long stop = System.nanoTime();
-                return ProtocolResponse.empty(start, stop);
+                return SamplerResponse.empty(start, stop);
             };
             roadrunner.execute(() -> fastProtocol);
         }
@@ -75,10 +75,10 @@ class OpenWorldRecorderIT {
                 .withOpenWorldModel(10, Duration.ofMillis(200));
 
         try (var roadrunner = bootstrap.build()) {
-            Protocol fastProtocol = () -> {
+            Sampler fastProtocol = () -> {
                 long start = System.nanoTime();
                 long stop = System.nanoTime();
-                return ProtocolResponse.empty(start, stop);
+                return SamplerResponse.empty(start, stop);
             };
             roadrunner.execute(() -> fastProtocol);
         }
