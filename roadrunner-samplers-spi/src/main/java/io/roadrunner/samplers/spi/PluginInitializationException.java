@@ -16,7 +16,7 @@
 package io.roadrunner.samplers.spi;
 
 public class PluginInitializationException extends RuntimeException {
-    public PluginInitializationException(String message, Exception e) {
-        super(message, e);
+    public PluginInitializationException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

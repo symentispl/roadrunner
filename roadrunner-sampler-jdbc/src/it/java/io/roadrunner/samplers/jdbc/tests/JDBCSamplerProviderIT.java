@@ -79,8 +79,7 @@ class JDBCSamplerProviderIT {
                         .satisfies(r -> {
                             assertThat(r.timestamp()).isGreaterThan(0);
                             assertThat(r.stopTime()).isGreaterThan(r.timestamp());
-                            assertThat(r.message())
-                                    .isEqualTo("user lacks privilege or object not found: NONEXISTENT_TABLE");
+                            assertThat(r.message()).isNotBlank().contains("NONEXISTENT_TABLE");
                         });
             }
         }

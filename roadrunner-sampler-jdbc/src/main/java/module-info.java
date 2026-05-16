@@ -16,7 +16,7 @@
 import io.roadrunner.samplers.jdbc.JDBCSamplerPlugin;
 import io.roadrunner.samplers.spi.SamplerPlugin;
 
-module io.roadrunner.sampler.jdbc {
+module io.roadrunner.samplers.jdbc {
     requires java.sql;
     requires io.roadrunner.api;
     requires io.roadrunner.samplers.spi;
