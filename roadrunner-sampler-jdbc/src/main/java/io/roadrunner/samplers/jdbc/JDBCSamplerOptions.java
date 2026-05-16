@@ -16,9 +16,7 @@
 package io.roadrunner.samplers.jdbc;
 
 import io.roadrunner.samplers.spi.SamplerOptions;
-
 import java.nio.file.Path;
-
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -38,12 +36,14 @@ public class JDBCSamplerOptions implements SamplerOptions<JDBCSamplerProvider> {
     @Option(names = "--password", description = "Database password", required = true)
     public String password;
 
-
     @Option(names = "--driver", description = "Path to JDBC driver JAR file", required = true)
     public Path driverPath;
 
     @Option(names = "--driver-class", description = "Fully-qualified JDBC driver class name (auto-detected if omitted)")
     public String driverClass;
+
+    @Option(names = "--pool-size", description = "Maximum connection pool size (default: ${DEFAULT-VALUE})")
+    public int poolSize = 10;
 
     private final JDBCSamplerPlugin samplerPlugin;
 

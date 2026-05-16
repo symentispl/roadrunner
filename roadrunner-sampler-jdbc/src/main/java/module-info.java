@@ -22,6 +22,7 @@ module io.roadrunner.sampler.jdbc {
     requires io.roadrunner.samplers.spi;
     requires info.picocli;
     requires com.zaxxer.hikari;
+    requires org.slf4j;
 
     uses java.sql.Driver;
 

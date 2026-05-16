@@ -16,15 +16,28 @@
 package io.roadrunner.samplers.jdbc;
 
 import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.pool.HikariPool;
+import com.zaxxer.hikari.HikariDataSource;
 import io.roadrunner.samplers.spi.PluginInitializationException;
 import io.roadrunner.samplers.spi.SamplerPlugin;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.Driver;
+import java.sql.DriverManager;
+import java.util.Locale;
 import java.util.ServiceLoader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JDBCSamplerPlugin implements SamplerPlugin<JDBCSamplerProvider, JDBCSamplerOptions> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JDBCSamplerPlugin.class);
+    private static final double ACQUIRE_RATIO_WARN_THRESHOLD = 0.20;
+
+    private URLClassLoader driverClassLoader;
+    private DriverWrapper registeredDriver;
+    private HikariDataSource dataSource;
+    private JDBCSamplerProvider provider;
+
     @Override
     public String name() {
         return "jdbc";
@@ -32,15 +45,18 @@ public class JDBCSamplerPlugin implements SamplerPlugin<JDBCSamplerProvider, JDB
 
     @Override
     public JDBCSamplerProvider newSamplerProvider(JDBCSamplerOptions options) {
-        ensureDriverLoaded(options);
-        HikariConfig config = new HikariConfig();
+        registeredDriver = registerDriver(options);
+
+        var config = new HikariConfig();
         config.setJdbcUrl(options.url);
         config.setUsername(options.username);
         config.setPassword(options.password);
+        config.setMaximumPoolSize(options.poolSize);
         config.setPoolName("roadrunner-sampler");
-        var pool = new HikariPool(config);
+        dataSource = new HikariDataSource(config);
 
-        return new JDBCSamplerProvider(pool, options.query);
+        provider = new JDBCSamplerProvider(dataSource, options.query);
+        return provider;
     }
 
     @Override
@@ -48,20 +64,79 @@ public class JDBCSamplerPlugin implements SamplerPlugin<JDBCSamplerProvider, JDB
         return new JDBCSamplerOptions(this);
     }
 
-    private Driver ensureDriverLoaded(JDBCSamplerOptions options) {
+    private DriverWrapper registerDriver(JDBCSamplerOptions options) {
         try {
             var jarUrl = options.driverPath.toUri().toURL();
-            var driverClassLoader = new URLClassLoader(new URL[] {jarUrl}, ClassLoader.getSystemClassLoader());
+            driverClassLoader = new URLClassLoader(new URL[] {jarUrl}, ClassLoader.getSystemClassLoader());
+            Driver delegate;
             if (options.driverClass != null) {
                 var clazz = driverClassLoader.loadClass(options.driverClass);
-                return (Driver) clazz.getDeclaredConstructor().newInstance();
+                delegate = (Driver) clazz.getDeclaredConstructor().newInstance();
             } else {
-                return ServiceLoader.load(Driver.class, driverClassLoader)
+                delegate = ServiceLoader.load(Driver.class, driverClassLoader)
                         .findFirst()
                         .orElseThrow(() -> new RuntimeException("No JDBC driver found in: " + options.driverPath));
             }
+            var shim = new DriverWrapper(delegate);
+            DriverManager.registerDriver(shim);
+            return shim;
         } catch (Exception e) {
             throw new PluginInitializationException("Failed to initialize JDBC driver", e);
+        }
+    }
+
+    @Override
+    public void close() {
+        try {
+            if (provider != null) {
+                logSummary(provider);
+            }
+        } finally {
+            if (dataSource != null) {
+                dataSource.close();
+                dataSource = null;
+            }
+            if (registeredDriver != null) {
+                try {
+                    DriverManager.deregisterDriver(registeredDriver);
+                } catch (Exception e) {
+                    LOG.warn("Failed to deregister JDBC driver", e);
+                }
+                registeredDriver = null;
+            }
+            if (driverClassLoader != null) {
+                try {
+                    driverClassLoader.close();
+                } catch (Exception e) {
+                    LOG.warn("Failed to close driver class loader", e);
+                }
+                driverClassLoader = null;
+            }
+        }
+    }
+
+    private static void logSummary(JDBCSamplerProvider provider) {
+        long samples = provider.sampleCount();
+        if (samples == 0) {
+            return;
+        }
+        long acquire = provider.totalAcquireNanos();
+        long query = provider.totalQueryNanos();
+        long total = acquire + query;
+        double ratio = total == 0 ? 0.0 : (double) acquire / (double) total;
+        long avgAcquire = acquire / samples;
+        long avgQuery = query / samples;
+        String summary = String.format(
+                Locale.ROOT,
+                "JDBC sampler summary: samples=%d, avg-acquire-ns=%d, avg-query-ns=%d, acquire-ratio=%.1f%%",
+                samples,
+                avgAcquire,
+                avgQuery,
+                ratio * 100.0);
+        if (ratio > ACQUIRE_RATIO_WARN_THRESHOLD) {
+            LOG.warn("{} - pool likely undersized; increase --pool-size or reduce --users", summary);
+        } else {
+            LOG.info(summary);
         }
     }
 }
