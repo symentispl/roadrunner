@@ -42,6 +42,24 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>9.1.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <version>2.0.5</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <scope>test</scope>
@@ -56,6 +74,8 @@
                 <configuration>
                     <classpathDependencyExcludes>
                         <classpathDependencyExclude>org.hsqldb:hsqldb</classpathDependencyExclude>
+                        <classpathDependencyExclude>com.mysql:mysql-connector-j</classpathDependencyExclude>
+                        <classpathDependencyExclude>org.postgresql:postgresql</classpathDependencyExclude>
                     </classpathDependencyExcludes>
                 </configuration>
             </plugin>
@@ -65,7 +85,7 @@
                 <version>3.8.1</version>
                 <executions>
                     <execution>
-                        <id>copy-hsqldb-driver</id>
+                        <id>copy-jdbc-drivers</id>
                         <phase>pre-integration-test</phase>
                         <goals>
                             <goal>copy</goal>
@@ -78,6 +98,20 @@
                                     <version>2.7.2</version>
                                     <outputDirectory>${project.build.directory}/jdbc-drivers</outputDirectory>
                                     <destFileName>hsqldb.jar</destFileName>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.mysql</groupId>
+                                    <artifactId>mysql-connector-j</artifactId>
+                                    <version>9.1.0</version>
+                                    <outputDirectory>${project.build.directory}/jdbc-drivers</outputDirectory>
+                                    <destFileName>mysql.jar</destFileName>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.postgresql</groupId>
+                                    <artifactId>postgresql</artifactId>
+                                    <version>42.7.4</version>
+                                    <outputDirectory>${project.build.directory}/jdbc-drivers</outputDirectory>
+                                    <destFileName>postgresql.jar</destFileName>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>

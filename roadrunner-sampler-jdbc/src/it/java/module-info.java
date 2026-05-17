@@ -20,6 +20,8 @@ open module io.roadrunner.samplers.jdbc.tests {
     requires org.assertj.core;
     requires org.junit.jupiter.api;
     requires transitive org.junit.jupiter.engine;
+    requires testcontainers;
+    requires testcontainers.junit.jupiter;
 
     exports io.roadrunner.samplers.jdbc.tests;
 }
