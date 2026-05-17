@@ -112,6 +112,10 @@ public abstract sealed class SamplerResponse<SELF extends SamplerResponse<SELF>>
             this.message = message;
         }
 
+        public String message() {
+            return message;
+        }
+
         @Override
         Error self() {
             return this;

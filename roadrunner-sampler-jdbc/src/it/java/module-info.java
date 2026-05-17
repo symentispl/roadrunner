@@ -13,10 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api.samplers;
+open module io.roadrunner.samplers.jdbc.tests {
+    requires io.roadrunner.api;
+    requires io.roadrunner.samplers.jdbc;
+    requires java.sql;
+    requires org.assertj.core;
+    requires org.junit.jupiter.api;
+    requires transitive org.junit.jupiter.engine;
+    requires testcontainers;
+    requires testcontainers.junit.jupiter;
 
-public interface SamplerProvider extends AutoCloseable {
-    Sampler newSampler();
-
-    default void close() throws Exception {}
+    exports io.roadrunner.samplers.jdbc.tests;
 }

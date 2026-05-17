@@ -1,12 +1,8 @@
-#[plugins]
-#async-profiler = "path:.mise/plugins/async-profiler"
-
 [tools]
 java = "temurin-25"
 maven = "4.0.0-rc-5"
 mvnd = "2.0.0-rc-3"
 shellcheck = "latest"
-#async-profiler = "4.3"
 
 [tasks.default]
 description = "Build and run all tests (incremental)"
@@ -25,6 +21,10 @@ outputs = [
     "**/target/generated-sources/**",
     "**/target/generated-test-sources/**",
 ]
+
+[tasks."build:format"]
+description = "Format code"
+run = "mvnd -q spotless:apply license:format"
 
 [tasks."lint:sh"]
 description = "Lint shell scripts with shellcheck"

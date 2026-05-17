@@ -58,7 +58,7 @@
         <assertj-core.version>3.27.7</assertj-core.version>
         <slf4j-api.version>2.0.18</slf4j-api.version>
         <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
-        <argLine>-Dorg.slf4j.simpleLogger.defaultLogLevel=debug</argLine>
+        <argLine>-Dorg.slf4j.simpleLogger.defaultLogLevel=warn</argLine>
     </properties>
     <build>
         <plugins>
@@ -362,6 +362,7 @@
         <module>roadrunner-samplers-spi</module>
         <module>roadrunner-sampler-vm</module>
         <module>roadrunner-sampler-ab</module>
+        <module>roadrunner-sampler-jdbc</module>
         <module>roadrunner-sampler-neo4j</module>
         <module>roadrunner-sampler-zero</module>
         <module>roadrunner-api</module>
