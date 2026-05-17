@@ -21,12 +21,14 @@ import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
+
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,7 +97,7 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 var scheduledStartTime = nextScheduledStartTime;
                 phaser.register();
                 requestsExecutor.submit(
-                        new RoadrunnerUser(journal, samplerSupplier.newSampler(), scheduledStartTime, phaser,parameterFeed,recorder));
+                        new RoadrunnerUser(journal, samplerSupplier.newSampler(), scheduledStartTime, phaser, parameters, recorder));
             }
         } finally {
             // Deregister the main party; when the last in-flight user also deregisters, the phaser
@@ -123,15 +125,14 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 Sampler sampler,
                 long scheduledStartTime,
                 Phaser phaser,
-                io.roadrunner.api.parameters.ParameterFeed parameterFeed,
+                Iterator<SamplerParameters> parameters,
                 LatencyRecorder recorder) {
-                Iterator<SamplerParameters> parameters) {
             this.journal = journal;
             this.sampler = sampler;
             this.scheduledStartTime = scheduledStartTime;
             this.phaser = phaser;
-            this.recorder = recorder;
             this.parameters = parameters;
+            this.recorder = recorder;
         }
 
         @Override

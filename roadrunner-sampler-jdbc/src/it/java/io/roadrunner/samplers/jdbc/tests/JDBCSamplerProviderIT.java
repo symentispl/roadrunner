@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.samplers.jdbc.JDBCSamplerOptions;
 import io.roadrunner.samplers.jdbc.JDBCSamplerPlugin;
 import io.roadrunner.samplers.jdbc.JDBCSamplerProvider;
@@ -46,7 +47,7 @@ class JDBCSamplerProviderIT {
             var options = defaultSamplerOptions(plugin, "jdbc:hsqldb:mem:testdb", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
             try (var provider = plugin.newSamplerProvider(options);
                  var sampler = provider.newSampler()) {
-                var response = sampler.execute();
+                var response = sampler.execute(SamplerParameters.EMPTY);
                 assertThat(response)
                         .asInstanceOf(type(SamplerResponse.Response.class))
                         .satisfies(r -> {
@@ -73,7 +74,7 @@ class JDBCSamplerProviderIT {
             var options = defaultSamplerOptions(plugin, "jdbc:hsqldb:mem:testdb2", "SELECT * FROM NONEXISTENT_TABLE");
             try (var provider = plugin.newSamplerProvider(options);
                  var newSampler = provider.newSampler()) {
-                var response = newSampler.execute();
+                var response = newSampler.execute(SamplerParameters.EMPTY);
                 assertThat(response)
                         .asInstanceOf(type(SamplerResponse.Error.class))
                         .satisfies(r -> {
@@ -90,7 +91,7 @@ class JDBCSamplerProviderIT {
         var failingDataSource = new ExceptionThrowingDataSource();
         try (var provider = new JDBCSamplerProvider(failingDataSource, "SELECT 1");
              var sampler = provider.newSampler()) {
-            var response = sampler.execute();
+            var response = sampler.execute(SamplerParameters.EMPTY);
             assertThat(response)
                     .asInstanceOf(type(SamplerResponse.Error.class))
                     .satisfies(r -> {
@@ -116,7 +117,7 @@ class JDBCSamplerProviderIT {
                 for (int i = 0; i < callCount; i++) {
                     executor.submit(() -> {
                         try {
-                            sampler.execute();
+                            sampler.execute(SamplerParameters.EMPTY);
                         } finally {
                             done.countDown();
                         }

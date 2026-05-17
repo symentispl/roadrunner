@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.samplers.jdbc.JDBCSamplerPlugin;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
@@ -53,7 +54,7 @@ public class MySQLSamplerProviderIT {
             options.driverPath = Paths.get(DRIVER_PATH);
             try (var provider = plugin.newSamplerProvider(options);
                     var sampler = provider.newSampler()) {
-                var response = sampler.execute();
+                var response = sampler.execute(SamplerParameters.EMPTY);
                 assertThat(response)
                         .asInstanceOf(type(SamplerResponse.Response.class))
                         .satisfies(r -> {

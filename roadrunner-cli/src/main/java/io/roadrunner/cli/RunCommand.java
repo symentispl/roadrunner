@@ -19,10 +19,13 @@ import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.latency.recording.PauseDetectorKind;
+
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.ArgGroup;
@@ -128,7 +131,8 @@ class RunCommand {
                         .formatted(report.prefix(), chartGeneratorProviders.supportedReportFormats()));
             }
 
-            var reportConfig = new HashMap<>(reportConfiguration.configuration());
+            var reportConfiguration = report.parameters();
+            var reportConfig = new HashMap<>(reportConfiguration);
             reportConfig.put("outputDir", bootstrap.outputDir().toString());
             reportConfig.put("rawLatency", Boolean.toString(rawLatency));
 

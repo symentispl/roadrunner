@@ -25,9 +25,14 @@ import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.parameters.ParameterFeed;
+
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import io.roadrunner.latency.recording.LatencyRecorders;
+import io.roadrunner.latency.recording.PauseDetectorKind;
 import org.junit.jupiter.api.Test;
 
 class ClosedWorldStrategyTest {
@@ -46,7 +51,8 @@ class ClosedWorldStrategyTest {
                         return SamplerResponse.empty(start, stop);
                     },
                     ParameterFeed.cyclicOfEmptyParameters(),
-                    journal);
+                    journal,
+                    LatencyRecorders.create(EnumSet.noneOf(PauseDetectorKind.class)));
         }
 
         assertThat(listener.events).first(type(UserEvent.Enter.class)).satisfies(e -> assertThat(e.timestamp())
@@ -70,7 +76,8 @@ class ClosedWorldStrategyTest {
         final List<Event> events = new CopyOnWriteArrayList<>();
 
         @Override
-        public void onStart() {}
+        public void onStart() {
+        }
 
         @Override
         public void onEvent(Collection<? extends Event> batch) {
@@ -78,7 +85,8 @@ class ClosedWorldStrategyTest {
         }
 
         @Override
-        public void onStop() {}
+        public void onStop() {
+        }
 
         @Override
         public EventReader samplesReader() {

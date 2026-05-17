@@ -16,6 +16,7 @@
 package io.roadrunner.samplers.jdbc;
 
 import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
 import java.sql.SQLException;
@@ -37,7 +38,7 @@ public class JDBCSamplerProvider implements SamplerProvider {
 
     @Override
     public Sampler newSampler() {
-        return () -> {
+        return (SamplerParameters parameters) -> {
             var t0 = System.nanoTime();
             try (var cnn = dataSource.getConnection();
                     var stmt = cnn.createStatement()) {

@@ -24,10 +24,12 @@ import io.roadrunner.latency.recording.PauseDetectorKind;
 import io.roadrunner.shaded.hdrhistogram.EncodableHistogram;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
 import io.roadrunner.shaded.hdrhistogram.HistogramLogReader;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.EnumSet;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -41,7 +43,7 @@ class OpenWorldRecorderIT {
                 .withOpenWorldModel(10, Duration.ofMillis(500));
 
         try (var roadrunner = bootstrap.build()) {
-            Sampler fastProtocol = () -> {
+            Sampler fastProtocol = (parameters) -> {
                 long start = System.nanoTime();
                 long stop = System.nanoTime();
                 return SamplerResponse.empty(start, stop);
@@ -75,7 +77,7 @@ class OpenWorldRecorderIT {
                 .withOpenWorldModel(10, Duration.ofMillis(200));
 
         try (var roadrunner = bootstrap.build()) {
-            Sampler fastProtocol = () -> {
+            Sampler fastProtocol = (parameters) -> {
                 long start = System.nanoTime();
                 long stop = System.nanoTime();
                 return SamplerResponse.empty(start, stop);
