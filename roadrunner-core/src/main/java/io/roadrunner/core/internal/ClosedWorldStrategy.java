@@ -48,7 +48,7 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
     @Override
     public void execute(
             SamplerProvider samplerProvider,
-            PreloadedParameterFeed parameterFeed,
+            ParameterCarousel parameterFeed,
             QueueingSamplerResponsesJournal journal,
             LatencyRecorder recorder)
             throws InterruptedException {
@@ -69,10 +69,10 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
     private static class RoadrunnerUser implements Runnable {
         private final MeasurementControl measurementControl;
         private final Sampler sampler;
-        private final PreloadedParameterFeed parameters;
+        private final ParameterCarousel parameters;
 
         private RoadrunnerUser(
-                MeasurementControl measurementControl, Sampler sampler, PreloadedParameterFeed parameters) {
+                MeasurementControl measurementControl, Sampler sampler, ParameterCarousel parameters) {
             this.measurementControl = measurementControl;
             this.sampler = sampler;
             this.parameters = parameters;

@@ -52,7 +52,7 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
     @Override
     public void execute(
             SamplerProvider samplerSupplier,
-            PreloadedParameterFeed parameterFeed,
+            ParameterCarousel parameterFeed,
             QueueingSamplerResponsesJournal journal,
             LatencyRecorder recorder)
             throws InterruptedException {
@@ -113,7 +113,7 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
         private final Sampler sampler;
         private final long scheduledStartTime;
         private final Phaser phaser;
-        private final PreloadedParameterFeed parameters;
+        private final ParameterCarousel parameters;
         private final LatencyRecorder recorder;
 
         public RoadrunnerUser(
@@ -121,7 +121,7 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 Sampler sampler,
                 long scheduledStartTime,
                 Phaser phaser,
-                PreloadedParameterFeed parameters,
+                ParameterCarousel parameters,
                 LatencyRecorder recorder) {
             this.journal = journal;
             this.sampler = sampler;

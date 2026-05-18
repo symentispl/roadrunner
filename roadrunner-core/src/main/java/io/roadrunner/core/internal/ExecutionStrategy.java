@@ -27,7 +27,7 @@ public interface ExecutionStrategy {
      */
     void execute(
             SamplerProvider samplerProvider,
-            PreloadedParameterFeed parameterFeed,
+            ParameterCarousel parameterFeed,
             QueueingSamplerResponsesJournal journal,
             LatencyRecorder recorder)
             throws InterruptedException;

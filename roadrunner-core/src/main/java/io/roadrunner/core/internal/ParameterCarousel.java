@@ -25,37 +25,37 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Engine-internal parameter dispatcher. Holds the preloaded parameter rows in a flat array and
- * hands them to sampler threads round-robin via a shared atomic counter. Calls to {@link #next()}
- * are thread-safe, allocation-free, and lock-free (not contention-free under high concurrency —
- * see issue #138).
+ * cycles through them round-robin via a shared atomic counter — sampler threads grab the next row
+ * as it rotates past. Calls to {@link #next()} are thread-safe, allocation-free, and lock-free
+ * (not contention-free under high concurrency — see issue #138).
  * <p>
- * Not part of the public {@code ParameterFeed} SPI on purpose: implementors of
+ * Not part of the public {@link ParameterFeed} SPI on purpose: implementors of
  * {@link ParameterSource} return a finite, single-threaded {@code ParameterFeed} from
  * {@link ParameterSource#load()}; this class is the engine's own data structure for re-publishing
  * those rows to many virtual threads.
  */
-final class PreloadedParameterFeed {
+final class ParameterCarousel {
 
-    private static final Logger LOG = LoggerFactory.getLogger(PreloadedParameterFeed.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ParameterCarousel.class);
 
     /**
      * Drains the user-supplied {@link ParameterSource} once, copies its rows into a flat array,
-     * and closes both the feed and the source. The resulting {@code PreloadedParameterFeed} is the
+     * and closes both the feed and the source. The resulting {@code ParameterCarousel} is the
      * only object the execution loop interacts with for the rest of the run.
      */
-    static PreloadedParameterFeed from(ParameterSource parameterSource) throws Exception {
+    static ParameterCarousel from(ParameterSource parameterSource) throws Exception {
         LOG.info("Pre-loading parameters from {} source", parameterSource);
         try (parameterSource;
                 ParameterFeed feed = parameterSource.load()) {
             var rows = StreamSupport.stream(feed.spliterator(), false).toArray(SamplerParameters[]::new);
-            return new PreloadedParameterFeed(rows);
+            return new ParameterCarousel(rows);
         }
     }
 
     private final SamplerParameters[] rows;
     private final AtomicLong counter = new AtomicLong(0);
 
-    PreloadedParameterFeed(SamplerParameters[] rows) {
+    ParameterCarousel(SamplerParameters[] rows) {
         if (rows.length == 0) {
             throw new IllegalArgumentException("rows must be non-empty");
         }

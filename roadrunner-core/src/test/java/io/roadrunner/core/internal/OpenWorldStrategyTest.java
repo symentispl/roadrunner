@@ -47,7 +47,7 @@ class OpenWorldStrategyTest {
                         var stop = System.nanoTime();
                         return SamplerResponse.empty(start, stop);
                     },
-                    new PreloadedParameterFeed(new SamplerParameters[] {SamplerParameters.NONE}),
+                    new ParameterCarousel(new SamplerParameters[] {SamplerParameters.NONE}),
                     journal,
                     LatencyRecorder.noop());
         }
