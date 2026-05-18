@@ -31,8 +31,16 @@ import java.util.Iterator;
  * <h2>For the execution engine</h2>
  *
  * The feed the {@code ExecutionStrategy} actually sees is the engine's preloaded wrapper, not
- * the one returned by a user-supplied source. Calls to {@link java.util.Iterator#next()} on its
- * iterator are thread-safe, allocation-free, and never block.
+ * the one returned by a user-supplied source. An {@code ExecutionStrategy} obtains the iterator
+ * <strong>once</strong>, before forking sampler users, and shares that single iterator across
+ * all of them. Calls to {@link java.util.Iterator#next()} on the shared iterator are:
+ * <ul>
+ *   <li><b>thread-safe</b> — concurrent calls produce well-defined results;</li>
+ *   <li><b>allocation-free</b> on the hot path — no boxing, no new objects per call;</li>
+ *   <li><b>lock-free and non-blocking</b> — implemented with an atomic counter, not a mutex.
+ *       Note this is <em>not</em> contention-free: under high concurrency the counter is a
+ *       cache-line hot spot. See issue #138 for measurement and mitigation work.</li>
+ * </ul>
  */
 public interface ParameterFeed extends AutoCloseable, Iterable<SamplerParameters> {
 
