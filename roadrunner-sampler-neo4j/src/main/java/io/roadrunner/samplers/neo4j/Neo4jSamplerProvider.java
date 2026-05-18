@@ -33,12 +33,15 @@ public class Neo4jSamplerProvider implements SamplerProvider {
 
     @Override
     public Sampler newSampler() {
-        return (parameters) -> {
+        return parameters -> {
             var startTime = System.nanoTime();
             try (var session = driver.session()) {
-                // TODO ugly, I think, unless we enforce SamplerParameters to contained typed values, not only raw
-                // strings
-                var result = session.run(query, (Map<String, Object>) parameters.asMap());
+                // Neo4j's Session.run accepts Map<String, Object>; SamplerParameters.asMap returns
+                // Map<String, ?>. Erasure makes the cast safe — Session.run is a read-only consumer
+                // of the map. See #137 for typed CSV values (Integer/Long/etc. instead of String).
+                @SuppressWarnings("unchecked")
+                var params = (Map<String, Object>) parameters.asMap();
+                var result = session.run(query, params);
                 return SamplerResponse.response(startTime, System.nanoTime(), result.consume());
             } catch (Exception e) {
                 return SamplerResponse.error(startTime, System.nanoTime(), e.getMessage());
