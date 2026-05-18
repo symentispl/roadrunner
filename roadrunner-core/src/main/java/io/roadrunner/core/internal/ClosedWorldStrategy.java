@@ -50,7 +50,10 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
 
     @Override
     public void execute(
-            SamplerProvider samplerProvider, ParameterFeed parameterFeed, QueueingSamplerResponsesJournal journal, LatencyRecorder recorder)
+            SamplerProvider samplerProvider,
+            ParameterFeed parameterFeed,
+            QueueingSamplerResponsesJournal journal,
+            LatencyRecorder recorder)
             throws InterruptedException {
         var delayedSupplier = new DelayedSupplier<>(samplerProvider::newSampler, () -> 20L);
         Iterator<SamplerParameters> parameters = parameterFeed.iterator();

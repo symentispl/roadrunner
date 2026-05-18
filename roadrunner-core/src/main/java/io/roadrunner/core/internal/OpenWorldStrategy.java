@@ -16,19 +16,17 @@
 package io.roadrunner.core.internal;
 
 import io.roadrunner.api.events.UserEvent;
-import io.roadrunner.api.parameters.ParameterFeed;
 import io.roadrunner.api.latency.LatencyRecorder;
+import io.roadrunner.api.parameters.ParameterFeed;
 import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
-
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +54,10 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
 
     @Override
     public void execute(
-            SamplerProvider samplerSupplier, ParameterFeed parameterFeed, QueueingSamplerResponsesJournal journal, LatencyRecorder recorder)
+            SamplerProvider samplerSupplier,
+            ParameterFeed parameterFeed,
+            QueueingSamplerResponsesJournal journal,
+            LatencyRecorder recorder)
             throws InterruptedException {
         long intervalNanos = 1_000_000_000L / usersArrivalRate;
         if (intervalNanos <= 0) {
@@ -96,8 +97,8 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 }
                 var scheduledStartTime = nextScheduledStartTime;
                 phaser.register();
-                requestsExecutor.submit(
-                        new RoadrunnerUser(journal, samplerSupplier.newSampler(), scheduledStartTime, phaser, parameters, recorder));
+                requestsExecutor.submit(new RoadrunnerUser(
+                        journal, samplerSupplier.newSampler(), scheduledStartTime, phaser, parameters, recorder));
             }
         } finally {
             // Deregister the main party; when the last in-flight user also deregisters, the phaser

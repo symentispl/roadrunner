@@ -46,7 +46,7 @@ public class Neo4jSamplerPluginIT {
             options.password = "";
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
-                var response = sampler.execute(SamplerParameters.EMPTY);
+                var response = sampler.execute(SamplerParameters.NONE);
                 assertThat(response).asInstanceOf(type(SamplerResponse.Error.class)).satisfies(e -> {
                     assertThat(e.timestamp()).isLessThanOrEqualTo(e.stopTime());
                     assertThat(e.stopTime()).isLessThanOrEqualTo(System.nanoTime());
@@ -66,7 +66,7 @@ public class Neo4jSamplerPluginIT {
             options.query = "RETURN 1";
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
-                var response = sampler.execute(SamplerParameters.EMPTY);
+                var response = sampler.execute(SamplerParameters.NONE);
                 assertThat(response).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(r -> assertThat(r.timestamp()).isLessThanOrEqualTo(System.nanoTime()));
             }
         }

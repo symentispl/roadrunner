@@ -54,7 +54,7 @@ public class MySQLSamplerProviderIT {
             options.driverPath = Paths.get(DRIVER_PATH);
             try (var provider = plugin.newSamplerProvider(options);
                     var sampler = provider.newSampler()) {
-                var response = sampler.execute(SamplerParameters.EMPTY);
+                var response = sampler.execute(SamplerParameters.NONE);
                 assertThat(response)
                         .asInstanceOf(type(SamplerResponse.Response.class))
                         .satisfies(r -> {

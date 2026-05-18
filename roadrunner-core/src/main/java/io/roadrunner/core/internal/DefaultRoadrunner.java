@@ -24,10 +24,9 @@ import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
 import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.samplers.SamplerProvider;
-import io.roadrunner.latency.recording.PauseDetectorKind;
 import io.roadrunner.latency.recording.LatencyRecorders;
+import io.roadrunner.latency.recording.PauseDetectorKind;
 import io.roadrunner.output.csv.CsvOutputEventListener;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -51,8 +50,7 @@ public class DefaultRoadrunner implements Roadrunner {
             MeasurementProgress measurementProgress,
             Path outputDir,
             ParameterSource parameterSource,
-            EnumSet<PauseDetectorKind> pauseDetectorKinds
-            ) {
+            EnumSet<PauseDetectorKind> pauseDetectorKinds) {
         this.strategy = strategy;
         this.measurementProgress = measurementProgress;
         this.outputDir = outputDir;

@@ -15,28 +15,41 @@
  */
 package io.roadrunner.api.parameters;
 
-import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class SamplerParameters {
 
-    public static final SamplerParameters EMPTY = new SamplerParameters(Collections.emptyMap());
-
-    private final Map<String, Object> parameters;
-
-    public SamplerParameters(Map<String, Object> parameters) {
-        this.parameters = Map.copyOf(parameters);
-    }
+    public static final SamplerParameters NONE = new SamplerParameters(new LinkedHashMap<>());
 
     public static SamplerParameters of(String key, Object value) {
-        return new SamplerParameters(Map.of(key, value));
+        return new SamplerParameters(new LinkedHashMap<>(Map.of(key, value)));
     }
 
-    public Object get(String key) {
+    public static SamplerParameters of(Map<String, ?> map) {
+        // TODO ugly hack to enforce ordered map, which can be later used for indexed access
+        return new SamplerParameters((LinkedHashMap<String, ?>) map);
+    }
+
+    private final LinkedHashMap<String, ?> parameters;
+
+    private SamplerParameters(LinkedHashMap<String, ?> parameters) {
+        this.parameters = parameters;
+    }
+
+    public Object valueOf(String key) {
         return parameters.get(key);
     }
 
-    public Map<String, Object> asMap() {
+    public Map<String, ?> asMap() {
         return parameters;
+    }
+
+    public void forEach(IndexedParameterSink sink) throws Exception {
+        int i = 0;
+        for (var value : parameters.values()) {
+            sink.accept(i, value.getClass(), value);
+            i++;
+        }
     }
 }

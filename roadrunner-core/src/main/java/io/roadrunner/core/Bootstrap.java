@@ -93,6 +93,6 @@ public class Bootstrap {
         if (strategy == null) {
             throw new IllegalStateException("Load strategy must be configured");
         }
-        return new DefaultRoadrunner(strategy, measurementProgress, outputDir, parameterSource,pauseDetectors);
+        return new DefaultRoadrunner(strategy, measurementProgress, outputDir, parameterSource, pauseDetectors);
     }
 }

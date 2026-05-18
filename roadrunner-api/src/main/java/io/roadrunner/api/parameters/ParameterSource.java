@@ -19,19 +19,33 @@ import java.util.Collections;
 
 /**
  * Source of parameter data for sampler invocations.
- * <p>
- * Responsible only for loading raw data — the execution engine
- * handles buffering, prefetching, and thread-safe delivery separately.
- * <p>
- * {@link #load()} is called once before the benchmark loop begins; all I/O
- * must happen there. The returned {@code Iterable} may be lazy (streaming)
- * or eager (in-memory list).
+ *
+ * <h2>Implementor contract</h2>
+ *
+ * An implementation loads raw parameter rows (typically from external storage — a CSV file, a
+ * database, an HTTP endpoint, etc.) and exposes them as a {@link ParameterFeed} via
+ * {@link #load()}. Implementations need <strong>not</strong> worry about:
+ * <ul>
+ *   <li><b>Thread-safety.</b> The engine drains the returned feed from a single thread before
+ *       any sampler thread starts. Subsequent thread-safe distribution to sampler threads is
+ *       handled by the engine's preloaded feed.</li>
+ *   <li><b>Cycling.</b> When the run requests more samples than the feed produced, the engine's
+ *       internal feed cycles through the loaded rows round-robin. Implementations return a
+ *       finite feed.</li>
+ *   <li><b>Hot-path costs.</b> Per-row allocation and lazy streaming inside {@code load()} are
+ *       fine — the rows are copied into a flat array once and the original feed is closed
+ *       immediately afterwards.</li>
+ * </ul>
+ *
+ * {@link #load()} is the only point at which I/O may happen. The hot path never re-enters this
+ * method.
  */
 public interface ParameterSource extends AutoCloseable {
 
     /**
-     * Loads and returns parameter rows. Maybe lazy (streaming) or eager.
-     * Called once before the benchmark execution loop.
+     * Loads and returns parameter rows. Called once before the benchmark execution loop. The
+     * returned feed is drained immediately by the engine and then closed. I/O is permitted
+     * here; per-row allocation and lazy streaming are both fine.
      */
     ParameterFeed load() throws Exception;
 
@@ -41,6 +55,6 @@ public interface ParameterSource extends AutoCloseable {
      * Returns a parameters source that produces only empty parameters.
      */
     static ParameterSource onlyEmptyParameters() {
-        return () -> () -> Collections.singletonList(SamplerParameters.EMPTY).iterator();
+        return () -> () -> Collections.singletonList(SamplerParameters.NONE).iterator();
     }
 }

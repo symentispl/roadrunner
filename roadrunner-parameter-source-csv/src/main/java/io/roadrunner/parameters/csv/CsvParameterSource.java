@@ -15,15 +15,15 @@
  */
 package io.roadrunner.parameters.csv;
 
-import static java.util.Collections.unmodifiableMap;
-
 import io.roadrunner.api.parameters.ParameterFeed;
 import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.parameters.SamplerParameters;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
+
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.slf4j.Logger;
@@ -79,7 +79,7 @@ public final class CsvParameterSource implements ParameterSource {
         @Override
         public Iterator<SamplerParameters> iterator() {
             return csvParser.stream()
-                    .map(record -> new SamplerParameters(unmodifiableMap(record.toMap())))
+                    .map(record -> SamplerParameters.of(record.toMap()))
                     .iterator();
         }
 

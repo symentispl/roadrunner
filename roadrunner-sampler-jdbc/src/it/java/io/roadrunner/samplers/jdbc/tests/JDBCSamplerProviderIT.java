@@ -15,27 +15,26 @@
  */
 package io.roadrunner.samplers.jdbc.tests;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.type;
-
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.samplers.jdbc.JDBCSamplerOptions;
 import io.roadrunner.samplers.jdbc.JDBCSamplerPlugin;
 import io.roadrunner.samplers.jdbc.JDBCSamplerProvider;
+import org.junit.jupiter.api.Test;
 
+import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import javax.sql.DataSource;
 
-import org.jspecify.annotations.NonNull;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 class JDBCSamplerProviderIT {
 
@@ -47,7 +46,7 @@ class JDBCSamplerProviderIT {
             var options = defaultSamplerOptions(plugin, "jdbc:hsqldb:mem:testdb", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
             try (var provider = plugin.newSamplerProvider(options);
                  var sampler = provider.newSampler()) {
-                var response = sampler.execute(SamplerParameters.EMPTY);
+                var response = sampler.execute(SamplerParameters.NONE);
                 assertThat(response)
                         .asInstanceOf(type(SamplerResponse.Response.class))
                         .satisfies(r -> {
@@ -58,23 +57,13 @@ class JDBCSamplerProviderIT {
         }
     }
 
-    private static @NonNull JDBCSamplerOptions defaultSamplerOptions(JDBCSamplerPlugin plugin, String url, String query) {
-        var options = plugin.options();
-        options.url = url;
-        options.username = "SA";
-        options.password = "";
-        options.query = query;
-        options.driverPath = Paths.get(DRIVER_PATH);
-        return options;
-    }
-
     @Test
     void errorOnInvalidQuery() {
         try (var plugin = new JDBCSamplerPlugin()) {
             var options = defaultSamplerOptions(plugin, "jdbc:hsqldb:mem:testdb2", "SELECT * FROM NONEXISTENT_TABLE");
             try (var provider = plugin.newSamplerProvider(options);
                  var newSampler = provider.newSampler()) {
-                var response = newSampler.execute(SamplerParameters.EMPTY);
+                var response = newSampler.execute(SamplerParameters.NONE);
                 assertThat(response)
                         .asInstanceOf(type(SamplerResponse.Error.class))
                         .satisfies(r -> {
@@ -91,7 +80,7 @@ class JDBCSamplerProviderIT {
         var failingDataSource = new ExceptionThrowingDataSource();
         try (var provider = new JDBCSamplerProvider(failingDataSource, "SELECT 1");
              var sampler = provider.newSampler()) {
-            var response = sampler.execute(SamplerParameters.EMPTY);
+            var response = sampler.execute(SamplerParameters.NONE);
             assertThat(response)
                     .asInstanceOf(type(SamplerResponse.Error.class))
                     .satisfies(r -> {
@@ -117,7 +106,7 @@ class JDBCSamplerProviderIT {
                 for (int i = 0; i < callCount; i++) {
                     executor.submit(() -> {
                         try {
-                            sampler.execute(SamplerParameters.EMPTY);
+                            sampler.execute(SamplerParameters.NONE);
                         } finally {
                             done.countDown();
                         }
@@ -136,6 +125,28 @@ class JDBCSamplerProviderIT {
                 assertThat(ratio)
                         .as("acquire ratio should exceed 20%% under saturation, was %.3f", ratio)
                         .isGreaterThan(0.20);
+            }
+        }
+    }
+
+    @Test
+    void fillInParameters() throws Exception {
+        try (var plugin = new JDBCSamplerPlugin()) {
+            var options = defaultSamplerOptions(plugin,
+                    "jdbc:hsqldb:mem:parameters",
+                    "INSERT INTO parameters (v_int,v_text) VALUES (?,?)");
+            try (var provider = plugin.newSamplerProvider(options)) {
+                try (Connection connection = provider.getConnection()) {
+                    connection.createStatement().execute("CREATE TABLE parameters (v_int int,v_text varchar(255))");
+                }
+                var sampler = provider.newSampler();
+                LinkedHashMap<String, Object> queryParameters = new LinkedHashMap<>();
+                queryParameters.put("v_int", 1);
+                queryParameters.put("v_text", "test");
+                var response = sampler.execute(SamplerParameters.of(queryParameters));
+                assertThat(response).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(r -> {
+                    assertThat(r.timestamp()).isLessThanOrEqualTo(System.nanoTime());
+                });
             }
         }
     }
@@ -185,5 +196,15 @@ class JDBCSamplerProviderIT {
         public Logger getParentLogger() {
             throw new UnsupportedOperationException();
         }
+    }
+
+    private static JDBCSamplerOptions defaultSamplerOptions(JDBCSamplerPlugin plugin, String url, String query) {
+        var options = plugin.options();
+        options.url = url;
+        options.username = "SA";
+        options.password = "";
+        options.query = query;
+        options.driverPath = Paths.get(DRIVER_PATH);
+        return options;
     }
 }

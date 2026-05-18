@@ -18,6 +18,7 @@ package io.roadrunner.samplers.neo4j;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
+import java.util.Map;
 import org.neo4j.driver.Driver;
 
 public class Neo4jSamplerProvider implements SamplerProvider {
@@ -35,7 +36,9 @@ public class Neo4jSamplerProvider implements SamplerProvider {
         return (parameters) -> {
             var startTime = System.nanoTime();
             try (var session = driver.session()) {
-                var result = session.run(query, parameters.asMap());
+                // TODO ugly, I think, unless we enforce SamplerParameters to contained typed values, not only raw
+                // strings
+                var result = session.run(query, (Map<String, Object>) parameters.asMap());
                 return SamplerResponse.response(startTime, System.nanoTime(), result.consume());
             } catch (Exception e) {
                 return SamplerResponse.error(startTime, System.nanoTime(), e.getMessage());
