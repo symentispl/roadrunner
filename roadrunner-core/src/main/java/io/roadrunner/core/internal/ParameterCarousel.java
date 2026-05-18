@@ -48,6 +48,11 @@ final class ParameterCarousel {
         try (parameterSource;
                 ParameterFeed feed = parameterSource.load()) {
             var rows = StreamSupport.stream(feed.spliterator(), false).toArray(SamplerParameters[]::new);
+            if (rows.length == 0) {
+                throw new IllegalStateException(
+                        "ParameterSource %s produced zero rows — at least one parameter row is required (check that the source file is not header-only or empty)"
+                                .formatted(parameterSource));
+            }
             return new ParameterCarousel(rows);
         }
     }

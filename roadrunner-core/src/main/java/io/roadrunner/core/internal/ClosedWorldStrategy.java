@@ -58,7 +58,8 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
             var latch = new CountDownLatch(concurrentUsers);
             var measurementControl = new MeasurementControl(requests, journal, latch);
             for (int i = 0; i < concurrentUsers; i++) {
-                usersExecutor.submit(new RoadrunnerUser(measurementControl, delayedSupplier.get(), parameterFeed));
+                usersExecutor.submit(
+                        new RoadrunnerUser(measurementControl, delayedSupplier.get(), parameterFeed, recorder));
             }
             latch.await();
             usersExecutor.shutdown();
@@ -70,12 +71,17 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
         private final MeasurementControl measurementControl;
         private final Sampler sampler;
         private final ParameterCarousel parameters;
+        private final LatencyRecorder recorder;
 
         private RoadrunnerUser(
-                MeasurementControl measurementControl, Sampler sampler, ParameterCarousel parameters) {
+                MeasurementControl measurementControl,
+                Sampler sampler,
+                ParameterCarousel parameters,
+                LatencyRecorder recorder) {
             this.measurementControl = measurementControl;
             this.sampler = sampler;
             this.parameters = parameters;
+            this.recorder = recorder;
         }
 
         @Override
@@ -97,6 +103,7 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
                         var correctedLatency = serviceTime + inQueueTime;
                         measurementControl.request(response.withScheduledStartTime(scheduledStartTime)
                                 .withLatency(correctedLatency));
+                        recorder.record(correctedLatency);
                     } catch (Exception e) {
                         measurementControl.error(e);
                         if (e instanceof InterruptedException || e.getCause() instanceof InterruptedException) {

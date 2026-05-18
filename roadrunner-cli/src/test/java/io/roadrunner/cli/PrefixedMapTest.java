@@ -71,4 +71,11 @@ class PrefixedMapTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Empty prefix is not allowed");
     }
+
+    @Test
+    void unterminatedTrailingKeyThrows() {
+        assertThatThrownBy(() -> PrefixedMap.parse("csv:file=a.csv,trailing"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Unterminated key");
+    }
 }

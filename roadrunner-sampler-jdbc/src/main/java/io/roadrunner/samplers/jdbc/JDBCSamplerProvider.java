@@ -15,11 +15,13 @@
  */
 package io.roadrunner.samplers.jdbc;
 
+import static java.util.Map.entry;
+import static java.util.Objects.requireNonNull;
+
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -34,9 +36,6 @@ import java.time.OffsetTime;
 import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 import javax.sql.DataSource;
-
-import static java.util.Map.entry;
-import static java.util.Objects.requireNonNull;
 
 public class JDBCSamplerProvider implements SamplerProvider {
 
@@ -56,7 +55,7 @@ public class JDBCSamplerProvider implements SamplerProvider {
         return (SamplerParameters parameters) -> {
             var tStarted = System.nanoTime();
             try (var cnn = dataSource.getConnection();
-                 var stmt = cnn.prepareStatement(query)) {
+                    var stmt = cnn.prepareStatement(query)) {
                 var tAcquired = System.nanoTime();
                 try {
                     long rowCount;
@@ -118,7 +117,9 @@ public class JDBCSamplerProvider implements SamplerProvider {
             entry(OffsetDateTime.class, JDBCType.TIMESTAMP_WITH_TIMEZONE));
 
     private static SQLType sqlTypeOf(Class<?> type) {
-        return requireNonNull(SQL_TYPE_BY_JAVA_TYPE.get(type), () -> "unsupported Java type for JDBC parameter binding: " + type.getName());
+        return requireNonNull(
+                SQL_TYPE_BY_JAVA_TYPE.get(type),
+                () -> "unsupported Java type for JDBC parameter binding: " + type.getName());
     }
 
     private void recordTimestamps(long tStarted, long tAcquired, long tDone) {

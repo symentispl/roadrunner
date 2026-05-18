@@ -23,7 +23,7 @@ public interface Sampler extends AutoCloseable {
     /**
      * Executes one request with the given parameters.
      */
-    SamplerResponse execute(SamplerParameters parameters);
+    SamplerResponse<?> execute(SamplerParameters parameters);
 
     default void close() {}
 }

@@ -103,4 +103,35 @@ class CsvParameterSourceTest {
             assertThat(rows.get(0).valueOf("key")).isEqualTo("val");
         }
     }
+
+    @Test
+    void shouldYieldNoRowsForHeaderOnlyFile() throws Exception {
+        var csvFile = tempDir.resolve("data.csv");
+        Files.writeString(csvFile, "name,value\n");
+
+        var source = new CsvParameterSource(csvFile, ',');
+        try (var feed = source.load()) {
+            List<SamplerParameters> rows = new ArrayList<>();
+            feed.forEach(rows::add);
+            assertThat(rows).isEmpty();
+        }
+    }
+
+    @Test
+    void shouldPreserveEmptyValues() throws Exception {
+        var csvFile = tempDir.resolve("data.csv");
+        Files.writeString(csvFile, "name,value\nalice,\n,2\n");
+
+        var source = new CsvParameterSource(csvFile, ',');
+        try (var feed = source.load()) {
+            List<SamplerParameters> rows = new ArrayList<>();
+            feed.forEach(rows::add);
+
+            assertThat(rows).hasSize(2);
+            assertThat(rows.get(0).valueOf("name")).isEqualTo("alice");
+            assertThat(rows.get(0).valueOf("value")).isEqualTo("");
+            assertThat(rows.get(1).valueOf("name")).isEqualTo("");
+            assertThat(rows.get(1).valueOf("value")).isEqualTo("2");
+        }
+    }
 }

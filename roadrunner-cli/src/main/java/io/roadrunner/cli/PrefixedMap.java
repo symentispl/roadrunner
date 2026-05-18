@@ -95,6 +95,10 @@ record PrefixedMap(String prefix, Map<String, String> parameters) {
         if (state == State.prefix) {
             type = buffer.toString();
         }
+        if (state == State.key && !buffer.isEmpty()) {
+            throw new IllegalStateException(
+                    "Unterminated key '%s': expected '=value' after key".formatted(buffer.toString()));
+        }
         if (state == State.value && currentKey != null) {
             parameters.put(currentKey, buffer.toString());
         }

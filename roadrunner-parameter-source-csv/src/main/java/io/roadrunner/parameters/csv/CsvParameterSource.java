@@ -18,12 +18,11 @@ package io.roadrunner.parameters.csv;
 import io.roadrunner.api.parameters.ParameterFeed;
 import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.parameters.SamplerParameters;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
-
+import java.util.LinkedHashMap;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.slf4j.Logger;
@@ -35,8 +34,10 @@ import org.slf4j.LoggerFactory;
  * The first row is treated as the header (parameter names). All subsequent rows
  * are data rows.
  * <p>
- * All I/O happens inside {@link #load()} — the file is fully read before the
- * benchmark loop begins.
+ * {@link #load()} opens the file and parses the header. Data rows are read lazily
+ * as the returned {@link ParameterFeed} is iterated. The engine drains the feed
+ * once before the benchmark loop starts and then closes it, so all I/O happens
+ * outside the hot path.
  */
 public final class CsvParameterSource implements ParameterSource {
 
@@ -66,8 +67,12 @@ public final class CsvParameterSource implements ParameterSource {
         static ParameterFeed of(Path csvFile, CSVFormat format) throws IOException {
             LOG.info("Loading CSV parameters from file {}", csvFile);
             var reader = Files.newBufferedReader(csvFile);
-            var csvParser = format.parse(reader);
-            return new CsvParameterFeed(csvParser);
+            try {
+                return new CsvParameterFeed(format.parse(reader));
+            } catch (Exception e) {
+                reader.close();
+                throw e;
+            }
         }
 
         private final CSVParser csvParser;
@@ -79,7 +84,7 @@ public final class CsvParameterSource implements ParameterSource {
         @Override
         public Iterator<SamplerParameters> iterator() {
             return csvParser.stream()
-                    .map(record -> SamplerParameters.of(record.toMap()))
+                    .map(record -> SamplerParameters.of(new LinkedHashMap<>(record.toMap())))
                     .iterator();
         }
 

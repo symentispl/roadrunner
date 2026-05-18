@@ -79,7 +79,7 @@ final class QueueingSamplerResponsesJournal implements AutoCloseable {
         responses.offer(event);
     }
 
-    public void response(SamplerResponse response) {
+    public void response(SamplerResponse<?> response) {
         responses.offer(response);
     }
 

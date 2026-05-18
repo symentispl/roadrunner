@@ -17,6 +17,7 @@ package io.roadrunner.api.parameters;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.SequencedMap;
 
 public final class SamplerParameters {
 
@@ -26,13 +27,18 @@ public final class SamplerParameters {
         return new SamplerParameters(new LinkedHashMap<>(Map.of(key, value)));
     }
 
-    public static SamplerParameters of(Map<String, ?> map) {
-        return new SamplerParameters(new LinkedHashMap<>(map));
+    /**
+     * Builds parameters from an ordered map. Iteration order of the map determines positional
+     * binding order in samplers (e.g. JDBC placeholders), so the API requires a
+     * {@link SequencedMap} — passing a {@link java.util.HashMap} won't compile.
+     */
+    public static SamplerParameters of(SequencedMap<String, ?> map) {
+        return new SamplerParameters(map);
     }
 
-    private final LinkedHashMap<String, ?> parameters;
+    private final SequencedMap<String, ?> parameters;
 
-    private SamplerParameters(LinkedHashMap<String, ?> parameters) {
+    private SamplerParameters(SequencedMap<String, ?> parameters) {
         this.parameters = parameters;
     }
 
