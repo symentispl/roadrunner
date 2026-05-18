@@ -20,12 +20,23 @@ import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.JDBCType;
 import java.sql.SQLException;
 import java.sql.SQLType;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 import javax.sql.DataSource;
+
+import static java.util.Map.entry;
+import static java.util.Objects.requireNonNull;
 
 public class JDBCSamplerProvider implements SamplerProvider {
 
@@ -78,14 +89,36 @@ public class JDBCSamplerProvider implements SamplerProvider {
         };
     }
 
+    /**
+     * Java to SQL type mapping per the JDBC 4.3 spec (table B-4 / appendix B). Only the exact
+     * runtime classes a {@link io.roadrunner.api.parameters.ParameterSource} can produce are
+     * listed — subtypes (e.g. {@code java.util.Date}, {@code Number}) and primitive class
+     * literals (unreachable since values arrive via {@link Object#getClass()}) are out of scope.
+     */
+    private static final Map<Class<?>, SQLType> SQL_TYPE_BY_JAVA_TYPE = Map.ofEntries(
+            entry(String.class, JDBCType.VARCHAR),
+            entry(Character.class, JDBCType.CHAR),
+            entry(Boolean.class, JDBCType.BOOLEAN),
+            entry(Byte.class, JDBCType.TINYINT),
+            entry(Short.class, JDBCType.SMALLINT),
+            entry(Integer.class, JDBCType.INTEGER),
+            entry(Long.class, JDBCType.BIGINT),
+            entry(Float.class, JDBCType.REAL),
+            entry(Double.class, JDBCType.DOUBLE),
+            entry(BigDecimal.class, JDBCType.DECIMAL),
+            entry(BigInteger.class, JDBCType.NUMERIC),
+            entry(byte[].class, JDBCType.VARBINARY),
+            entry(java.sql.Date.class, JDBCType.DATE),
+            entry(java.sql.Time.class, JDBCType.TIME),
+            entry(java.sql.Timestamp.class, JDBCType.TIMESTAMP),
+            entry(LocalDate.class, JDBCType.DATE),
+            entry(LocalTime.class, JDBCType.TIME),
+            entry(LocalDateTime.class, JDBCType.TIMESTAMP),
+            entry(OffsetTime.class, JDBCType.TIME_WITH_TIMEZONE),
+            entry(OffsetDateTime.class, JDBCType.TIMESTAMP_WITH_TIMEZONE));
+
     private static SQLType sqlTypeOf(Class<?> type) {
-        if (type == String.class) {
-            return JDBCType.VARCHAR;
-        }
-        if (type == Integer.class || type == int.class) {
-            return JDBCType.INTEGER;
-        }
-        throw new IllegalArgumentException("unsupported Java type mapping to SQL type");
+        return requireNonNull(SQL_TYPE_BY_JAVA_TYPE.get(type), () -> "unsupported Java type for JDBC parameter binding: " + type.getName());
     }
 
     private void recordTimestamps(long tStarted, long tAcquired, long tDone) {
