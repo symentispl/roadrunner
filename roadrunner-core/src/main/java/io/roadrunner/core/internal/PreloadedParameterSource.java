@@ -27,7 +27,8 @@ final class PreloadedParameterSource implements ParameterSource {
 
     public static ParameterSource from(ParameterSource parameterSource) throws Exception {
         LOG.info("Pre-loading parameters from {} source", parameterSource);
-        try (ParameterFeed feed = parameterSource.load()) {
+        try (parameterSource;
+                ParameterFeed feed = parameterSource.load()) {
             var parameters = StreamSupport.stream(feed.spliterator(), false).toArray(SamplerParameters[]::new);
             return new PreloadedParameterSource(parameters);
         }
