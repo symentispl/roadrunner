@@ -27,8 +27,7 @@ public final class SamplerParameters {
     }
 
     public static SamplerParameters of(Map<String, ?> map) {
-        // TODO ugly hack to enforce ordered map, which can be later used for indexed access
-        return new SamplerParameters((LinkedHashMap<String, ?>) map);
+        return new SamplerParameters(new LinkedHashMap<>(map));
     }
 
     private final LinkedHashMap<String, ?> parameters;
