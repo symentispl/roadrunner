@@ -134,7 +134,6 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
         @Override
         public void run() {
             try {
-
                 journal.userEnters(UserEvent.enter());
                 var response = sampler.execute(parameters.next());
                 var inQueueTime = response.timestamp() - scheduledStartTime;
