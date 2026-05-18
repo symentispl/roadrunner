@@ -27,7 +27,7 @@ public interface ExecutionStrategy {
      */
     void execute(
             SamplerProvider samplerProvider,
-            io.roadrunner.api.parameters.ParameterFeed parameterFeed,
+            PreloadedParameterFeed parameterFeed,
             QueueingSamplerResponsesJournal journal,
             LatencyRecorder recorder)
             throws InterruptedException;

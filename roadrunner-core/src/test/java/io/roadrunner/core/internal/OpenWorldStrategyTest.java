@@ -25,7 +25,7 @@ import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.measurments.EventReader;
-import io.roadrunner.api.parameters.ParameterFeed;
+import io.roadrunner.api.parameters.SamplerParameters;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -47,7 +47,7 @@ class OpenWorldStrategyTest {
                         var stop = System.nanoTime();
                         return SamplerResponse.empty(start, stop);
                     },
-                    ParameterFeed.cyclicOfEmptyParameters(),
+                    new PreloadedParameterFeed(new SamplerParameters[] {SamplerParameters.NONE}),
                     journal,
                     LatencyRecorder.noop());
         }

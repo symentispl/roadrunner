@@ -18,11 +18,8 @@ package io.roadrunner.core.internal;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.latency.LatencyRecorder;
-import io.roadrunner.api.parameters.ParameterFeed;
-import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
-import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -51,18 +48,17 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
     @Override
     public void execute(
             SamplerProvider samplerProvider,
-            ParameterFeed parameterFeed,
+            PreloadedParameterFeed parameterFeed,
             QueueingSamplerResponsesJournal journal,
             LatencyRecorder recorder)
             throws InterruptedException {
         var delayedSupplier = new DelayedSupplier<>(samplerProvider::newSampler, () -> 20L);
-        Iterator<SamplerParameters> parameters = parameterFeed.iterator();
         try (var usersExecutor = Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("roadrunner-users-").factory())) {
             var latch = new CountDownLatch(concurrentUsers);
             var measurementControl = new MeasurementControl(requests, journal, latch);
             for (int i = 0; i < concurrentUsers; i++) {
-                usersExecutor.submit(new RoadrunnerUser(measurementControl, delayedSupplier.get(), parameters));
+                usersExecutor.submit(new RoadrunnerUser(measurementControl, delayedSupplier.get(), parameterFeed));
             }
             latch.await();
             usersExecutor.shutdown();
@@ -73,10 +69,10 @@ public final class ClosedWorldStrategy implements ExecutionStrategy {
     private static class RoadrunnerUser implements Runnable {
         private final MeasurementControl measurementControl;
         private final Sampler sampler;
-        private final Iterator<SamplerParameters> parameters;
+        private final PreloadedParameterFeed parameters;
 
         private RoadrunnerUser(
-                MeasurementControl measurementControl, Sampler sampler, Iterator<SamplerParameters> parameters) {
+                MeasurementControl measurementControl, Sampler sampler, PreloadedParameterFeed parameters) {
             this.measurementControl = measurementControl;
             this.sampler = sampler;
             this.parameters = parameters;

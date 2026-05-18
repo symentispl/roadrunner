@@ -24,7 +24,7 @@ import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
-import io.roadrunner.api.parameters.ParameterFeed;
+import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.latency.recording.LatencyRecorders;
 import io.roadrunner.latency.recording.PauseDetectorKind;
 import java.util.Collection;
@@ -48,7 +48,7 @@ class ClosedWorldStrategyTest {
                         var stop = System.nanoTime();
                         return SamplerResponse.empty(start, stop);
                     },
-                    ParameterFeed.cyclicOfEmptyParameters(),
+                    new PreloadedParameterFeed(new SamplerParameters[] {SamplerParameters.NONE}),
                     journal,
                     LatencyRecorders.create(EnumSet.noneOf(PauseDetectorKind.class)));
         }

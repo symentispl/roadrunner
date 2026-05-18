@@ -16,16 +16,41 @@
 package io.roadrunner.core.internal;
 
 import io.roadrunner.api.parameters.ParameterFeed;
+import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.parameters.SamplerParameters;
-import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.StreamSupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * {@link ParameterFeed} backed by a preloaded array of {@link SamplerParameters}.
+ * Engine-internal parameter dispatcher. Holds the preloaded parameter rows in a flat array and
+ * hands them to sampler threads round-robin via a shared atomic counter. Calls to {@link #next()}
+ * are thread-safe, allocation-free, and lock-free (not contention-free under high concurrency —
+ * see issue #138).
  * <p>
- * Rows are delivered round-robin using an {@link AtomicLong} counter.
+ * Not part of the public {@code ParameterFeed} SPI on purpose: implementors of
+ * {@link ParameterSource} return a finite, single-threaded {@code ParameterFeed} from
+ * {@link ParameterSource#load()}; this class is the engine's own data structure for re-publishing
+ * those rows to many virtual threads.
  */
-final class PreloadedParameterFeed implements ParameterFeed {
+final class PreloadedParameterFeed {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PreloadedParameterFeed.class);
+
+    /**
+     * Drains the user-supplied {@link ParameterSource} once, copies its rows into a flat array,
+     * and closes both the feed and the source. The resulting {@code PreloadedParameterFeed} is the
+     * only object the execution loop interacts with for the rest of the run.
+     */
+    static PreloadedParameterFeed from(ParameterSource parameterSource) throws Exception {
+        LOG.info("Pre-loading parameters from {} source", parameterSource);
+        try (parameterSource;
+                ParameterFeed feed = parameterSource.load()) {
+            var rows = StreamSupport.stream(feed.spliterator(), false).toArray(SamplerParameters[]::new);
+            return new PreloadedParameterFeed(rows);
+        }
+    }
 
     private final SamplerParameters[] rows;
     private final AtomicLong counter = new AtomicLong(0);
@@ -37,19 +62,11 @@ final class PreloadedParameterFeed implements ParameterFeed {
         this.rows = rows;
     }
 
-    @Override
-    public Iterator<SamplerParameters> iterator() {
-        return new Iterator<>() {
-            @Override
-            public boolean hasNext() {
-                return true;
-            }
-
-            @Override
-            public SamplerParameters next() {
-                long idx = counter.getAndIncrement();
-                return rows[Math.floorMod(idx, rows.length)];
-            }
-        };
+    /**
+     * Returns the next parameter row in the round-robin cycle. Thread-safe.
+     */
+    SamplerParameters next() {
+        long idx = counter.getAndIncrement();
+        return rows[Math.floorMod(idx, rows.length)];
     }
 }
