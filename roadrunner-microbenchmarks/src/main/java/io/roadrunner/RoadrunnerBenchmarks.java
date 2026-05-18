@@ -24,6 +24,7 @@ import java.time.Duration;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -57,10 +58,13 @@ public class RoadrunnerBenchmarks {
         private VmSamplerProvider samplerProvider;
         private Sampler sampler;
 
+        @Param({"1", "10", "100", "1000", "10000"})
+        private int arrivalRate;
+
         @Setup(Level.Trial)
         public void setUp() throws IOException {
             roadrunner = new Bootstrap()
-                    .withOpenWorldModel(10, Duration.ofSeconds(1))
+                    .withOpenWorldModel(arrivalRate, Duration.ofSeconds(10))
                     .build();
             samplerProvider = VmSamplerProvider.from(Duration.ofMillis(100));
             sampler = samplerProvider.newSampler();
