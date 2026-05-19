@@ -33,7 +33,10 @@ public class CsvOutputEventListener implements EventListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(CsvOutputEventListener.class);
 
+    private static final int ROW_BUFFER_SIZE = 128;
+
     private final Path csvOutputFile;
+    private final StringBuilder rowBuilder = new StringBuilder(ROW_BUFFER_SIZE);
     private BufferedWriter bufferedWriter;
 
     public CsvOutputEventListener(Path csvOutputFile) {
@@ -54,18 +57,17 @@ public class CsvOutputEventListener implements EventListener {
     @Override
     public void onEvent(Collection<? extends Event> batch) {
         for (var response : batch) {
-            var row =
-                    switch (response) {
-                        case SamplerResponse.Error e -> toRow(e, "KO");
-                        case SamplerResponse.Response<?> e -> toRow(e, "OK");
-                        case UserEvent.Enter e -> "USER,%d,ENTER".formatted(e.timestamp());
-                        case UserEvent.Exit e -> "USER,%d,EXIT".formatted(e.timestamp());
-                        default -> throw new IllegalStateException("Unexpected value: " + response);
-                    };
+            rowBuilder.setLength(0);
+            switch (response) {
+                case SamplerResponse.Error e -> appendResponseRow(e, "KO");
+                case SamplerResponse.Response<?> e -> appendResponseRow(e, "OK");
+                case UserEvent.Enter e -> rowBuilder.append("USER,").append(e.timestamp()).append(",ENTER");
+                case UserEvent.Exit e -> rowBuilder.append("USER,").append(e.timestamp()).append(",EXIT");
+                default -> throw new IllegalStateException("Unexpected value: " + response);
+            }
             try {
-                bufferedWriter.write(row);
+                bufferedWriter.append(rowBuilder);
                 bufferedWriter.newLine();
-                bufferedWriter.flush();
             } catch (IOException e) {
                 LOG.error("cannot write csv output", e);
                 throw new RuntimeException(e);
@@ -73,19 +75,24 @@ public class CsvOutputEventListener implements EventListener {
         }
     }
 
-    private String toRow(SamplerResponse<?> response, String status) {
-        return "REQ,%d,%d,%d,%d,%s"
-                .formatted(
-                        response.scheduledStartTime(),
-                        response.timestamp(),
-                        response.stopTime(),
-                        response.latency(),
-                        status);
+    private void appendResponseRow(SamplerResponse<?> response, String status) {
+        rowBuilder
+                .append("REQ,")
+                .append(response.scheduledStartTime())
+                .append(',')
+                .append(response.timestamp())
+                .append(',')
+                .append(response.stopTime())
+                .append(',')
+                .append(response.latency())
+                .append(',')
+                .append(status);
     }
 
     @Override
     public void onStop() {
         try {
+            bufferedWriter.flush();
             bufferedWriter.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
