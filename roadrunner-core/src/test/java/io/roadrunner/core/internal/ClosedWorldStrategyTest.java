@@ -23,24 +23,25 @@ import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
-import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.parameters.SamplerParameters;
-import java.time.Duration;
+import io.roadrunner.latency.recording.LatencyRecorders;
+import io.roadrunner.latency.recording.PauseDetectorKind;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.Test;
 
-class OpenWorldStrategyTest {
+class ClosedWorldStrategyTest {
 
     @Test
-    void fireRequestsAtTargetRate() throws InterruptedException {
+    void fireRequestsAtTargetConcurrency() throws InterruptedException {
         var listener = new CollectionEventListener();
 
         try (var journal = new QueueingSamplerResponsesJournal(listener)) {
             journal.start();
-            var strategy = OpenWorldStrategy.of(5, Duration.ofSeconds(2));
+            var strategy = ClosedWorldStrategy.of(5, 10);
             strategy.execute(
                     () -> (parameters) -> {
                         var start = System.nanoTime();
@@ -49,7 +50,7 @@ class OpenWorldStrategyTest {
                     },
                     new ParameterCarousel(new SamplerParameters[] {SamplerParameters.NONE}),
                     journal,
-                    LatencyRecorder.noop());
+                    LatencyRecorders.create(EnumSet.noneOf(PauseDetectorKind.class)));
         }
 
         assertThat(listener.events).first(type(UserEvent.Enter.class)).satisfies(e -> assertThat(e.timestamp())
@@ -58,11 +59,10 @@ class OpenWorldStrategyTest {
         assertThat(listener.events).last(type(UserEvent.Exit.class)).satisfies(e -> assertThat(e.timestamp())
                 .isGreaterThan(0));
 
-        // 5 rps * 2s = 10 expected requests; allow ±4 tolerance for scheduling jitter
         assertThat(listener.events)
                 .filteredOn(SamplerResponse.class::isInstance)
                 .asInstanceOf(collection(SamplerResponse.class))
-                .hasSizeBetween(6, 14)
+                .hasSize(10)
                 .allSatisfy(r -> {
                     assertThat(r.scheduledStartTime()).isGreaterThan(0);
                     assertThat(r.timestamp()).isGreaterThanOrEqualTo(r.scheduledStartTime());

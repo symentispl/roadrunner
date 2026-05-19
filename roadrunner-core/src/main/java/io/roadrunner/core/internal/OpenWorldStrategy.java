@@ -51,7 +51,10 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
 
     @Override
     public void execute(
-            SamplerProvider samplerSupplier, QueueingSamplerResponsesJournal journal, LatencyRecorder recorder)
+            SamplerProvider samplerSupplier,
+            ParameterCarousel parameterFeed,
+            QueueingSamplerResponsesJournal journal,
+            LatencyRecorder recorder)
             throws InterruptedException {
         long intervalNanos = 1_000_000_000L / usersArrivalRate;
         if (intervalNanos <= 0) {
@@ -64,15 +67,15 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
         var requestsExecutor = Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("roadrunner-users-").factory());
 
-        var startNanos = System.nanoTime();
-        var deadlineNanos = startNanos + durationNanos;
-        // Track the next arrival as an absolute nanos value to avoid drift accumulation
-        var nextScheduledStartTime = startNanos;
-
         // Phaser tracks in-flight users; registered parties = concurrent users in the system.
         // Phaser supports at most 65535 simultaneous parties, which bounds max concurrency, not
         // total request count.
         var phaser = new Phaser(1);
+
+        var startNanos = System.nanoTime();
+        var deadlineNanos = startNanos + durationNanos;
+        // Track the next arrival as an absolute nanos value to avoid drift accumulation
+        var nextScheduledStartTime = startNanos;
 
         try {
             while (true) {
@@ -90,7 +93,7 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 var scheduledStartTime = nextScheduledStartTime;
                 phaser.register();
                 requestsExecutor.submit(new RoadrunnerUser(
-                        journal, samplerSupplier.newSampler(), scheduledStartTime, phaser, recorder));
+                        journal, samplerSupplier.newSampler(), scheduledStartTime, phaser, parameterFeed, recorder));
             }
         } finally {
             // Deregister the main party; when the last in-flight user also deregisters, the phaser
@@ -110,6 +113,7 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
         private final Sampler sampler;
         private final long scheduledStartTime;
         private final Phaser phaser;
+        private final ParameterCarousel parameters;
         private final LatencyRecorder recorder;
 
         public RoadrunnerUser(
@@ -117,11 +121,13 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 Sampler sampler,
                 long scheduledStartTime,
                 Phaser phaser,
+                ParameterCarousel parameters,
                 LatencyRecorder recorder) {
             this.journal = journal;
             this.sampler = sampler;
             this.scheduledStartTime = scheduledStartTime;
             this.phaser = phaser;
+            this.parameters = parameters;
             this.recorder = recorder;
         }
 
@@ -129,7 +135,7 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
         public void run() {
             try {
                 journal.userEnters(UserEvent.enter());
-                var response = sampler.execute();
+                var response = sampler.execute(parameters.next());
                 var inQueueTime = response.timestamp() - scheduledStartTime;
                 var serviceTime = response.stopTime() - response.timestamp();
                 var correctedLatency = serviceTime + inQueueTime;
@@ -138,6 +144,9 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 recorder.record(correctedLatency);
             } catch (Exception e) {
                 journal.error(e);
+                if (e instanceof InterruptedException || e.getCause() instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
             } finally {
                 journal.userExits(UserEvent.exit());
                 phaser.arriveAndDeregister();

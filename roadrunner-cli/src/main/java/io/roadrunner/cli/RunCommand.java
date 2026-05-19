@@ -15,6 +15,7 @@
  */
 package io.roadrunner.cli;
 
+import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.latency.recording.PauseDetectorKind;
@@ -22,6 +23,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine.ArgGroup;
@@ -67,8 +69,8 @@ class RunCommand {
     @Option(names = "-s", description = "Loadtests results output directory")
     Path outputDir;
 
-    @Option(names = "-r", description = "Report format type")
-    String report;
+    @Option(names = "-r", description = "Report format type", converter = PrefixedMap.Converter.class)
+    PrefixedMap report = new PrefixedMap("console", Map.of());
 
     @Option(
             names = "--pause-detectors",
@@ -83,6 +85,12 @@ class RunCommand {
                     "Reports use the per-event CSV histogram even when a pause-corrected latency.hgrm is present.")
     boolean rawLatency;
 
+    @Option(
+            names = "--parameters-source",
+            description = "Parameter source in 'type:key=value' format (e.g. csv:file=data.csv)",
+            converter = PrefixedMap.Converter.class)
+    PrefixedMap parametersSource;
+
     public void run(SamplerProvider samplerProvider) throws Exception {
         if (!pauseDetectors.isEmpty() && loadModel.closedWorld != null) {
             throw new IllegalArgumentException(
@@ -90,6 +98,17 @@ class RunCommand {
         }
 
         var bootstrap = new Bootstrap().withOutputDir(outputDir).withPauseDetectorKinds(pauseDetectors);
+
+        if (parametersSource != null) {
+            var paramProviders = ParameterSourceProviders.load();
+            var paramProvider = paramProviders.get(parametersSource.prefix());
+            if (paramProvider == null) {
+                throw new IllegalArgumentException("Unknown parameter source prefix '%s', supported types: %s"
+                        .formatted(parametersSource.prefix(), paramProviders.supportedSourceTypes()));
+            }
+            ParameterSource source = paramProvider.create(parametersSource.parameters());
+            bootstrap.withParameterSource(source);
+        }
 
         if (loadModel.closedWorld != null) {
             bootstrap
@@ -103,20 +122,15 @@ class RunCommand {
 
         try (var roadrunner = bootstrap.build()) {
             LOG.debug("loading report generators");
-            var reportOpts = report;
-            if (reportOpts == null) {
-                reportOpts = "console";
-            }
-            var reportConfiguration = ReportConfiguration.parse(reportOpts);
             var chartGeneratorProviders = ChartGeneratorProviders.load();
-            var reportGeneratorProvider = chartGeneratorProviders.get(reportConfiguration.reportFormat());
+            var reportGeneratorProvider = chartGeneratorProviders.get(report.prefix());
             if (reportGeneratorProvider == null) {
                 throw new IllegalArgumentException("report generator %s unknown, supported report formats %s"
-                        .formatted(
-                                reportConfiguration.reportFormat(), chartGeneratorProviders.supportedReportFormats()));
+                        .formatted(report.prefix(), chartGeneratorProviders.supportedReportFormats()));
             }
 
-            var reportConfig = new HashMap<>(reportConfiguration.configuration());
+            var reportConfiguration = report.parameters();
+            var reportConfig = new HashMap<>(reportConfiguration);
             reportConfig.put("outputDir", bootstrap.outputDir().toString());
             reportConfig.put("rawLatency", Boolean.toString(rawLatency));
 

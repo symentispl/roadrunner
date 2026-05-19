@@ -18,6 +18,7 @@ package io.roadrunner.samplers.neo4j;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
+import java.util.Map;
 import org.neo4j.driver.Driver;
 
 public class Neo4jSamplerProvider implements SamplerProvider {
@@ -32,10 +33,15 @@ public class Neo4jSamplerProvider implements SamplerProvider {
 
     @Override
     public Sampler newSampler() {
-        return () -> {
+        return parameters -> {
             var startTime = System.nanoTime();
             try (var session = driver.session()) {
-                var result = session.run(query);
+                // Neo4j's Session.run accepts Map<String, Object>; SamplerParameters.asMap returns
+                // Map<String, ?>. Erasure makes the cast safe — Session.run is a read-only consumer
+                // of the map. See #137 for typed CSV values (Integer/Long/etc. instead of String).
+                @SuppressWarnings("unchecked")
+                var params = (Map<String, Object>) parameters.asMap();
+                var result = session.run(query, params);
                 return SamplerResponse.response(startTime, System.nanoTime(), result.consume());
             } catch (Exception e) {
                 return SamplerResponse.error(startTime, System.nanoTime(), e.getMessage());

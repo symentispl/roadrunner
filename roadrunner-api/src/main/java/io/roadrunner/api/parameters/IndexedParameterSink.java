@@ -13,13 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.roadrunner.api {
-    exports io.roadrunner.api;
-    exports io.roadrunner.api.samplers;
-    exports io.roadrunner.api.metrics;
-    exports io.roadrunner.api.measurments;
-    exports io.roadrunner.api.reports;
-    exports io.roadrunner.api.events;
-    exports io.roadrunner.api.latency;
-    exports io.roadrunner.api.parameters;
+package io.roadrunner.api.parameters;
+
+@FunctionalInterface
+public interface IndexedParameterSink {
+    void accept(int i, Class<?> clazz, Object value) throws Exception;
 }

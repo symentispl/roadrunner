@@ -13,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.cli;
+import io.roadrunner.api.parameters.ParameterSourceProvider;
+import io.roadrunner.parameters.csv.CsvParameterSourceProvider;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
+module io.roadrunner.parameters.csv {
+    requires io.roadrunner.api;
+    requires org.apache.commons.csv;
+    requires org.slf4j;
 
-import org.junit.jupiter.api.Test;
+    provides ParameterSourceProvider with
+            CsvParameterSourceProvider;
 
-class ReportConfigurationTest {
-
-    @Test
-    void parseCommandLineOptions() {
-        var reportConfig = ReportConfiguration.parse("html:outputDir=report");
-        assertThat(reportConfig.reportFormat()).isEqualTo("html");
-        assertThat(reportConfig.configuration()).containsOnly(entry("outputDir", "report"));
-    }
+    exports io.roadrunner.parameters.csv;
 }

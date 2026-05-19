@@ -16,6 +16,7 @@
 package io.roadrunner.samplers.neo4j;
 
 import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.parameters.SamplerParameters;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -45,7 +46,7 @@ public class Neo4jSamplerPluginIT {
             options.password = "";
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
-                var response = sampler.execute();
+                var response = sampler.execute(SamplerParameters.NONE);
                 assertThat(response).asInstanceOf(type(SamplerResponse.Error.class)).satisfies(e -> {
                     assertThat(e.timestamp()).isLessThanOrEqualTo(e.stopTime());
                     assertThat(e.stopTime()).isLessThanOrEqualTo(System.nanoTime());
@@ -65,7 +66,23 @@ public class Neo4jSamplerPluginIT {
             options.query = "RETURN 1";
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
-                var response = sampler.execute();
+                var response = sampler.execute(SamplerParameters.NONE);
+                assertThat(response).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(r -> assertThat(r.timestamp()).isLessThanOrEqualTo(System.nanoTime()));
+            }
+        }
+    }
+
+    @Test
+    void validParameterizedQuery() throws Exception {
+        try (var plugin = new Neo4jSamplerPlugin()) {
+            var options = plugin.options();
+            options.uri = new URI("neo4j://%s:%d".formatted(neo4j.getHost(), neo4j.getMappedPort(7687)));
+            options.username = "neo4j";
+            options.password = "";
+            options.query = "RETURN $param";
+            try (var samplerProvider = options.samplerProvider()) {
+                var sampler = samplerProvider.newSampler();
+                var response = sampler.execute(SamplerParameters.of("param", "1"));
                 assertThat(response).asInstanceOf(type(SamplerResponse.Response.class))
                         .satisfies(r -> {
                             assertThat(r.timestamp()).isLessThanOrEqualTo(r.stopTime());

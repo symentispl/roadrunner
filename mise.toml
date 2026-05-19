@@ -38,6 +38,11 @@ description = "Run JMH benchmarks (quick run without metadata)"
 depends = ["default"]
 run = "java -jar roadrunner-microbenchmarks/target/benchmarks.jar"
 
+[tasks."benchmarks:profile:jfr"]
+description = "Profile JMH benchmarks with JFR profiler"
+depends = ["default"]
+run = "java -jar roadrunner-microbenchmarks/target/benchmarks.jar -prof jfr"
+
 [tasks."benchmark:run"]
 description = "Run benchmarks and collect results with metadata"
 depends = ["default"]

@@ -16,6 +16,7 @@
 package io.roadrunner.api.events;
 
 import java.util.Objects;
+import java.util.StringJoiner;
 
 public abstract sealed class SamplerResponse<SELF extends SamplerResponse<SELF>> extends Event
         permits SamplerResponse.Response, SamplerResponse.Error {
@@ -131,6 +132,13 @@ public abstract sealed class SamplerResponse<SELF extends SamplerResponse<SELF>>
         @Override
         public int hashCode() {
             return Objects.hash(super.hashCode(), message);
+        }
+
+        @Override
+        public String toString() {
+            return new StringJoiner(", ", "%s[".formatted(Error.class.getSimpleName()), "]")
+                    .add("message='%s'".formatted(message))
+                    .toString();
         }
     }
 }
