@@ -1,0 +1,65 @@
+= Getting Started
+
+== Prerequisites
+
+* https://adoptium.net/temurin/releases/?version=25[JDK 25 (Temurin)] or later
+* Git
+
+NOTE: Roadrunner is currently tested and supported on Linux only.
+
+== Build from source
+
+[source,bash]
+----
+git clone https://github.com/symentispl/roadrunner.git
+cd roadrunner
+./mvnw verify
+----
+
+The runnable binary is produced at:
+
+----
+roadrunner-app/target/maven-jlink/default/bin/roadrunner
+----
+
+Add it to your `PATH` or run it directly:
+
+[source,bash]
+----
+export PATH=$PWD/roadrunner-app/target/maven-jlink/default/bin:$PATH
+----
+
+== Run your first test
+
+The `vm` sampler sleeps for a fixed number of milliseconds per request.
+It is useful for verifying Roadrunner overhead and as a baseline.
+
+[source,bash]
+----
+roadrunner -c 50 -n 500 vm --sleep-time 10
+----
+
+This sends 500 requests using 50 concurrent users, each sleeping 10 ms.
+
+== Run an HTTP test
+
+The `ab` sampler benchmarks an HTTP endpoint using the same CLI as
+https://httpd.apache.org/docs/2.4/programs/ab.html[Apache HTTP server benchmarking tool]:
+
+[source,bash]
+----
+roadrunner -c 50 -n 500 ab http://localhost:8080/api/health
+----
+
+== Reading the output
+
+After each run, Roadrunner prints a console summary and writes an HTML report to the output directory (default: a timestamped directory in the current working directory).
+
+The HTML report includes:
+
+* Throughput (requests/second)
+* Latency percentiles (p50, p90, p99, p999, max)
+* HDR histogram chart
+* Coordinated-omission-corrected latency (when pause detectors are enabled)
+
+See xref:configuration.adoc[Configuration] for all available options.
