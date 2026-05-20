@@ -1,9 +1,10 @@
 * xref:index.adoc[Home]
 * xref:getting-started.adoc[Getting Started]
 * xref:configuration.adoc[Configuration]
-* Protocols
-** xref:protocols/index.adoc[Overview]
-** xref:protocols/vm.adoc[VM]
-** xref:protocols/ab.adoc[HTTP (ab)]
-** xref:protocols/zero.adoc[Zero]
-** xref:protocols/jdbc.adoc[JDBC]
+* Samplers
+** xref:samplers/index.adoc[Overview]
+** xref:samplers/vm.adoc[VM]
+** xref:samplers/ab.adoc[HTTP (ab)]
+** xref:samplers/zero.adoc[Zero]
+** xref:samplers/jdbc.adoc[JDBC]
+** xref:samplers/neo4j.adoc[Neo4j]
