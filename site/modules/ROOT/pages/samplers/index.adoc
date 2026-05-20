@@ -1,0 +1,47 @@
+= Samplers
+
+Roadrunner is sampler-agnostic. Each sampler is a pluggable implementation that
+executes one request per virtual-thread iteration and returns a `ProtocolResponse`
+with nanosecond-precision timestamps.
+
+== Built-in samplers
+
+The following samplers are bundled with the standard distribution:
+
+[cols="1,3"]
+|===
+| Sampler | Description
+
+| xref:vm.adoc[vm]
+| In-VM baseline — sleeps for a fixed number of milliseconds. Use this to measure Roadrunner's own overhead.
+
+| xref:ab.adoc[ab]
+| HTTP benchmarking, API-compatible with Apache's `ab` tool.
+
+| xref:zero.adoc[zero]
+| Zero-latency no-op. Useful for measuring the absolute ceiling throughput of the engine.
+|===
+
+== Plugin samplers
+
+The following samplers are distributed as separate plugin JARs.
+Install them by placing the JAR under `~/.roadrunner/plugins/protocols/`.
+
+[cols="1,3"]
+|===
+| Sampler | Description
+
+| xref:jdbc.adoc[jdbc]
+| Executes a SQL query against any JDBC-compatible database.
+
+| xref:neo4j.adoc[neo4j]
+| Executes a Cypher query against a Neo4j database.
+|===
+
+== Writing your own sampler
+
+Implement `io.roadrunner.api.samplers.SamplerProvider` from the `roadrunner-samplers-spi` module,
+annotate it with `@Command` (picocli) for CLI options, and register it via
+`META-INF/services/io.roadrunner.api.samplers.SamplerProvider` or a `module-info.java` `provides` directive.
+
+See `VmSamplerProvider` and `AbSamplerProvider` in the source for reference implementations.
