@@ -1,0 +1,116 @@
+= Configuration
+
+Roadrunner is invoked as:
+
+[source]
+----
+roadrunner [OPTIONS] <sampler> [SAMPLER_OPTIONS]
+----
+
+== Load model
+
+Exactly one load model must be chosen per run.
+
+=== Closed-world model
+
+All concurrent users loop continuously until the total request count is reached.
+
+[cols="1,3"]
+|===
+| Option | Description
+
+| `-c <n>`
+| Number of concurrent users (required)
+
+| `-n <n>`
+| Total number of requests to make (required)
+|===
+
+Example:
+
+[source,bash]
+----
+roadrunner -c 50 -n 1000 vm --sleep-time 5
+----
+
+=== Open-world model
+
+New requests arrive at a fixed rate regardless of how long in-flight requests take.
+This models real-world arrival patterns and avoids coordinated omission.
+
+[cols="1,3"]
+|===
+| Option | Description
+
+| `--rate <n>`
+| Target request rate in requests per second (required)
+
+| `--duration <d>`
+| Test duration, e.g. `30s`, `5m`, `2h` (required)
+|===
+
+Example:
+
+[source,bash]
+----
+roadrunner --rate 100 --duration 30s ab http://localhost:8080/
+----
+
+== Output and reporting
+
+[cols="1,1,3"]
+|===
+| Option | Default | Description
+
+| `-s <path>`
+| timestamped dir
+| Output directory for results CSV and report
+
+| `-r <format>`
+| `console`
+| Report format. Built-in values: `console`, `html`
+|===
+
+HTML report example:
+
+[source,bash]
+----
+roadrunner -c 10 -n 200 -r html ab http://localhost:8080/
+----
+
+== Latency correction
+
+[cols="1,3"]
+|===
+| Option | Description
+
+| `--pause-detectors vt,jvm`
+| Enable pause-corrected latency recording. Accepts `vt` (virtual-thread scheduler pauses), `jvm` (GC/JVM pauses), or `vt,jvm` for both. Only supported with the open-world model.
+
+| `--raw-latency`
+| Force reports to use the per-event CSV histogram even when a pause-corrected `latency.hgrm` is present.
+|===
+
+[#parameter-sources]
+== Parameter sources
+
+Feed a dynamic set of parameters into each request (e.g. different SQL queries or URLs per user):
+
+[cols="1,3"]
+|===
+| Option | Description
+
+| `--parameters-source <type>:<key>=<value>`
+| Parameter source in `type:key=value` format. Built-in type: `csv:file=<path>`
+|===
+
+Example — pass a different query per request from a CSV file:
+
+[source,bash]
+----
+roadrunner -c 10 -n 100 --parameters-source csv:file=queries.csv jdbc \
+  --url jdbc:postgresql://localhost/mydb \
+  --username app --password secret \
+  --driver /opt/drivers/postgresql.jar \
+  "SELECT 1"
+----
