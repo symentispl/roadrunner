@@ -1,0 +1,39 @@
+= VM Sampler
+
+The `vm` sampler is an in-process baseline. Each request sleeps for a fixed
+number of milliseconds on a virtual thread, then returns immediately. Its purpose is
+to measure Roadrunner's own scheduling and recording overhead without any real I/O.
+
+== Usage
+
+[source,bash]
+----
+roadrunner -c <concurrency> -n <requests> vm --sleep-time <ms>
+----
+
+== Options
+
+[cols="1,1,3"]
+|===
+| Option | Required | Description
+
+| `--sleep-time <ms>`
+| Yes
+| Sleep duration in milliseconds per request
+|===
+
+== Example
+
+[source,bash]
+----
+roadrunner -c 50 -n 500 vm --sleep-time 10
+----
+
+500 requests, 50 concurrent users, each sleeping 10 ms per request.
+Expected throughput ≈ 50 / 0.010 = 5000 req/s (minus overhead).
+
+== When to use it
+
+* Establish a latency floor before testing real samplers
+* Verify that observed latencies are not inflated by Roadrunner overhead
+* Smoke-test that the binary is installed correctly
