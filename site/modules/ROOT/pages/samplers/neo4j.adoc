@@ -1,0 +1,69 @@
+= Neo4j Sampler
+
+The `neo4j` sampler executes a Cypher query against a Neo4j database.
+It is distributed as a plugin JAR, not bundled with the standard distribution.
+
+== Installation
+
+Download the `roadrunner-sampler-neo4j-<version>.jar` from the
+https://github.com/symentispl/roadrunner/releases[GitHub Releases] page and place it
+under `~/.roadrunner/plugins/protocols/`:
+
+[source,bash]
+----
+mkdir -p ~/.roadrunner/plugins/protocols
+cp roadrunner-sampler-neo4j-*.jar ~/.roadrunner/plugins/protocols/
+----
+
+== Usage
+
+[source,bash]
+----
+roadrunner -c <concurrency> -n <requests> neo4j [OPTIONS] "<cypher>"
+----
+
+== Arguments
+
+[cols="1,3"]
+|===
+| Argument | Description
+
+| `<cypher>`
+| Cypher query to execute per request (required, positional)
+|===
+
+== Options
+
+[cols="1,1,3"]
+|===
+| Option | Required | Description
+
+| `--uri <uri>`
+| Yes
+| Neo4j connection URI, e.g. `bolt://localhost:7687`
+
+| `--username <user>`
+| Yes
+| Neo4j database username
+
+| `--password <pass>`
+| Yes
+| Neo4j database password
+|===
+
+== Example
+
+[source,bash]
+----
+roadrunner -c 20 -n 1000 neo4j \
+  --uri bolt://localhost:7687 \
+  --username neo4j \
+  --password secret \
+  "MATCH (n:Person) RETURN n.name LIMIT 1"
+----
+
+== Parameter sources
+
+Combine with `--parameters-source csv:file=<path>` to execute a different query per
+request using values from a CSV file.
+See xref:configuration.adoc#parameter-sources[Parameter sources] for details.
