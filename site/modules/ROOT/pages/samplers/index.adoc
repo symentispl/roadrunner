@@ -12,13 +12,13 @@ The following samplers are bundled with the standard distribution:
 |===
 | Sampler | Description
 
-| xref:vm.adoc[vm]
+| xref:samplers/vm.adoc[vm]
 | In-VM baseline — sleeps for a fixed number of milliseconds. Use this to measure Roadrunner's own overhead.
 
-| xref:ab.adoc[ab]
+| xref:samplers/ab.adoc[ab]
 | HTTP benchmarking, API-compatible with Apache's `ab` tool.
 
-| xref:zero.adoc[zero]
+| xref:samplers/zero.adoc[zero]
 | Zero-latency no-op. Useful for measuring the absolute ceiling throughput of the engine.
 |===
 
@@ -31,10 +31,10 @@ Install them by placing the JAR under `~/.roadrunner/plugins/protocols/`.
 |===
 | Sampler | Description
 
-| xref:jdbc.adoc[jdbc]
+| xref:samplers/jdbc.adoc[jdbc]
 | Executes a SQL query against any JDBC-compatible database.
 
-| xref:neo4j.adoc[neo4j]
+| xref:samplers/neo4j.adoc[neo4j]
 | Executes a Cypher query against a Neo4j database.
 |===
 
