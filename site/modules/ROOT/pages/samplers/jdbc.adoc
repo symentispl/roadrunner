@@ -1,0 +1,84 @@
+= JDBC Sampler
+
+The `jdbc` sampler executes a SQL query against any JDBC-compatible database.
+It is distributed as a plugin JAR, not bundled with the standard distribution.
+
+== Installation
+
+Download the `roadrunner-sampler-jdbc-<version>.jar` from the
+https://github.com/symentispl/roadrunner/releases[GitHub Releases] page and place it
+under `~/.roadrunner/plugins/protocols/`:
+
+[source,bash]
+----
+mkdir -p ~/.roadrunner/plugins/protocols
+cp roadrunner-sampler-jdbc-*.jar ~/.roadrunner/plugins/protocols/
+----
+
+You also need the JDBC driver JAR for your database. Pass its path with `--driver`.
+
+== Usage
+
+[source,bash]
+----
+roadrunner -c <concurrency> -n <requests> jdbc [OPTIONS] "<sql>"
+----
+
+== Arguments
+
+[cols="1,3"]
+|===
+| Argument | Description
+
+| `<sql>`
+| SQL query to execute per request (required, positional)
+|===
+
+== Options
+
+[cols="1,1,3"]
+|===
+| Option | Required | Description
+
+| `--url <jdbc-url>`
+| Yes
+| JDBC URL, e.g. `jdbc:postgresql://localhost/mydb`
+
+| `--username <user>`
+| Yes
+| Database username
+
+| `--password <pass>`
+| Yes
+| Database password
+
+| `--driver <path>`
+| Yes
+| Path to the JDBC driver JAR file
+
+| `--driver-class <fqcn>`
+| No
+| Fully-qualified JDBC driver class name. Auto-detected from the JAR if omitted.
+
+| `--pool-size <n>`
+| No
+| Maximum connection pool size. Defaults to the concurrency level (`-c`).
+|===
+
+== Example
+
+[source,bash]
+----
+roadrunner -c 20 -n 1000 jdbc \
+  --url jdbc:postgresql://localhost/benchdb \
+  --username app \
+  --password secret \
+  --driver /opt/drivers/postgresql-42.7.3.jar \
+  "SELECT id, name FROM users WHERE id = 1"
+----
+
+== Parameter sources
+
+Combine with `--parameters-source csv:file=<path>` to execute a different query per
+request using values from a CSV file.
+See xref:configuration.adoc#parameter-sources[Parameter sources] for details.
