@@ -1,0 +1,17 @@
+site:
+  title: Roadrunner
+  url: https://symentispl.github.io/roadrunner
+  start_page: roadrunner::index.adoc
+
+content:
+  sources:
+    - url: .
+      start_path: site
+
+ui:
+  bundle:
+    url: https://gitlab.com/antora/antora-default-ui/-/jobs/artifacts/HEAD/raw/build/ui-bundle.zip?job=bundle-stable
+    snapshot: true
+
+output:
+  dir: target/site
