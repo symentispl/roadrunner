@@ -7,7 +7,7 @@ It is protocol-agnostic, low-overhead, and designed for continuous performance m
 
 == Why Roadrunner?
 
-* *Protocol-agnostic* — built-in HTTP, JDBC, and VM samplers; add your own via the plugin API
+* *Protocol-agnostic* — built-in HTTP, VM, and zero samplers; JDBC and Neo4j available as plugins
 * *Low overhead* — virtual-thread-per-user model with coordinated omission correction
 * *Simple* — no scripting, no complex scenarios; point it at a target and go
 * *Extensible reporting* — console summary and HTML report with HDR histogram charts

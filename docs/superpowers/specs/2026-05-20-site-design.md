@@ -25,12 +25,13 @@ site/
             ├── index.adoc            # landing page
             ├── getting-started.adoc  # build, install, first run
             ├── configuration.adoc    # CLI flags and options
-            └── protocols/
-                ├── index.adoc        # protocols overview
+            └── samplers/
+                ├── index.adoc        # samplers overview
                 ├── vm.adoc
                 ├── ab.adoc
                 ├── zero.adoc
-                └── jdbc.adoc
+                ├── jdbc.adoc
+                └── neo4j.adoc
 ```
 
 `target/site` is the Antora output directory, consistent with Maven conventions. It must be added to `.gitignore`.
