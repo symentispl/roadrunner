@@ -1,0 +1,31 @@
+= Zero Sampler
+
+The `zero` sampler is a no-op. Each request returns immediately with zero
+latency and no I/O. It measures the absolute maximum throughput the Roadrunner
+engine can sustain — the ceiling beyond which no sampler optimisation can go.
+
+== Usage
+
+[source,bash]
+----
+roadrunner -c <concurrency> -n <requests> zero
+----
+
+== Options
+
+The `zero` sampler has no sampler-specific options.
+
+== Example
+
+[source,bash]
+----
+roadrunner -c 100 -n 1000000 zero
+----
+
+Runs one million requests across 100 concurrent users with zero work per request.
+The resulting throughput is Roadrunner's engine overhead baseline.
+
+== When to use it
+
+* Determine the engine's maximum achievable request rate on your hardware
+* Confirm that a sampler under test has room to improve before optimising Roadrunner itself

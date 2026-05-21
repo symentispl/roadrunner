@@ -71,3 +71,13 @@ jobs:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: target/checkout
         run: ./mvnw -f roadrunner-app/pom.xml -B -DskipTests org.jreleaser:jreleaser-maven-plugin:release
+
+      - name: Build site with Antora
+        working-directory: target/checkout
+        run: mise run build:site
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: target/checkout/target/site

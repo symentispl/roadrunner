@@ -2,6 +2,8 @@
 java = "temurin-25"
 maven = "4.0.0-rc-5"
 mvnd = "2.0.0-rc-3"
+node = "22"
+"npm:antora" = "3.1.14"
 shellcheck = "latest"
 
 [tasks.default]
@@ -119,3 +121,7 @@ MAJOR=$(echo "$BASE" | cut -d. -f1)
   -DdevelopmentVersion="$((MAJOR + 1)).0.1-SNAPSHOT" \
   -DskipTests -Dmaven.javadoc.skip=true -Denforcer.skip=true
 """
+
+[tasks."build:site"]
+description = "Build Antora documentation site to target/site"
+run = "antora antora-playbook.yml"

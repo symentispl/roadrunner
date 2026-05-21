@@ -1,0 +1,76 @@
+= HTTP Sampler (ab)
+
+The `ab` sampler benchmarks HTTP endpoints. Its CLI is designed to be a drop-in
+replacement for https://httpd.apache.org/docs/2.4/programs/ab.html[Apache HTTP server benchmarking tool (ab)].
+
+== Usage
+
+[source,bash]
+----
+roadrunner -c <concurrency> -n <requests> ab [OPTIONS] <url>
+----
+
+== Arguments
+
+[cols="1,3"]
+|===
+| Argument | Description
+
+| `<url>`
+| HTTP server URL (required, positional)
+|===
+
+== Options
+
+[cols="1,1,3"]
+|===
+| Option | Default | Description
+
+| `-m <method>`
+| `GET`
+| HTTP method
+
+| `-p <file>`
+|
+| File containing data to POST
+
+| `-u <file>`
+|
+| File containing data to PUT
+
+| `-T <content-type>`
+| `text/plain`
+| Content-type header for POST/PUT data
+
+| `-i`
+| false
+| Use HEAD instead of GET
+
+| `-X <seconds>`
+| 30
+| Seconds to wait for each response before timing out
+
+| `--proxy <host:port>`
+|
+| Proxy server and port
+
+| `--bind <address>`
+|
+| Local address to bind when making outgoing connections
+|===
+
+== Examples
+
+Simple GET benchmark:
+
+[source,bash]
+----
+roadrunner -c 50 -n 500 ab http://localhost:8080/api/health
+----
+
+POST with a JSON body:
+
+[source,bash]
+----
+roadrunner -c 20 -n 200 ab -m POST -p body.json -T application/json http://localhost:8080/api/orders
+----
