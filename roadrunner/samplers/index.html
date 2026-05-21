@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Samplers :: Roadrunner</title>
+    <link rel="canonical" href="https://symentispl.github.io/roadrunner/roadrunner/samplers/index.html">
+    <meta name="generator" content="Antora 3.1.14">
+    <link rel="stylesheet" href="../../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://symentispl.github.io/roadrunner">Roadrunner</a>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="#">Home</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Products</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="#">Product A</a>
+            <a class="navbar-item" href="#">Product B</a>
+            <a class="navbar-item" href="#">Product C</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Services</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="#">Service A</a>
+            <a class="navbar-item" href="#">Service B</a>
+            <a class="navbar-item" href="#">Service C</a>
+          </div>
+        </div>
+        <div class="navbar-item">
+          <span class="control">
+            <a class="button is-primary" href="#">Download</a>
+          </span>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="roadrunner" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">Roadrunner</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Home</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../getting-started.html">Getting Started</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../configuration.html">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Samplers</span>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="vm.html">VM</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="ab.html">HTTP (ab)</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="zero.html">Zero</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="jdbc.html">JDBC</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="neo4j.html">Neo4j</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Roadrunner</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">Roadrunner</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Roadrunner</a></li>
+    <li>Samplers</li>
+    <li><a href="index.html">Overview</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/symentispl/roadrunner/edit/HEAD/site/modules/ROOT/pages/samplers/index.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Samplers</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Roadrunner is sampler-agnostic. Each sampler is a pluggable implementation that
+executes one request per virtual-thread iteration and returns a <code>ProtocolResponse</code>
+with nanosecond-precision timestamps.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_built_in_samplers"><a class="anchor" href="#_built_in_samplers"></a>Built-in samplers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following samplers are bundled with the standard distribution:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Sampler</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="vm.html" class="xref page">vm</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">In-VM baseline — sleeps for a fixed number of milliseconds. Use this to measure Roadrunner&#8217;s own overhead.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="ab.html" class="xref page">ab</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP benchmarking, API-compatible with Apache&#8217;s <code>ab</code> tool.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="zero.html" class="xref page">zero</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Zero-latency no-op. Useful for measuring the absolute ceiling throughput of the engine.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_plugin_samplers"><a class="anchor" href="#_plugin_samplers"></a>Plugin samplers</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following samplers are distributed as separate plugin JARs.
+Install them by placing the JAR under <code>~/.roadrunner/plugins/protocols/</code>.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Sampler</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="jdbc.html" class="xref page">jdbc</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Executes a SQL query against any JDBC-compatible database.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="neo4j.html" class="xref page">neo4j</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Executes a Cypher query against a Neo4j database.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_writing_your_own_sampler"><a class="anchor" href="#_writing_your_own_sampler"></a>Writing your own sampler</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Implement <code>io.roadrunner.api.samplers.SamplerProvider</code> from the <code>roadrunner-samplers-spi</code> module,
+annotate it with <code>@Command</code> (picocli) for CLI options, and register it via
+<code>META-INF/services/io.roadrunner.api.samplers.SamplerProvider</code> or a <code>module-info.java</code> <code>provides</code> directive.</p>
+</div>
+<div class="paragraph">
+<p>See <code>VmSamplerProvider</code> and <code>AbSamplerProvider</code> in the source for reference implementations.</p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
