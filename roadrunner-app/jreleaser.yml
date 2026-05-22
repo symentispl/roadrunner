@@ -46,6 +46,7 @@ assemble:
       args:
         - --no-header-files
         - --no-man-pages
+        - --bind-services
       archiveFormat: ZIP
       imageName: 'roadrunner-app-{{projectVersion}}'
 
