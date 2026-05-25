@@ -36,6 +36,22 @@ import org.junit.jupiter.api.io.TempDir;
 class HtmlReportGeneratorTest {
 
     @Test
+    void generatePerformanceChartHtmlCreatesOutputDirectoryIfMissing(@TempDir Path tempDir) throws Exception {
+        // given — outputPath does not exist yet; generateChart must create it
+        var chartDir = tempDir.resolve("report");
+        var properties = new HashMap<String, String>();
+        properties.put("outputPath", chartDir.toString());
+        var chartGenerator = new HtmlReportGenerator(properties);
+        var eventReader = new CsvOutputEventReader(Paths.get("src/test/resources/output.csv"));
+        // when
+        chartGenerator.generateChart(eventReader);
+        // then
+        assertThat(chartDir.resolve("index.html")).isNotEmptyFile();
+        assertThat(chartDir.resolve("data.js")).isNotEmptyFile();
+        assertThat(chartDir.resolve("users.js")).isNotEmptyFile();
+    }
+
+    @Test
     void generatePerformanceChartHtml(@TempDir Path tempDir) throws Exception {
         // given
         var chartDir = Files.createDirectory(tempDir.resolve("report"));
