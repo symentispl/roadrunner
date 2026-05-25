@@ -1,0 +1,8 @@
+{
+  "aliases": {
+    "roadrunner": {
+      "script-ref": "roadrunner.java",
+      "description": "A Java load generator built on virtual threads"
+    }
+  }
+}
