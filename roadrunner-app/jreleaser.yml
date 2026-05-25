@@ -46,7 +46,8 @@ assemble:
       args:
         - --no-header-files
         - --no-man-pages
-        - --bind-services
+        - --add-modules
+        - org.slf4j.simple,io.roadrunner.samplers.ab,io.roadrunner.samplers.vm,io.roadrunner.samplers.neo4j,io.roadrunner.samplers.jdbc,io.roadrunner.reports.console,io.roadrunner.reports.html,io.roadrunner.parameters.csv
       archiveFormat: ZIP
       imageName: 'roadrunner-app-{{projectVersion}}'
 
