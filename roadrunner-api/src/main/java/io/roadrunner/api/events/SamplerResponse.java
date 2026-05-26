@@ -111,7 +111,7 @@ public abstract sealed class SamplerResponse<SELF extends SamplerResponse<SELF>>
             return metrics;
         }
 
-        public ProtocolResponse addMetric(String metric, double value) {
+        public SamplerResponse addMetric(String metric, double value) {
             metrics.put(metric, new Metric(metric, MetricUnit.BYTES, value));
             return this;
         }
