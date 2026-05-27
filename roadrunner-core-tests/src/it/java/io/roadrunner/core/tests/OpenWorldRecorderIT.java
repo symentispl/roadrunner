@@ -43,10 +43,10 @@ class OpenWorldRecorderIT {
                 .withOpenWorldModel(10, Duration.ofMillis(500));
 
         try (var roadrunner = bootstrap.build()) {
-            Sampler fastProtocol = (parameters) -> {
+            Sampler fastProtocol = (parameters, builder) -> {
                 long start = System.nanoTime();
                 long stop = System.nanoTime();
-                return SamplerResponse.empty(start, stop);
+                return builder.response(start, stop);
             };
             roadrunner.execute(() -> fastProtocol);
         }
@@ -77,10 +77,10 @@ class OpenWorldRecorderIT {
                 .withOpenWorldModel(10, Duration.ofMillis(200));
 
         try (var roadrunner = bootstrap.build()) {
-            Sampler fastProtocol = (parameters) -> {
+            Sampler fastProtocol = (parameters, builder) -> {
                 long start = System.nanoTime();
                 long stop = System.nanoTime();
-                return SamplerResponse.empty(start, stop);
+                return builder.response(start, stop);
             };
             roadrunner.execute(() -> fastProtocol);
         }

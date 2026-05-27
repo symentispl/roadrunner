@@ -15,7 +15,6 @@
  */
 package io.roadrunner.samplers.neo4j;
 
-import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
 import java.util.Map;
@@ -33,7 +32,7 @@ public class Neo4jSamplerProvider implements SamplerProvider {
 
     @Override
     public Sampler newSampler() {
-        return parameters -> {
+        return (parameters, builder) -> {
             var startTime = System.nanoTime();
             try (var session = driver.session()) {
                 // Neo4j's Session.run accepts Map<String, Object>; SamplerParameters.asMap returns
@@ -42,9 +41,9 @@ public class Neo4jSamplerProvider implements SamplerProvider {
                 @SuppressWarnings("unchecked")
                 var params = (Map<String, Object>) parameters.asMap();
                 var result = session.run(query, params);
-                return SamplerResponse.response(startTime, System.nanoTime(), result.consume());
+                return builder.response(startTime, System.nanoTime()).consume(result.consume());
             } catch (Exception e) {
-                return SamplerResponse.error(startTime, System.nanoTime(), e.getMessage());
+                return builder.error(startTime, System.nanoTime(), e.getMessage());
             }
         };
     }

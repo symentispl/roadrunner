@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.samplers.zero;
+package io.roadrunner.core.internal;
 
-import io.roadrunner.api.parameters.SamplerParameters;
-import io.roadrunner.api.samplers.Sampler;
-import io.roadrunner.api.samplers.SamplerProvider;
-import io.roadrunner.api.samplers.SamplerResponseBuilder;
+import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.events.UserEvent;
+import io.roadrunner.api.measurments.EventReader;
 
-public class ZeroSamplerProvider implements SamplerProvider {
+public interface ResponsesJournal extends AutoCloseable {
+    void start();
 
-    public ZeroSamplerProvider() {}
+    void userEnters(UserEvent.Enter event);
 
-    @Override
-    public Sampler newSampler() {
-        return (SamplerParameters _, SamplerResponseBuilder builder) -> {
-            var nanoTime = System.nanoTime();
-            return builder.response(nanoTime, nanoTime);
-        };
-    }
+    void response(SamplerResponse<?> response);
+
+    void error(Exception e);
+
+    void userExits(UserEvent.Exit event);
 
     @Override
-    public void close() {}
+    void close();
+
+    EventReader measurementsReader();
 }
