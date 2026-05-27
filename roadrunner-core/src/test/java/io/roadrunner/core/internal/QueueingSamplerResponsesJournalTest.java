@@ -33,11 +33,11 @@ class QueueingSamplerResponsesJournalTest {
     @Test
     void drainResponseJournal() {
         var listener = new CollectionEventListener();
-        var response1 = SamplerResponse.response(0, 0, "1");
-        var response2 = SamplerResponse.response(0, 0, "2");
-        var response3 = SamplerResponse.response(0, 0, "3");
-        var response4 = SamplerResponse.response(0, 0, "4");
-        var response5 = SamplerResponse.response(0, 0, "5");
+        var response1 = new SamplerResponse.Response(1, 10);
+        var response2 = new SamplerResponse.Response(2, 20);
+        var response3 = new SamplerResponse.Response(3, 30);
+        var response4 = new SamplerResponse.Response(4, 40);
+        var response5 = new SamplerResponse.Response(5, 50);
 
         try (var journal = new QueueingSamplerResponsesJournal(listener)) {
             journal.start();

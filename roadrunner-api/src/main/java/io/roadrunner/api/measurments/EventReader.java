@@ -15,8 +15,12 @@
  */
 package io.roadrunner.api.measurments;
 
+import io.roadrunner.api.attachments.AttachmentKey;
 import io.roadrunner.api.events.Event;
+import io.roadrunner.api.metrics.MetricKey;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Represents a reader for events that can be iterated over.
@@ -24,4 +28,12 @@ import java.util.Iterator;
  */
 public interface EventReader extends Iterable<Event> {
     Iterator<Event> iterator();
+
+    default Collection<MetricKey> metricKeys() {
+        return List.of();
+    }
+
+    default Collection<AttachmentKey> attachmentKeys() {
+        return List.of();
+    }
 }

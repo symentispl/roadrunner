@@ -15,9 +15,10 @@
  */
 package io.roadrunner.samplers.ab;
 
-import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
+import io.roadrunner.api.samplers.SamplerResponseBuilder;
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -37,18 +38,18 @@ public class AbSamplerProvider implements SamplerProvider {
     @Override
     public Sampler newSampler() {
         var request = requestSupplier.get();
-        return (parameters) -> {
+        return (SamplerParameters _, SamplerResponseBuilder builder) -> {
             var startTime = System.nanoTime();
             try {
                 var httpResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
                 var stopTime = System.nanoTime();
                 if (httpResponse.statusCode() == 200) {
-                    return SamplerResponse.response(startTime, stopTime, httpResponse);
+                    return builder.response(startTime, stopTime);
                 } else {
-                    return SamplerResponse.error(startTime, stopTime, Integer.toString(httpResponse.statusCode()));
+                    return builder.error(startTime, stopTime, Integer.toString(httpResponse.statusCode()));
                 }
             } catch (IOException e) {
-                return SamplerResponse.error(startTime, System.nanoTime(), e.getMessage());
+                return builder.error(startTime, System.nanoTime(), e.getMessage());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new RuntimeException(e);

@@ -20,10 +20,7 @@ import io.roadrunner.api.parameters.SamplerParameters;
 
 public interface Sampler extends AutoCloseable {
 
-    /**
-     * Executes one request with the given parameters.
-     */
-    SamplerResponse<?> execute(SamplerParameters parameters);
+    SamplerResponse<?> execute(SamplerParameters parameters, SamplerResponseBuilder builder);
 
     default void close() {}
 }

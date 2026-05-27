@@ -16,6 +16,7 @@
 open module io.roadrunner.samplers.ab.tests {
     requires io.roadrunner.api;
     requires io.roadrunner.samplers.ab;
+    requires io.roadrunner.samplers.spi;
     requires jdk.httpserver;
     requires org.assertj.core;
     requires org.junit.jupiter.api;

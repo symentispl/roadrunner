@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-open module io.roadrunner.samplers.jdbc.tests {
-    requires io.roadrunner.api;
-    requires io.roadrunner.samplers.jdbc;
-    requires io.roadrunner.samplers.spi;
-    requires java.sql;
-    requires org.assertj.core;
-    requires org.junit.jupiter.api;
-    requires transitive org.junit.jupiter.engine;
-    requires testcontainers;
-    requires testcontainers.junit.jupiter;
+package io.roadrunner.api.samplers;
 
-    exports io.roadrunner.samplers.jdbc.tests;
+import io.roadrunner.api.events.SamplerResponse;
+import java.util.function.Consumer;
+
+public interface SamplerResponseBuilder {
+
+    SamplerResponse.Response response(long start, long stop);
+
+    SamplerResponse.Response response(long start, long stop, Consumer<SamplerSink> sink);
+
+    SamplerResponse.Error error(long start, long stop, String message);
+
+    SamplerResponse.Error error(long start, long stop, String message, Consumer<SamplerSink> sink);
 }

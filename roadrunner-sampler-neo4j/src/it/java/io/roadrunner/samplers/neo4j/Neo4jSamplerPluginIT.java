@@ -15,18 +15,18 @@
  */
 package io.roadrunner.samplers.neo4j;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
+
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.parameters.SamplerParameters;
+import io.roadrunner.samplers.spi.SamplerContext;
+import java.net.URI;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import java.net.URI;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 @Testcontainers
 public class Neo4jSamplerPluginIT {
@@ -66,10 +66,11 @@ public class Neo4jSamplerPluginIT {
             options.password = "";
             options.expression = """
                     query("RETURN 1")""";
-            try (var samplerProvider = options.samplerProvider()) {
-                var sampler = samplerProvider.newSampler();
-                var response = sampler.execute(SamplerParameters.NONE);
-                assertThat(response).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(r -> assertThat(r.timestamp()).isLessThanOrEqualTo(System.nanoTime()));
+            var ctx = SamplerContext.create(plugin, options);
+            try (var sampler = ctx.newSampler()) {
+                var response = sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
+                assertThat(response).asInstanceOf(type(SamplerResponse.Response.class))
+                        .satisfies(r -> assertThat(r.timestamp()).isLessThanOrEqualTo(System.nanoTime()));
             }
         }
     }
@@ -83,9 +84,9 @@ public class Neo4jSamplerPluginIT {
             options.password = "";
             options.expression = """
                     query("RETURN $param")""";
-            try (var samplerProvider = options.samplerProvider()) {
-                var sampler = samplerProvider.newSampler();
-                var response = sampler.execute(SamplerParameters.of("param", "1"));
+            var ctx = SamplerContext.create(plugin, options);
+            try (var sampler = ctx.newSampler()) {
+                var response = sampler.execute(SamplerParameters.of("param", "1"), ctx.newResponseBuilder());
                 assertThat(response).asInstanceOf(type(SamplerResponse.Response.class))
                         .satisfies(r -> {
                             assertThat(r.timestamp()).isLessThanOrEqualTo(r.stopTime());

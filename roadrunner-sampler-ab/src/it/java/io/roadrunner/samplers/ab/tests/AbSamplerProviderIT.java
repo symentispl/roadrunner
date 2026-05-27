@@ -25,6 +25,7 @@ import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.samplers.ab.AbSamplerOptions;
 import io.roadrunner.samplers.ab.AbSamplerPlugin;
+import io.roadrunner.samplers.spi.SamplerContext;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -65,8 +66,9 @@ class AbSamplerProviderIT {
             var options = plugin.options();
             options.uri = URI.create("http://localhost:" + PORT + "/test");
             options.headers = new String[]{"Accept-Encoding: gzip"};
-            try (var provider = plugin.newSamplerProvider(options); var sampler = provider.newSampler()) {
-                var event = sampler.execute(SamplerParameters.NONE);
+            var ctx = SamplerContext.create(plugin, options);
+            try (var sampler = ctx.newSampler()) {
+                var event = sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
                 assertThat(event).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(response -> {
                     assertThat(response.timestamp()).isGreaterThan(0);
                     assertThat(response.stopTime()).isGreaterThan(response.timestamp());
@@ -81,8 +83,9 @@ class AbSamplerProviderIT {
         try (var plugin = new AbSamplerPlugin()) {
             var options = plugin.options();
             options.uri = URI.create("http://localhost:" + PORT + "/not-existing-endpoint");
-            try (var provider = plugin.newSamplerProvider(options); var sampler = provider.newSampler()) {
-                var event = sampler.execute(SamplerParameters.NONE);
+            var ctx = SamplerContext.create(plugin, options);
+            try (var sampler = ctx.newSampler()) {
+                var event = sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
                 assertThat(event).asInstanceOf(type(SamplerResponse.Error.class)).satisfies(response -> {
                     assertThat(response.timestamp()).isGreaterThan(0);
                     assertThat(response.stopTime()).isGreaterThan(response.timestamp());
@@ -101,9 +104,9 @@ class AbSamplerProviderIT {
             options.uri = URI.create("http://localhost:" + PORT + "/test");
             options.fileContent = new AbSamplerOptions.FileContent();
             options.fileContent.postFile = tempFile;
-            try (var provider = plugin.newSamplerProvider(options); var sampler = provider.newSampler()) {
-                var event = sampler.execute(SamplerParameters.NONE);
-
+            var ctx = SamplerContext.create(plugin, options);
+            try (var sampler = ctx.newSampler()) {
+                var event = sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
                 assertThat(event).isInstanceOf(SamplerResponse.Response.class);
                 assertThat(lastMethod.get()).isEqualTo("POST");
                 assertThat(lastContentType.get()).isEqualTo("text/plain");
@@ -124,9 +127,9 @@ class AbSamplerProviderIT {
             options.fileContent = new AbSamplerOptions.FileContent();
             options.fileContent.putFile = tempFile;
             options.contentType = "application/json";
-            try (var provider = plugin.newSamplerProvider(options);
-                 var sampler = provider.newSampler()) {
-                var event = sampler.execute(SamplerParameters.NONE);
+            var ctx = SamplerContext.create(plugin, options);
+            try (var sampler = ctx.newSampler()) {
+                var event = sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
                 assertThat(event).isInstanceOf(SamplerResponse.Response.class);
                 assertThat(lastMethod.get()).isEqualTo("PUT");
                 assertThat(lastContentType.get()).isEqualTo("application/json");
@@ -142,9 +145,9 @@ class AbSamplerProviderIT {
             var options = plugin.options();
             options.uri = URI.create("http://localhost:" + PORT + "/test");
             options.method = "DELETE";
-            try (var provider = plugin.newSamplerProvider(options);
-                 var sampler = provider.newSampler()) {
-                var event = sampler.execute(SamplerParameters.NONE);
+            var ctx = SamplerContext.create(plugin, options);
+            try (var sampler = ctx.newSampler()) {
+                var event = sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
                 assertThat(event).isInstanceOf(SamplerResponse.Response.class);
                 assertThat(lastMethod.get()).isEqualTo("DELETE");
             }
@@ -155,12 +158,11 @@ class AbSamplerProviderIT {
     void customMethodHead() {
         try (var plugin = new AbSamplerPlugin()) {
             var options = plugin.options();
-
             options.uri = URI.create("http://localhost:" + PORT + "/test");
             options.method = "HEAD";
-            try (var provider = plugin.newSamplerProvider(options);
-                 var sampler = provider.newSampler()) {
-                var event = sampler.execute(SamplerParameters.NONE);
+            var ctx = SamplerContext.create(plugin, options);
+            try (var sampler = ctx.newSampler()) {
+                var event = sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
                 assertThat(event).isInstanceOf(SamplerResponse.Response.class);
                 assertThat(lastMethod.get()).isEqualTo("HEAD");
             }

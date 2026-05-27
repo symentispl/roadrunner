@@ -17,6 +17,7 @@ package io.roadrunner.core.internal;
 
 import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.samplers.SamplerProvider;
+import io.roadrunner.samplers.spi.SamplerContext;
 
 public interface ExecutionStrategy {
     /**
@@ -29,6 +30,7 @@ public interface ExecutionStrategy {
             SamplerProvider samplerProvider,
             ParameterCarousel parameterFeed,
             QueueingSamplerResponsesJournal journal,
-            LatencyRecorder recorder)
+            LatencyRecorder recorder,
+            SamplerContext samplerContext)
             throws InterruptedException;
 }

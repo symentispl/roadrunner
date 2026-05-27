@@ -13,16 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-open module io.roadrunner.samplers.jdbc.tests {
-    requires io.roadrunner.api;
-    requires io.roadrunner.samplers.jdbc;
-    requires io.roadrunner.samplers.spi;
-    requires java.sql;
-    requires org.assertj.core;
-    requires org.junit.jupiter.api;
-    requires transitive org.junit.jupiter.engine;
-    requires testcontainers;
-    requires testcontainers.junit.jupiter;
+package io.roadrunner.api.metrics;
 
-    exports io.roadrunner.samplers.jdbc.tests;
+public interface MetricSink {
+    void add(MetricKey key, double value);
 }

@@ -13,25 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.samplers.zero;
+package io.roadrunner.api.samplers;
 
-import io.roadrunner.api.parameters.SamplerParameters;
-import io.roadrunner.api.samplers.Sampler;
-import io.roadrunner.api.samplers.SamplerProvider;
-import io.roadrunner.api.samplers.SamplerResponseBuilder;
+import io.roadrunner.api.attachments.AttachmentKey;
+import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.metrics.MetricKey;
 
-public class ZeroSamplerProvider implements SamplerProvider {
+final class ReusableSamplerSink implements SamplerSink {
 
-    public ZeroSamplerProvider() {}
+    private SamplerResponse<?> current;
 
-    @Override
-    public Sampler newSampler() {
-        return (SamplerParameters _, SamplerResponseBuilder builder) -> {
-            var nanoTime = System.nanoTime();
-            return builder.response(nanoTime, nanoTime);
-        };
+    void attachTo(SamplerResponse<?> response) {
+        this.current = response;
+    }
+
+    void detach() {
+        this.current = null;
     }
 
     @Override
-    public void close() {}
+    public void add(MetricKey key, double value) {
+        current.setMetricValue(key, value);
+    }
+
+    @Override
+    public void attach(AttachmentKey key, String value) {
+        current.setAttachmentValue(key, value);
+    }
 }

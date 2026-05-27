@@ -26,6 +26,8 @@ import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.parameters.SamplerParameters;
+import io.roadrunner.api.samplers.SamplerProvider;
+import io.roadrunner.samplers.spi.SamplerContext;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -40,16 +42,18 @@ class OpenWorldStrategyTest {
 
         try (var journal = new QueueingSamplerResponsesJournal(listener)) {
             journal.start();
+            SamplerProvider provider = () -> (parameters, builder) -> {
+                var start = System.nanoTime();
+                var stop = System.nanoTime();
+                return builder.response(start, stop);
+            };
             var strategy = OpenWorldStrategy.of(5, Duration.ofSeconds(2));
             strategy.execute(
-                    () -> (parameters) -> {
-                        var start = System.nanoTime();
-                        var stop = System.nanoTime();
-                        return SamplerResponse.empty(start, stop);
-                    },
+                    provider,
                     new ParameterCarousel(new SamplerParameters[] {SamplerParameters.NONE}),
                     journal,
-                    LatencyRecorder.noop());
+                    LatencyRecorder.noop(),
+                    SamplerContext.of(provider));
         }
 
         assertThat(listener.events).first(type(UserEvent.Enter.class)).satisfies(e -> assertThat(e.timestamp())
