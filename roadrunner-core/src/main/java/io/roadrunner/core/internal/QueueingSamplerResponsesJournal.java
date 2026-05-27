@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-final class QueueingSamplerResponsesJournal implements AutoCloseable {
+final class QueueingSamplerResponsesJournal implements ResponsesJournal {
 
     private static final Logger LOG = LoggerFactory.getLogger(QueueingSamplerResponsesJournal.class);
 
@@ -43,7 +43,8 @@ final class QueueingSamplerResponsesJournal implements AutoCloseable {
                 Thread.ofPlatform().name("responses-journal-").factory());
     }
 
-    void start() {
+    @Override
+    public void start() {
         LOG.debug("starting responses journaling");
         isRunning = true;
         executorService.submit(() -> {
@@ -75,18 +76,22 @@ final class QueueingSamplerResponsesJournal implements AutoCloseable {
         });
     }
 
+    @Override
     public void userEnters(UserEvent.Enter event) {
         responses.offer(event);
     }
 
+    @Override
     public void response(SamplerResponse<?> response) {
         responses.offer(response);
     }
 
+    @Override
     public void error(Exception e) {
         responses.offer(new MeasurementError(System.nanoTime(), e));
     }
 
+    @Override
     public void userExits(UserEvent.Exit event) {
         responses.offer(event);
     }
@@ -107,6 +112,7 @@ final class QueueingSamplerResponsesJournal implements AutoCloseable {
         }
     }
 
+    @Override
     public EventReader measurementsReader() {
         return listener.samplesReader();
     }

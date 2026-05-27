@@ -25,6 +25,8 @@ import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.parameters.SamplerParameters;
+import io.roadrunner.api.samplers.SamplerProvider;
+import io.roadrunner.samplers.spi.SamplerContext;
 import io.roadrunner.latency.recording.LatencyRecorders;
 import io.roadrunner.latency.recording.PauseDetectorKind;
 import java.util.Collection;
@@ -41,16 +43,18 @@ class ClosedWorldStrategyTest {
 
         try (var journal = new QueueingSamplerResponsesJournal(listener)) {
             journal.start();
+            SamplerProvider provider = () -> (parameters, builder) -> {
+                var start = System.nanoTime();
+                var stop = System.nanoTime();
+                return builder.response(start, stop);
+            };
             var strategy = ClosedWorldStrategy.of(5, 10);
             strategy.execute(
-                    () -> (parameters) -> {
-                        var start = System.nanoTime();
-                        var stop = System.nanoTime();
-                        return SamplerResponse.empty(start, stop);
-                    },
+                    provider,
                     new ParameterCarousel(new SamplerParameters[] {SamplerParameters.NONE}),
                     journal,
-                    LatencyRecorders.create(EnumSet.noneOf(PauseDetectorKind.class)));
+                    LatencyRecorders.create(EnumSet.noneOf(PauseDetectorKind.class)),
+                    SamplerContext.of(provider));
         }
 
         assertThat(listener.events).first(type(UserEvent.Enter.class)).satisfies(e -> assertThat(e.timestamp())

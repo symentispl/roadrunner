@@ -15,11 +15,13 @@
  */
 package io.roadrunner.output.csv;
 
+import io.roadrunner.api.attachments.AttachmentRegistry;
 import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
+import io.roadrunner.api.metrics.MetricRegistry;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -36,11 +38,16 @@ public class CsvOutputEventListener implements EventListener {
     private static final int ROW_BUFFER_SIZE = 128;
 
     private final Path csvOutputFile;
+    private final MetricRegistry metricRegistry;
+    private final AttachmentRegistry attachmentRegistry;
     private final StringBuilder rowBuilder = new StringBuilder(ROW_BUFFER_SIZE);
     private BufferedWriter bufferedWriter;
 
-    public CsvOutputEventListener(Path csvOutputFile) {
+    public CsvOutputEventListener(
+            Path csvOutputFile, MetricRegistry metricRegistry, AttachmentRegistry attachmentRegistry) {
         this.csvOutputFile = csvOutputFile;
+        this.metricRegistry = metricRegistry;
+        this.attachmentRegistry = attachmentRegistry;
     }
 
     @Override
@@ -48,10 +55,28 @@ public class CsvOutputEventListener implements EventListener {
         try {
             bufferedWriter =
                     Files.newBufferedWriter(csvOutputFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+            writeHeader();
         } catch (IOException e) {
             LOG.error("cannot open csv output", e);
             throw new RuntimeException(e);
         }
+    }
+
+    private void writeHeader() throws IOException {
+        rowBuilder.setLength(0);
+        rowBuilder.append("type,scheduledStartTime,timestamp,stopTime,latency,status");
+        for (var key : metricRegistry.registeredKeys()) {
+            rowBuilder
+                    .append(",metric:")
+                    .append(key.name())
+                    .append(':')
+                    .append(key.unit().name());
+        }
+        for (var key : attachmentRegistry.registeredKeys()) {
+            rowBuilder.append(",attachment:").append(key.name());
+        }
+        bufferedWriter.append(rowBuilder);
+        bufferedWriter.newLine();
     }
 
     @Override
@@ -60,7 +85,7 @@ public class CsvOutputEventListener implements EventListener {
             rowBuilder.setLength(0);
             switch (response) {
                 case SamplerResponse.Error e -> appendResponseRow(e, "KO");
-                case SamplerResponse.Response<?> e -> appendResponseRow(e, "OK");
+                case SamplerResponse.Response e -> appendResponseRow(e, "OK");
                 case UserEvent.Enter e ->
                     rowBuilder.append("USER,").append(e.timestamp()).append(",ENTER");
                 case UserEvent.Exit e ->
@@ -89,6 +114,17 @@ public class CsvOutputEventListener implements EventListener {
                 .append(response.latency())
                 .append(',')
                 .append(status);
+        for (var key : metricRegistry.registeredKeys()) {
+            rowBuilder.append(',').append(response.metricValueAt(key));
+        }
+        for (var key : attachmentRegistry.registeredKeys()) {
+            var value = response.attachmentValueAt(key);
+            if (value != null) {
+                rowBuilder.append(',').append(value);
+            } else {
+                rowBuilder.append(',');
+            }
+        }
     }
 
     @Override
