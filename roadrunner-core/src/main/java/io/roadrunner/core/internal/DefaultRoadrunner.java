@@ -24,10 +24,10 @@ import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
 import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.samplers.SamplerProvider;
-import io.roadrunner.samplers.spi.SamplerContext;
 import io.roadrunner.latency.recording.LatencyRecorders;
 import io.roadrunner.latency.recording.PauseDetectorKind;
 import io.roadrunner.output.csv.CsvOutputEventListener;
+import io.roadrunner.samplers.spi.SamplerContext;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -78,12 +78,7 @@ public class DefaultRoadrunner implements Roadrunner {
             gcProfiler.start();
             responsesJournal.start();
             try {
-                strategy.execute(
-                        samplerSupplier,
-                        parameterFeed,
-                        responsesJournal,
-                        latencyRecorder,
-                        samplerContext);
+                strategy.execute(samplerSupplier, parameterFeed, responsesJournal, latencyRecorder, samplerContext);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new RuntimeException(e);

@@ -17,5 +17,6 @@ package io.roadrunner.api.metrics;
 
 public enum MetricUnit {
     BYTES,
-    COUNT;
+    COUNT,
+    NANOSECONDS;
 }

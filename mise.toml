@@ -10,18 +10,18 @@ shellcheck = "latest"
 description = "Build and run all tests (incremental)"
 run = "mvnd -q verify"
 sources = [
-    "**/pom.xml",
-    "**/src/main/java/**",
-    "**/src/test/java/**",
-    "**/src/test/resources/**",
-    "**/src/it/java/**",
-    "**/src/it/resources/**",
+  "**/pom.xml",
+  "**/src/main/java/**",
+  "**/src/test/java/**",
+  "**/src/test/resources/**",
+  "**/src/it/java/**",
+  "**/src/it/resources/**",
 ]
 outputs = [
-    "**/target/classes/**",
-    "**/target/test-classes/**",
-    "**/target/generated-sources/**",
-    "**/target/generated-test-sources/**",
+  "**/target/classes/**",
+  "**/target/test-classes/**",
+  "**/target/generated-sources/**",
+  "**/target/generated-test-sources/**",
 ]
 
 [tasks."build:format"]

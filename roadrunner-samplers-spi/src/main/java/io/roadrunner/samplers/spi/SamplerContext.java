@@ -37,7 +37,8 @@ public final class SamplerContext {
     private final MetricRegistry metricRegistry;
     private final AttachmentRegistry attachmentRegistry;
 
-    private SamplerContext(SamplerProvider provider, MetricRegistry metricRegistry, AttachmentRegistry attachmentRegistry) {
+    private SamplerContext(
+            SamplerProvider provider, MetricRegistry metricRegistry, AttachmentRegistry attachmentRegistry) {
         this.provider = provider;
         this.metricRegistry = metricRegistry;
         this.attachmentRegistry = attachmentRegistry;
