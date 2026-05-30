@@ -41,13 +41,14 @@ import org.junit.jupiter.api.Test;
 class AbSamplerProviderIT {
 
     private HttpServer server;
-    private final int PORT = 8000;
+    private int port;
     private final AtomicReference<String> lastMethod = new AtomicReference<>();
     private final AtomicReference<String> lastContentType = new AtomicReference<>();
 
     @BeforeEach
     void setUp() throws IOException {
-        server = HttpServer.create(new InetSocketAddress(PORT), 0);
+        server = HttpServer.create(new InetSocketAddress(0), 0);
+        port = server.getAddress().getPort();
         server.createContext("/test", new TestHandler());
         server.setExecutor(Executors.newFixedThreadPool(1));
         server.start();
@@ -64,7 +65,7 @@ class AbSamplerProviderIT {
     void successfulRequest() {
         try (var plugin = new AbSamplerPlugin()) {
             var options = plugin.options();
-            options.uri = URI.create("http://localhost:" + PORT + "/test");
+            options.uri = URI.create("http://localhost:%d/test".formatted(port));
             options.headers = new String[]{"Accept-Encoding: gzip"};
             var ctx = SamplerContext.create(plugin, options);
             try (var sampler = ctx.newSampler()) {
@@ -82,7 +83,7 @@ class AbSamplerProviderIT {
     void errorRequest() {
         try (var plugin = new AbSamplerPlugin()) {
             var options = plugin.options();
-            options.uri = URI.create("http://localhost:" + PORT + "/not-existing-endpoint");
+            options.uri = URI.create("http://localhost:%d/not-existing-endpoint".formatted(port));
             var ctx = SamplerContext.create(plugin, options);
             try (var sampler = ctx.newSampler()) {
                 var event = sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
@@ -101,7 +102,7 @@ class AbSamplerProviderIT {
 
         try (var plugin = new AbSamplerPlugin()) {
             var options = plugin.options();
-            options.uri = URI.create("http://localhost:" + PORT + "/test");
+            options.uri = URI.create("http://localhost:%d/test".formatted(port));
             options.fileContent = new AbSamplerOptions.FileContent();
             options.fileContent.postFile = tempFile;
             var ctx = SamplerContext.create(plugin, options);
@@ -123,7 +124,7 @@ class AbSamplerProviderIT {
                 {"key":"value"}""");
         try (var plugin = new AbSamplerPlugin()) {
             var options = plugin.options();
-            options.uri = URI.create("http://localhost:" + PORT + "/test");
+            options.uri = URI.create("http://localhost:%d/test".formatted(port));
             options.fileContent = new AbSamplerOptions.FileContent();
             options.fileContent.putFile = tempFile;
             options.contentType = "application/json";
@@ -143,7 +144,7 @@ class AbSamplerProviderIT {
     void customMethodDelete() {
         try (var plugin = new AbSamplerPlugin()) {
             var options = plugin.options();
-            options.uri = URI.create("http://localhost:" + PORT + "/test");
+            options.uri = URI.create("http://localhost:%d/test".formatted(port));
             options.method = "DELETE";
             var ctx = SamplerContext.create(plugin, options);
             try (var sampler = ctx.newSampler()) {
@@ -158,7 +159,7 @@ class AbSamplerProviderIT {
     void customMethodHead() {
         try (var plugin = new AbSamplerPlugin()) {
             var options = plugin.options();
-            options.uri = URI.create("http://localhost:" + PORT + "/test");
+            options.uri = URI.create("http://localhost:%d/test".formatted(port));
             options.method = "HEAD";
             var ctx = SamplerContext.create(plugin, options);
             try (var sampler = ctx.newSampler()) {

@@ -18,7 +18,6 @@ package io.roadrunner.api.events;
 import io.roadrunner.api.attachments.AttachmentKey;
 import io.roadrunner.api.attachments.AttachmentRegistry;
 import io.roadrunner.api.metrics.MetricKey;
-
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 
