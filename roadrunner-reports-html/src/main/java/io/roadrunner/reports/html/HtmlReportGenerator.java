@@ -59,6 +59,8 @@ public class HtmlReportGenerator implements ReportGenerator {
         var datapointsJs = outputPath.resolve("data.js");
         var usersJs = outputPath.resolve("users.js");
 
+        Files.createDirectories(outputPath);
+
         var useSnapshot = !rawLatency && snapshotPath != null && Files.isRegularFile(snapshotPath);
         Histogram histogram = useSnapshot ? loadSnapshot(snapshotPath) : new Histogram(3);
 
