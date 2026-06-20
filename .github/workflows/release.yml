@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7
 
       # Writes ~/.m2/settings.xml with <server id="github"> for GitHub Packages.
       # server-username/server-password are env var *names* resolved at Maven runtime.
