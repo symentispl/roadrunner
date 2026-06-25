@@ -15,11 +15,15 @@
  */
 package io.roadrunner.samplers.jdbc.tests;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
+
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.samplers.jdbc.JDBCSamplerOptions;
 import io.roadrunner.samplers.jdbc.JDBCSamplerPlugin;
 import io.roadrunner.samplers.jdbc.JDBCSamplerProvider;
+import io.roadrunner.samplers.spi.SamplerContext;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -33,9 +37,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.type;
-
 class JDBCSamplerProviderIT {
 
     private static final String DRIVER_PATH = "target/jdbc-drivers/hsqldb.jar";
@@ -43,15 +44,20 @@ class JDBCSamplerProviderIT {
     @Test
     void successfulQuery() {
         try (var plugin = new JDBCSamplerPlugin()) {
-            var options = defaultSamplerOptions(plugin, "jdbc:hsqldb:mem:testdb", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
-            try (var provider = plugin.newSamplerProvider(options);
-                 var sampler = provider.newSampler()) {
-                var response = sampler.execute(SamplerParameters.NONE);
+            var options = defaultSamplerOptions(plugin, "jdbc:hsqldb:mem:testdb",
+                    "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
+            var ctx = SamplerContext.create(plugin, options);
+            var rowCountKey = ctx.metricRegistry().registeredKeys().stream()
+                    .filter(k -> "row_count".equals(k.name()))
+                    .findFirst().orElseThrow();
+            try (var sampler = ctx.newSampler()) {
+                var response = sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
                 assertThat(response)
                         .asInstanceOf(type(SamplerResponse.Response.class))
                         .satisfies(r -> {
                             assertThat(r.timestamp()).isGreaterThan(0);
                             assertThat(r.stopTime()).isGreaterThan(r.timestamp());
+                            assertThat(r.metricValueAt(rowCountKey)).isGreaterThanOrEqualTo(1.0);
                         });
             }
         }
@@ -60,10 +66,11 @@ class JDBCSamplerProviderIT {
     @Test
     void errorOnInvalidQuery() {
         try (var plugin = new JDBCSamplerPlugin()) {
-            var options = defaultSamplerOptions(plugin, "jdbc:hsqldb:mem:testdb2", "SELECT * FROM NONEXISTENT_TABLE");
-            try (var provider = plugin.newSamplerProvider(options);
-                 var newSampler = provider.newSampler()) {
-                var response = newSampler.execute(SamplerParameters.NONE);
+            var options = defaultSamplerOptions(plugin, "jdbc:hsqldb:mem:testdb2",
+                    "SELECT * FROM NONEXISTENT_TABLE");
+            var ctx = SamplerContext.create(plugin, options);
+            try (var sampler = ctx.newSampler()) {
+                var response = sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
                 assertThat(response)
                         .asInstanceOf(type(SamplerResponse.Error.class))
                         .satisfies(r -> {
@@ -77,10 +84,10 @@ class JDBCSamplerProviderIT {
 
     @Test
     void errorOnConnectionFailure() {
-        var failingDataSource = new ExceptionThrowingDataSource();
-        try (var provider = new JDBCSamplerProvider(failingDataSource, "SELECT 1");
-             var sampler = provider.newSampler()) {
-            var response = sampler.execute(SamplerParameters.NONE);
+        var provider = new JDBCSamplerProvider(new ExceptionThrowingDataSource(), "SELECT 1");
+        var ctx = SamplerContext.of(provider);
+        try (var sampler = ctx.newSampler()) {
+            var response = sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
             assertThat(response)
                     .asInstanceOf(type(SamplerResponse.Error.class))
                     .satisfies(r -> {
@@ -97,16 +104,19 @@ class JDBCSamplerProviderIT {
     void poolSaturationVisibleInCounters() throws Exception {
         int callCount = 50;
         try (var plugin = new JDBCSamplerPlugin()) {
-            var options = defaultSamplerOptions(plugin, "jdbc:hsqldb:mem:saturation", "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
+            var options = defaultSamplerOptions(plugin, "jdbc:hsqldb:mem:saturation",
+                    "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
             options.poolSize = 1;
-            try (var provider = plugin.newSamplerProvider(options);
-                 var executor = Executors.newVirtualThreadPerTaskExecutor();
-                 var sampler = provider.newSampler()) {
+            // Use of() to retain a typed provider reference for stats inspection
+            var provider = plugin.newSamplerProvider(options);
+            var ctx = SamplerContext.of(provider);
+            try (var executor = Executors.newVirtualThreadPerTaskExecutor();
+                 var sampler = ctx.newSampler()) {
                 var done = new CountDownLatch(callCount);
                 for (int i = 0; i < callCount; i++) {
                     executor.submit(() -> {
                         try {
-                            sampler.execute(SamplerParameters.NONE);
+                            sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
                         } finally {
                             done.countDown();
                         }
@@ -115,38 +125,38 @@ class JDBCSamplerProviderIT {
                 assertThat(done.await(30, TimeUnit.SECONDS))
                         .as("all samples should complete within 30 seconds")
                         .isTrue();
-
-                long samples = provider.sampleCount();
-                long acquire = provider.totalAcquireNanos();
-                long query = provider.totalQueryNanos();
-                double ratio = (double) acquire / (double) (acquire + query);
-
-                assertThat(samples).isEqualTo(callCount);
-                assertThat(ratio)
-                        .as("acquire ratio should exceed 20%% under saturation, was %.3f", ratio)
-                        .isGreaterThan(0.20);
             }
+
+            long samples = provider.sampleCount();
+            long acquire = provider.totalAcquireNanos();
+            long query = provider.totalQueryNanos();
+            double ratio = (double) acquire / (double) (acquire + query);
+
+            assertThat(samples).isEqualTo(callCount);
+            assertThat(ratio)
+                    .as("acquire ratio should exceed 20%% under saturation, was %.3f", ratio)
+                    .isGreaterThan(0.20);
         }
     }
 
     @Test
     void fillInParameters() throws Exception {
         try (var plugin = new JDBCSamplerPlugin()) {
-            var options = defaultSamplerOptions(plugin,
-                    "jdbc:hsqldb:mem:parameters",
+            var options = defaultSamplerOptions(plugin, "jdbc:hsqldb:mem:parameters",
                     "INSERT INTO parameters (v_int,v_text) VALUES (?,?)");
-            try (var provider = plugin.newSamplerProvider(options)) {
-                try (Connection connection = provider.getConnection()) {
-                    connection.createStatement().execute("CREATE TABLE parameters (v_int int,v_text varchar(255))");
-                }
-                var sampler = provider.newSampler();
-                LinkedHashMap<String, Object> queryParameters = new LinkedHashMap<>();
-                queryParameters.put("v_int", 1);
-                queryParameters.put("v_text", "test");
-                var response = sampler.execute(SamplerParameters.of(queryParameters));
-                assertThat(response).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(r -> {
-                    assertThat(r.timestamp()).isLessThanOrEqualTo(System.nanoTime());
-                });
+            // Use of() to retain a typed provider reference for getConnection()
+            var provider = plugin.newSamplerProvider(options);
+            var ctx = SamplerContext.of(provider);
+            try (Connection connection = provider.getConnection()) {
+                connection.createStatement().execute("CREATE TABLE parameters (v_int int,v_text varchar(255))");
+            }
+            LinkedHashMap<String, Object> queryParameters = new LinkedHashMap<>();
+            queryParameters.put("v_int", 1);
+            queryParameters.put("v_text", "test");
+            try (var sampler = ctx.newSampler()) {
+                var response = sampler.execute(SamplerParameters.of(queryParameters), ctx.newResponseBuilder());
+                assertThat(response).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(r ->
+                        assertThat(r.timestamp()).isLessThanOrEqualTo(System.nanoTime()));
             }
         }
     }

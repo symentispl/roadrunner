@@ -15,9 +15,10 @@
  */
 package io.roadrunner.samplers.vm;
 
-import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
+import io.roadrunner.api.samplers.SamplerResponseBuilder;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -40,7 +41,7 @@ public class VmSamplerProvider implements SamplerProvider {
 
     @Override
     public Sampler newSampler() {
-        return (parameters) -> CompletableFuture.supplyAsync(
+        return (SamplerParameters _, SamplerResponseBuilder builder) -> CompletableFuture.supplyAsync(
                         () -> {
                             var startTime = System.nanoTime();
                             try {
@@ -49,7 +50,7 @@ public class VmSamplerProvider implements SamplerProvider {
                                 throw new RuntimeException(e);
                             }
                             var stopTime = System.nanoTime();
-                            return SamplerResponse.empty(startTime, stopTime);
+                            return builder.response(startTime, stopTime);
                         },
                         executorService)
                 .join();

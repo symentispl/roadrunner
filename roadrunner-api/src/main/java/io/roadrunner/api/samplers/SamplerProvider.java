@@ -15,8 +15,15 @@
  */
 package io.roadrunner.api.samplers;
 
+import io.roadrunner.api.attachments.AttachmentRegistry;
+import io.roadrunner.api.metrics.MetricRegistry;
+
 public interface SamplerProvider extends AutoCloseable {
     Sampler newSampler();
+
+    default void registerMetrics(MetricRegistry registry) {}
+
+    default void registerAttachments(AttachmentRegistry registry) {}
 
     default void close() throws Exception {}
 }
