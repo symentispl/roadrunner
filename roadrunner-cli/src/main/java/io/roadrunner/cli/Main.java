@@ -20,6 +20,8 @@ import static picocli.CommandLine.Model.CommandSpec.forAnnotatedObject;
 
 import io.roadrunner.samplers.spi.SamplerOptions;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import picocli.CommandLine;
 
 public class Main {
@@ -30,19 +32,13 @@ public class Main {
             var commandSpec = createCommandSpec(samplerProviders);
 
             var commandLine = new CommandLine(commandSpec);
+            // required options are validated per-command as soon as that command's own args are parsed,
+            // regardless of --help further down the subcommand chain (picocli only skips validation for the
+            // command level --help was passed to). Collecting errors instead of throwing lets parsing finish
+            // building the whole subcommand tree so we can still detect a nested --help and print its usage.
+            enableCollectErrors(commandLine);
 
-            CommandLine.ParseResult parseResult;
-            try {
-                parseResult = commandLine.parseArgs(args);
-            } catch (CommandLine.ParameterException e) {
-                for (String arg : args) {
-                    if ("--help".equals(arg) || "-h".equals(arg)) {
-                        e.getCommandLine().usage(System.out);
-                        return;
-                    }
-                }
-                throw e;
-            }
+            var parseResult = commandLine.parseArgs(args);
 
             if (parseResult.isUsageHelpRequested()) {
                 commandLine.usage(System.out);
@@ -55,26 +51,78 @@ public class Main {
             }
 
             var subcommand = parseResult.subcommand();
-            if (subcommand.isUsageHelpRequested()) {
+            if (subcommand != null && subcommand.isUsageHelpRequested()) {
                 subcommand.commandSpec().commandLine().usage(System.out);
                 return;
             }
 
-            if (subcommand.commandSpec().userObject() instanceof RunCommand runCommand) {
+            if (subcommand != null && subcommand.commandSpec().userObject() instanceof RunCommand runCommand) {
                 var samplerSubCmd = subcommand.subcommand();
-                if (samplerSubCmd != null) {
-                    if (samplerSubCmd.isUsageHelpRequested()) {
-                        samplerSubCmd.commandSpec().commandLine().usage(System.out);
-                        return;
+                if (samplerSubCmd != null && samplerSubCmd.isUsageHelpRequested()) {
+                    printSamplerUsage(
+                            subcommand.commandSpec().commandLine(),
+                            samplerSubCmd.commandSpec().commandLine());
+                    return;
+                }
+
+                var errors = collectErrors(parseResult);
+                if (!errors.isEmpty()) {
+                    throw errors.get(0);
+                }
+
+                if (samplerSubCmd != null
+                        && samplerSubCmd.commandSpec().userObject() instanceof SamplerOptions samplerOptions) {
+                    try (var samplerProvider = samplerOptions.samplerProvider()) {
+                        runCommand.run(samplerProvider);
                     }
-                    if (samplerSubCmd.commandSpec().userObject() instanceof SamplerOptions samplerOptions) {
-                        try (var samplerProvider = samplerOptions.samplerProvider()) {
-                            runCommand.run(samplerProvider);
-                        }
-                    }
+                }
+            } else {
+                var errors = collectErrors(parseResult);
+                if (!errors.isEmpty()) {
+                    throw errors.get(0);
                 }
             }
         }
+    }
+
+    /**
+     * Prints combined usage help for a sampler subcommand: the sampler's own synopsis and
+     * description, followed by the {@code run} command's options (concurrency/rate, report, etc.),
+     * the sampler's own options, and its expression syntax, so everything needed to invoke the
+     * sampler is visible in one place instead of split across {@code run --help} and
+     * {@code run <sampler> --help}.
+     */
+    private static void printSamplerUsage(CommandLine runCommandLine, CommandLine samplerCommandLine) {
+        var runHelp = runCommandLine.getHelp();
+        var samplerHelp = samplerCommandLine.getHelp();
+        var synopsisHeading = samplerHelp.commandSpec().usageMessage().synopsisHeading();
+
+        var sb = new StringBuilder();
+        sb.append(synopsisHeading).append(samplerHelp.synopsis(synopsisHeading.length()));
+        sb.append(samplerHelp.description());
+        sb.append("Run command options:%n".formatted());
+        sb.append(runHelp.optionList());
+        sb.append("Sampler options:%n".formatted());
+        sb.append(samplerHelp.parameterList());
+        sb.append(samplerHelp.optionList());
+        sb.append(samplerHelp.footer());
+        System.out.print(sb);
+    }
+
+    private static void enableCollectErrors(CommandLine commandLine) {
+        commandLine.getCommandSpec().parser().collectErrors(true);
+        for (var subcommand : commandLine.getSubcommands().values()) {
+            enableCollectErrors(subcommand);
+        }
+    }
+
+    private static List<Exception> collectErrors(CommandLine.ParseResult parseResult) {
+        var errors = new ArrayList<Exception>();
+        if (parseResult.hasSubcommand()) {
+            errors.addAll(collectErrors(parseResult.subcommand()));
+        }
+        errors.addAll(parseResult.errors());
+        return errors;
     }
 
     private static CommandSpec createCommandSpec(SamplerPlugins samplerPlugins) {
@@ -83,9 +131,12 @@ public class Main {
         var runCommand = forAnnotatedObject(new RunCommand()).mixinStandardHelpOptions(true);
 
         for (var samplerPlugin : samplerPlugins.all()) {
-            runCommand
-                    .addSubcommand(samplerPlugin.name(), forAnnotatedObject(samplerPlugin.options()))
-                    .mixinStandardHelpOptions(true);
+            var samplerCmd = forAnnotatedObject(samplerPlugin.options()).mixinStandardHelpOptions(true);
+            var extensionPoints = samplerPlugin.extensionPoints();
+            if (!extensionPoints.isEmpty()) {
+                samplerCmd.usageMessage().footer(SamplerExtensionPointsUsage.format(extensionPoints));
+            }
+            runCommand.addSubcommand(samplerPlugin.name(), samplerCmd);
         }
 
         commandSpec.mixinStandardHelpOptions(true);
