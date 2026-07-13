@@ -140,16 +140,18 @@ public final class SamplerExtensionPoint {
 
 Binding steps:
 
-1. **Validate eligibility.** Every public method declared on `target`'s class
-   (excluding anything inherited from `Object`/`AutoCloseable`) must:
-   - return exactly `Sampler`,
-   - take only `String` parameters (the only literal type supported today).
-
-   Validation runs over *all* public methods up front, not just the one
-   matching the expression's method name — a badly-shaped method on a
-   sampler class fails at plugin construction time regardless of which
-   operation the CLI expression picked. Violations throw
-   `PluginInitializationException` naming the offending method and why.
+1. **Validate eligibility.** Scan `target.getClass().getMethods()` and
+   consider only the methods whose return type is exactly `Sampler` — those
+   are the extension-point candidates. (This is narrower than the original
+   draft of this section, which said *every* public method must qualify;
+   that broke on `JDBCSampler` itself, which also needs plain accessor
+   methods like `sampleCount()` for `JDBCSamplerPlugin`'s summary log.
+   Methods that don't return `Sampler` are simply outside the extension
+   point's concern and are left alone — no rejection, no annotation needed
+   to hide them.) Each candidate method's parameters must all be `String`
+   (the only literal type supported today); a candidate with a non-`String`
+   parameter throws `PluginInitializationException` naming the offending
+   method and why, at plugin construction time.
 
 2. **Resolve.** Find the method named `expression.methodName()` whose
    parameter count equals `expression.arguments().size()`. No match (wrong
@@ -355,12 +357,12 @@ which is no different from today's `newSampler()` contract.
    behaves identically to today. A sampler author who instead wants one
    shared, stateless `Sampler` can simply have their method return the same
    cached instance — the mechanism doesn't force either choice.
-3. **Validation false positives.** Scanning *all* public methods (not just
-   the invoked one) means a sampler class must keep every public method
-   extension-point-eligible, or explicitly keep helper methods
-   package-private/private. This is documented behavior, not a defect, but
-   worth calling out clearly in Javadoc on the methods class so authors don't
-   trip over it.
+3. **Ambiguous arity across overloads.** If a methods class ever declares two
+   `Sampler`-returning methods with the same name and the same parameter
+   count (e.g. two overloads both taking two `String`s), resolution in step 2
+   can't disambiguate by name + arity alone. Not a problem for JDBC/Neo4j
+   (one `Sampler`-returning method each); `PluginInitializationException` at
+   bind time if it ever occurs, rather than silently picking one.
 
 ## Open questions (deferred to the implementation plan)
 
