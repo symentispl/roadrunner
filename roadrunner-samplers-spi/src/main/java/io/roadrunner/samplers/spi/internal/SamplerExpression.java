@@ -29,6 +29,10 @@ import java.util.List;
  */
 public record SamplerExpression(String methodName, List<String> arguments) {
 
+    public SamplerExpression {
+        arguments = List.copyOf(arguments);
+    }
+
     public static SamplerExpression parse(String input) {
         char[] chars = input.toCharArray();
         int pos = 0;

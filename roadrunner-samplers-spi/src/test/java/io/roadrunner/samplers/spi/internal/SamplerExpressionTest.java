@@ -32,7 +32,8 @@ class SamplerExpressionTest {
                 Arguments.of("query(\"SELECT 1\")", "query", List.of("SELECT 1")),
                 Arguments.of("noArgs()", "noArgs", List.of()),
                 Arguments.of("post(\"url\", \"body\")", "post", List.of("url", "body")),
-                Arguments.of("query(\"say \\\"hi\\\"\")", "query", List.of("say \"hi\"")));
+                Arguments.of("query(\"say \\\"hi\\\"\")", "query", List.of("say \"hi\"")),
+                Arguments.of("query( \"SELECT 1\" )", "query", List.of("SELECT 1")));
     }
 
     @ParameterizedTest

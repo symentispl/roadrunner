@@ -112,5 +112,5 @@ roadrunner -c 10 -n 100 --parameters-source csv:file=queries.csv jdbc \
   --url jdbc:postgresql://localhost/mydb \
   --username app --password secret \
   --driver /opt/drivers/postgresql.jar \
-  "SELECT 1"
+  'query("SELECT 1")'
 ----

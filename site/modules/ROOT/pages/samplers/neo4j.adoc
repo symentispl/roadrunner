@@ -19,7 +19,7 @@ cp roadrunner-sampler-neo4j-*.jar ~/.roadrunner/plugins/protocols/
 
 [source,bash]
 ----
-roadrunner -c <concurrency> -n <requests> neo4j [OPTIONS] "<cypher>"
+roadrunner -c <concurrency> -n <requests> neo4j [OPTIONS] 'query("<cypher>")'
 ----
 
 == Arguments
@@ -28,8 +28,8 @@ roadrunner -c <concurrency> -n <requests> neo4j [OPTIONS] "<cypher>"
 |===
 | Argument | Description
 
-| `<cypher>`
-| Cypher query to execute per request (required, positional)
+| `query("<cypher>")`
+| Sampler operation expression (required, positional). The Neo4j sampler exposes a single `query(cypher)` operation, so the positional argument must be a `query("...")` expression rather than bare Cypher text.
 |===
 
 == Options
@@ -59,7 +59,7 @@ roadrunner -c 20 -n 1000 neo4j \
   --uri bolt://localhost:7687 \
   --username neo4j \
   --password secret \
-  "MATCH (n:Person) RETURN n.name LIMIT 1"
+  'query("MATCH (n:Person) RETURN n.name LIMIT 1")'
 ----
 
 == Parameter sources

@@ -21,7 +21,7 @@ You also need the JDBC driver JAR for your database. Pass its path with `--drive
 
 [source,bash]
 ----
-roadrunner -c <concurrency> -n <requests> jdbc [OPTIONS] "<sql>"
+roadrunner -c <concurrency> -n <requests> jdbc [OPTIONS] 'query("<sql>")'
 ----
 
 == Arguments
@@ -30,8 +30,8 @@ roadrunner -c <concurrency> -n <requests> jdbc [OPTIONS] "<sql>"
 |===
 | Argument | Description
 
-| `<sql>`
-| SQL query to execute per request (required, positional)
+| `query("<sql>")`
+| Sampler operation expression (required, positional). The JDBC sampler exposes a single `query(sql)` operation, so the positional argument must be a `query("...")` expression rather than bare SQL text.
 |===
 
 == Options
@@ -74,7 +74,7 @@ roadrunner -c 20 -n 1000 jdbc \
   --username app \
   --password secret \
   --driver /opt/drivers/postgresql-42.7.3.jar \
-  "SELECT id, name FROM users WHERE id = 1"
+  'query("SELECT id, name FROM users WHERE id = 1")'
 ----
 
 == Parameter sources
