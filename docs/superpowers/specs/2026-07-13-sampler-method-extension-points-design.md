@@ -363,12 +363,13 @@ which is no different from today's `newSampler()` contract.
    behaves identically to today. A sampler author who instead wants one
    shared, stateless `Sampler` can simply have their method return the same
    cached instance — the mechanism doesn't force either choice.
-3. **Ambiguous arity across overloads.** If a methods class ever declares two
-   `Sampler`-returning methods with the same name and the same parameter
-   count (e.g. two overloads both taking two `String`s), resolution in step 2
-   can't disambiguate by name + arity alone. Not a problem for JDBC/Neo4j
-   (one `Sampler`-returning method each); `PluginInitializationException` at
-   bind time if it ever occurs, rather than silently picking one.
+3. ~~Ambiguous overloads~~ — considered and ruled out: resolution in step 2
+   matches by name *and* arity, and since every candidate parameter must be
+   `String` (step 1), two `Sampler`-returning methods with the same name and
+   same arity would necessarily have identical parameter types — which Java
+   itself rejects as a duplicate method at compile time. Name + arity
+   matching is therefore always unambiguous; no defensive "which one did you
+   mean" code is needed in `SamplerExtensionPoint`.
 
 ## Open questions (deferred to the implementation plan)
 
@@ -377,7 +378,7 @@ which is no different from today's `newSampler()` contract.
 - Whether `SamplerExpression`'s grammar should reject or silently accept
   extra whitespace around literals/commas — lean toward accepting it, to be
   decided during implementation.
-- Whether a shared helper for "bui`ld a `DataSource`-backed methods class + a
+- Whether a shared helper for "build a `DataSource`-backed methods class + a
   `SamplerProvider` that delegates to `SamplerExtensionPoint`" is worth
   factoring out once a third sampler adopts this pattern. Not needed for two
   samplers — revisit if a third migration arrives.
