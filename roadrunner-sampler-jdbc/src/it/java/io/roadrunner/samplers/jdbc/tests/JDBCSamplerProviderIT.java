@@ -203,7 +203,7 @@ class JDBCSamplerProviderIT {
         options.url = url;
         options.username = "SA";
         options.password = "";
-        options.query = "query(\"%s\")".formatted(query);
+        options.expression = "query(\"%s\")".formatted(query);
         options.driverPath = Paths.get(DRIVER_PATH);
         return options;
     }

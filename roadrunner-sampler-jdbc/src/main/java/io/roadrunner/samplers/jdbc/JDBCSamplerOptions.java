@@ -24,8 +24,8 @@ import picocli.CommandLine.Parameters;
 @Command(description = "JDBC protocol, executes a SQL query against a database", mixinStandardHelpOptions = true)
 public class JDBCSamplerOptions implements SamplerOptions<JDBCSamplerProvider> {
 
-    @Parameters(description = "Sampler operation expression, e.g. query(\"SELECT 1\")")
-    public String query;
+    @Parameters(paramLabel = "expression", description = "Sampler operation expression, e.g. query(\"SELECT 1\")")
+    public String expression;
 
     @Option(names = "--url", description = "JDBC URL (e.g. jdbc:postgresql://localhost/mydb)", required = true)
     public String url;

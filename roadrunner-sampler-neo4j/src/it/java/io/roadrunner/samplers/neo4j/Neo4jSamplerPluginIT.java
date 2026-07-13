@@ -44,7 +44,7 @@ public class Neo4jSamplerPluginIT {
             options.uri = new URI("neo4j://%s:%d".formatted(neo4j.getHost(), neo4j.getMappedPort(7687)));
             options.username = "neo4j";
             options.password = "";
-            options.query = "query(\"\")";
+            options.expression = "query(\"\")";
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
                 var response = sampler.execute(SamplerParameters.NONE);
@@ -64,7 +64,7 @@ public class Neo4jSamplerPluginIT {
             options.uri = new URI("neo4j://%s:%d".formatted(neo4j.getHost(), neo4j.getMappedPort(7687)));
             options.username = "neo4j";
             options.password = "";
-            options.query = "query(\"RETURN 1\")";
+            options.expression = "query(\"RETURN 1\")";
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
                 var response = sampler.execute(SamplerParameters.NONE);
@@ -80,7 +80,7 @@ public class Neo4jSamplerPluginIT {
             options.uri = new URI("neo4j://%s:%d".formatted(neo4j.getHost(), neo4j.getMappedPort(7687)));
             options.username = "neo4j";
             options.password = "";
-            options.query = "query(\"RETURN $param\")";
+            options.expression = "query(\"RETURN $param\")";
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
                 var response = sampler.execute(SamplerParameters.of("param", "1"));
