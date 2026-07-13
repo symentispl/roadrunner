@@ -82,10 +82,8 @@ bind.
 
 ```
 roadrunner-samplers-spi
-  io.roadrunner.samplers.spi            (exported — public SPI surface)
-    └─ SamplerExtensionPoint (new) — validates + parses + MethodHandle-binds
-  io.roadrunner.samplers.spi.internal   (NOT exported — implementation detail)
-    └─ SamplerExpression (new) — parses "name(\"lit\", ...)" into an IR
+  ├─ SamplerExpression   (new)  — parses "name(\"lit\", ...)" into an IR
+  └─ SamplerExtensionPoint (new) — validates + MethodHandle-binds + adapts
 
            used by (construction time only)
                     │
@@ -105,32 +103,17 @@ ServiceLoader discovery, roadrunner-core's ExecutionStrategy — all unchanged.
 
 No new module. Both new types live in `roadrunner-samplers-spi`, alongside
 `SamplerOptions`/`SamplerPlugin`, since every sampler module already depends
-on it. `SamplerExpression` is a parsing detail of *how* `SamplerExtensionPoint`
-turns a string into a bound `Sampler` — not something a sampler author (or
-any other module) ever names directly — so it lives in an unexported
-sub-package. `roadrunner-sampler-jdbc`/`roadrunner-sampler-neo4j` call only
-`SamplerExtensionPoint.bind(Object, String)`; they never import
-`SamplerExpression`, and JPMS enforces that (the package isn't `exports`-ed,
-so it's a compile error for another module to even name the type).
+on it.
 
-## `SamplerExpression` (internal)
+## `SamplerExpression`
 
 ```java
-package io.roadrunner.samplers.spi.internal;
+package io.roadrunner.samplers.spi;
 
 public record SamplerExpression(String methodName, List<String> arguments) {
     public static SamplerExpression parse(String input) { ... }
 }
 ```
-
-`public` (so `SamplerExtensionPoint`, in the sibling `io.roadrunner.samplers.spi`
-package, can reference it — package-private wouldn't be visible across
-packages even within the same module), but the containing package is simply
-never named in `roadrunner-samplers-spi`'s `module-info.java`'s `exports`
-list, which is all JPMS needs to keep it invisible to every other module. No
-`module-info.java` change is required to achieve this — the module already
-only exports `io.roadrunner.samplers.spi`; a new package is unexported by
-default unless explicitly added.
 
 Grammar (intentionally minimal — only what JDBC/Neo4j need):
 
@@ -151,52 +134,32 @@ surfaced at CLI startup, before any sample is taken.
 package io.roadrunner.samplers.spi;
 
 public final class SamplerExtensionPoint {
-    public static Supplier<Sampler> bind(Object target, String expressionText) { ... }
+    public static Supplier<Sampler> bind(Object target, SamplerExpression expression) { ... }
 }
 ```
 
-This is the module's only exported entry point for the mechanism —
-`SamplerExpression` (the parsed IR) never appears in this signature, so
-callers in other modules (`JDBCSamplerPlugin`, `Neo4jSamplerPlugin`) pass
-`options.query` straight through as a `String` and never reference
-`SamplerExpression` at all.
-
 Binding steps:
 
-0. **Parse.** `SamplerExpression.parse(expressionText)` (internal package,
-   same module — see above). Parse errors propagate as the
-   `IllegalArgumentException` `SamplerExpression.parse` already throws.
+1. **Validate eligibility.** Every public method declared on `target`'s class
+   (excluding anything inherited from `Object`/`AutoCloseable`) must:
+   - return exactly `Sampler`,
+   - take only `String` parameters (the only literal type supported today).
 
-1. **Validate eligibility.** Scan `target.getClass().getMethods()` and
-   consider only the methods whose return type is exactly `Sampler` — those
-   are the extension-point candidates. (This is narrower than the original
-   draft of this section, which said *every* public method must qualify;
-   that broke on `JDBCSampler` itself, which also needs plain accessor
-   methods like `sampleCount()` for `JDBCSamplerPlugin`'s summary log.
-   Methods that don't return `Sampler` are simply outside the extension
-   point's concern and are left alone — no rejection, no annotation needed
-   to hide them.) Each candidate method's parameters must all be `String`
-   (the only literal type supported today); a candidate with a non-`String`
-   parameter throws `PluginInitializationException` naming the offending
-   method and why, at plugin construction time.
+   Validation runs over *all* public methods up front, not just the one
+   matching the expression's method name — a badly-shaped method on a
+   sampler class fails at plugin construction time regardless of which
+   operation the CLI expression picked. Violations throw
+   `PluginInitializationException` naming the offending method and why.
 
 2. **Resolve.** Find the method named `expression.methodName()` whose
    parameter count equals `expression.arguments().size()`. No match (wrong
    name or wrong arity) throws `IllegalArgumentException` listing the
    available methods and their arities.
 
-3. **Bind.** `MethodHandles.publicLookup().unreflect(method)` → `MethodHandle`
-   with receiver as the leading parameter; `MethodHandles.insertArguments`
-   binds `target` plus every literal argument, fully saturating the handle
-   (zero parameters remain). `publicLookup()`, not `lookup()`: the target
-   class (e.g. `JDBCSampler`) lives in a different module than
-   `SamplerExtensionPoint`, and `roadrunner-samplers-spi` must not gain a
-   `requires` edge back onto every sampler module that uses it — that would
-   invert the plugin dependency direction. `publicLookup()` resolves public
-   members of unconditionally-exported packages across module boundaries
-   without either module needing a `requires` on the other, which is exactly
-   the shape here (`query` is `public` on a `public` class in a package each
-   sampler module already `exports` unconditionally).
+3. **Bind.** `MethodHandles.lookup().unreflect(method)` → `MethodHandle` with
+   receiver as the leading parameter; `MethodHandles.insertArguments` binds
+   `target` plus every literal argument, fully saturating the handle (zero
+   parameters remain).
 
 4. **Wrap.** Return `() -> { try { return (Sampler) handle.invoke(); } catch (Throwable t) { throw ...; } }`.
    Each invocation of the returned `Supplier<Sampler>` calls the fully-bound
@@ -208,77 +171,6 @@ Binding steps:
 Binding (steps 1–3) happens once, when the `SamplerProvider` is constructed.
 Step 4's `Supplier` is invoked once per `SamplerProvider.newSampler()` call
 (once per virtual thread), same call frequency as today.
-
-Note what this means for the hot path: the `MethodHandle` is only ever
-invoked from step 4, i.e. once per virtual thread at startup. The object it
-returns (e.g. the lambda inside `JDBCSampler.query(String sql)`) is an
-ordinary, hand-written `Sampler` implementation — `execute(SamplerParameters)`
-itself is called through plain interface dispatch, exactly as it is today.
-No `MethodHandle` sits on the per-request path.
-
-## Microbenchmarks
-
-The open question is therefore narrower than "does MethodHandle dispatch
-slow down sampling" (it doesn't touch the per-request path at all) — it's
-"does binding+invoking the factory method through a `MethodHandle` cost
-meaningfully more than calling it directly, at the frequency `newSampler()`
-is actually called (once per virtual thread)?" The issue also explicitly
-motivates the `MethodHandle` choice by contrast with reflection, which is
-worth measuring rather than asserting.
-
-Add benchmarks to the existing `roadrunner-microbenchmarks` JMH module (no
-new module, no new dependency — `jmh-core` is already there) comparing three
-ways of turning a resolved target + literal argument into a `Sampler`:
-
-1. **Direct** — baseline: call `fixture.query(sql)` as an ordinary Java method
-   call (today's status quo — no indirection at all).
-2. **MethodHandle** — the design above: `Lookup.unreflect` + `insertArguments`
-   done once in `@Setup`, then `handle.invoke()` per benchmark invocation.
-3. **Reflection** — `Class.getMethod` done once in `@Setup`, then
-   `method.invoke(fixture, sql)` per benchmark invocation (Approach B from
-   this spec, included so its rejection is backed by a number, not just an
-   assertion).
-
-```java
-@State(Scope.Benchmark)
-public class SamplerFactoryDispatchState {
-    JDBCSamplerFixture fixture;   // trivial stand-in, no real DataSource needed
-    String sql;
-    MethodHandle boundHandle;     // fully saturated: unreflect + insertArguments
-    Method reflectMethod;
-
-    @Setup(Level.Trial)
-    public void setUp() throws Exception { ... }
-}
-
-@Benchmark
-public Sampler directDispatch(SamplerFactoryDispatchState s) {
-    return s.fixture.query(s.sql);
-}
-
-@Benchmark
-public Sampler methodHandleDispatch(SamplerFactoryDispatchState s) throws Throwable {
-    return (Sampler) s.boundHandle.invoke();
-}
-
-@Benchmark
-public Sampler reflectionDispatch(SamplerFactoryDispatchState s) throws Exception {
-    return (Sampler) s.reflectMethod.invoke(s.fixture, s.sql);
-}
-```
-
-JMH auto-blackholes the returned `Sampler`, so no manual `Blackhole` plumbing
-is needed. Runs through the existing `benchmarks/` tracking scripts
-(`task benchmark:run`) like the current `RoadrunnerBenchmarks` — no new
-tooling. This is a one-time comparison to sanity-check the design choice, not
-a regression gate: `newSampler()` runs once per virtual thread, so even a
-measurable per-call delta here is orders of magnitude below anything that
-would show up in end-to-end throughput.
-
-If the numbers show the `MethodHandle` path is unexpectedly costly relative
-to direct dispatch, the fallback is to cache/reuse resolved handles more
-aggressively — not to abandon `MethodHandle`s for `Method.invoke`, which the
-benchmark is expected to show is worse, not better.
 
 ## Migration: JDBC and Neo4j
 
@@ -304,7 +196,7 @@ public class JDBCSampler {
 ```java
 @Override
 public Sampler newSampler() {
-    return samplerSupplier.get(); // samplerSupplier = SamplerExtensionPoint.bind(jdbcSampler, options.query)
+    return samplerSupplier.get(); // samplerSupplier = SamplerExtensionPoint.bind(jdbcSampler, expression)
 }
 ```
 
@@ -318,12 +210,10 @@ jdbc --url jdbc:postgresql://localhost/db --username u --password p \
      --driver driver.jar 'query("SELECT * FROM table WHERE id = ?")'
 ```
 
-`JDBCSamplerPlugin.newSamplerProvider` builds the `JDBCSampler` with the
-constructed `DataSource` and calls `SamplerExtensionPoint.bind(jdbcSampler,
-options.query)` directly — passing the raw string straight through, once, to
-get the `Supplier<Sampler>` handed to `JDBCSamplerProvider`. Neither
-`JDBCSamplerPlugin` nor `JDBCSamplerProvider` ever imports `SamplerExpression`;
-parsing is entirely `SamplerExtensionPoint.bind`'s own concern.
+`JDBCSamplerPlugin.newSamplerProvider` parses that string with
+`SamplerExpression.parse`, builds the `JDBCSampler` with the constructed
+`DataSource`, and calls `SamplerExtensionPoint.bind(jdbcSampler, expression)`
+once to get the `Supplier<Sampler>` handed to `JDBCSamplerProvider`.
 
 **Neo4j.** Same shape: `Neo4jSampler.query(String cypher)` returns a `Sampler`
 whose body is today's `Neo4jSamplerProvider.newSampler()` lambda (run
@@ -362,46 +252,41 @@ which is no different from today's `newSampler()` contract.
 
 - New `roadrunner-samplers-spi` test source set (none exists yet — add a
   junit dependency to its `pom.xml`, matching sibling sampler modules):
-  - `SamplerExpressionTest` (package `io.roadrunner.samplers.spi.internal`):
-    valid parses (zero/one/multiple string args), malformed input
-    (unterminated literal, missing parens, empty method name).
-  - `SamplerExtensionPointTest` (package `io.roadrunner.samplers.spi`):
-    exercises the public `bind(Object, String)` entry point directly (never
-    imports `SamplerExpression`) — successful bind + invoke round-trip
-    against a small in-test fixture class; rejection of a method with a
-    non-`String` parameter; rejection of a method returning something other
-    than `Sampler`; arity-mismatch and unknown-method-name errors; malformed
-    expression text.
+  - `SamplerExpressionTest`: valid parses (zero/one/multiple string args),
+    malformed input (unterminated literal, missing parens, empty method
+    name).
+  - `SamplerExtensionPointTest`: successful bind + invoke round-trip against
+    a small in-test fixture class; rejection of a method with a non-`String`
+    parameter; rejection of a method returning something other than
+    `Sampler`; arity-mismatch and unknown-method-name errors.
 - Existing `JDBCSamplerProviderIT` (`roadrunner-sampler-jdbc/src/it`) and
   `Neo4jSamplerPluginIT` (`roadrunner-sampler-neo4j/src/it`) continue to
   exercise the migrated samplers end-to-end (real Postgres/Neo4j) — updated
   only to pass the new `query("...")` expression syntax instead of a bare SQL
   string, asserting identical behavior to before the migration.
-- The JMH microbenchmarks described above (direct vs `MethodHandle` vs
-  reflection dispatch) — a one-time design sanity check, run manually via
-  `task benchmark:run`, not part of the regular unit/integration test suite.
 
 ## Risks
 
-1. **Cross-module reflection under JPMS.** Resolved by using
-   `MethodHandles.publicLookup()` (see the Bind step above) rather than
-   `MethodHandles.lookup()` — no new `requires`/`opens` directives needed in
-   any `module-info.java`, since target classes are `public` in packages each
-   sampler module already `exports` unconditionally. Confirmed during
-   implementation by the extension-point unit tests actually running.
+1. **`MethodHandleProxies`/`unreflect` under JPMS.** Each sampler module is a
+   named module with explicit `exports`; reflective access via
+   `MethodHandles.lookup()` from within `roadrunner-samplers-spi` calling
+   into `JDBCSampler` (a different module) requires that module to `open` or
+   `exports` the package to `roadrunner-samplers-spi`, similar to the
+   existing `opens ... to info.picocli` directives already present in each
+   sampler module's `module-info.java`. Verified case-by-case during
+   implementation.
 2. **Shared vs. fresh `Sampler` per thread.** Steps 3–4 re-invoke the fully
    bound handle on every `Supplier.get()` call, so a naive `query(String
    sql)` implementation that allocates per call (as JDBC/Neo4j already do)
    behaves identically to today. A sampler author who instead wants one
    shared, stateless `Sampler` can simply have their method return the same
    cached instance — the mechanism doesn't force either choice.
-3. ~~Ambiguous overloads~~ — considered and ruled out: resolution in step 2
-   matches by name *and* arity, and since every candidate parameter must be
-   `String` (step 1), two `Sampler`-returning methods with the same name and
-   same arity would necessarily have identical parameter types — which Java
-   itself rejects as a duplicate method at compile time. Name + arity
-   matching is therefore always unambiguous; no defensive "which one did you
-   mean" code is needed in `SamplerExtensionPoint`.
+3. **Validation false positives.** Scanning *all* public methods (not just
+   the invoked one) means a sampler class must keep every public method
+   extension-point-eligible, or explicitly keep helper methods
+   package-private/private. This is documented behavior, not a defect, but
+   worth calling out clearly in Javadoc on the methods class so authors don't
+   trip over it.
 
 ## Open questions (deferred to the implementation plan)
 
