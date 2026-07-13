@@ -158,10 +158,18 @@ Binding steps:
    name or wrong arity) throws `IllegalArgumentException` listing the
    available methods and their arities.
 
-3. **Bind.** `MethodHandles.lookup().unreflect(method)` → `MethodHandle` with
-   receiver as the leading parameter; `MethodHandles.insertArguments` binds
-   `target` plus every literal argument, fully saturating the handle (zero
-   parameters remain).
+3. **Bind.** `MethodHandles.publicLookup().unreflect(method)` → `MethodHandle`
+   with receiver as the leading parameter; `MethodHandles.insertArguments`
+   binds `target` plus every literal argument, fully saturating the handle
+   (zero parameters remain). `publicLookup()`, not `lookup()`: the target
+   class (e.g. `JDBCSampler`) lives in a different module than
+   `SamplerExtensionPoint`, and `roadrunner-samplers-spi` must not gain a
+   `requires` edge back onto every sampler module that uses it — that would
+   invert the plugin dependency direction. `publicLookup()` resolves public
+   members of unconditionally-exported packages across module boundaries
+   without either module needing a `requires` on the other, which is exactly
+   the shape here (`query` is `public` on a `public` class in a package each
+   sampler module already `exports` unconditionally).
 
 4. **Wrap.** Return `() -> { try { return (Sampler) handle.invoke(); } catch (Throwable t) { throw ...; } }`.
    Each invocation of the returned `Supplier<Sampler>` calls the fully-bound
@@ -343,14 +351,12 @@ which is no different from today's `newSampler()` contract.
 
 ## Risks
 
-1. **`MethodHandleProxies`/`unreflect` under JPMS.** Each sampler module is a
-   named module with explicit `exports`; reflective access via
-   `MethodHandles.lookup()` from within `roadrunner-samplers-spi` calling
-   into `JDBCSampler` (a different module) requires that module to `open` or
-   `exports` the package to `roadrunner-samplers-spi`, similar to the
-   existing `opens ... to info.picocli` directives already present in each
-   sampler module's `module-info.java`. Verified case-by-case during
-   implementation.
+1. **Cross-module reflection under JPMS.** Resolved by using
+   `MethodHandles.publicLookup()` (see the Bind step above) rather than
+   `MethodHandles.lookup()` — no new `requires`/`opens` directives needed in
+   any `module-info.java`, since target classes are `public` in packages each
+   sampler module already `exports` unconditionally. Confirmed during
+   implementation by the extension-point unit tests actually running.
 2. **Shared vs. fresh `Sampler` per thread.** Steps 3–4 re-invoke the fully
    bound handle on every `Supplier.get()` call, so a naive `query(String
    sql)` implementation that allocates per call (as JDBC/Neo4j already do)
@@ -371,7 +377,7 @@ which is no different from today's `newSampler()` contract.
 - Whether `SamplerExpression`'s grammar should reject or silently accept
   extra whitespace around literals/commas — lean toward accepting it, to be
   decided during implementation.
-- Whether a shared helper for "build a `DataSource`-backed methods class + a
+- Whether a shared helper for "bui`ld a `DataSource`-backed methods class + a
   `SamplerProvider` that delegates to `SamplerExtensionPoint`" is worth
   factoring out once a third sampler adopts this pattern. Not needed for two
   samplers — revisit if a third migration arrives.
