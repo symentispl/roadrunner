@@ -38,8 +38,11 @@ public record SamplerExpression(String methodName, List<String> arguments) {
         int pos = 0;
 
         int nameStart = pos;
-        while (pos < chars.length && Character.isLetterOrDigit(chars[pos])) {
+        if (pos < chars.length && Character.isLetter(chars[pos])) {
             pos++;
+            while (pos < chars.length && Character.isLetterOrDigit(chars[pos])) {
+                pos++;
+            }
         }
         if (pos == nameStart) {
             throw new IllegalArgumentException("Expected method name at position %d in '%s'".formatted(pos, input));

@@ -32,7 +32,7 @@ class SamplerExtensionPointTest {
             this.lastSql = sql;
             // Capture sql so the lambda isn't a non-capturing singleton, forcing a fresh
             // instance per call.
-            return parameters -> SamplerResponse.empty(sql.length(), 0);
+            return parameters -> SamplerResponse.empty(0, sql.length());
         }
 
         public Sampler noArgs() {

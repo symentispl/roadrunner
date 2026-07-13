@@ -53,6 +53,13 @@ class SamplerExpressionTest {
     }
 
     @Test
+    void methodNameStartingWithDigitThrows() {
+        assertThatThrownBy(() -> SamplerExpression.parse("123abc(\"x\")"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Expected method name");
+    }
+
+    @Test
     void missingOpenParenThrows() {
         assertThatThrownBy(() -> SamplerExpression.parse("query \"x\")"))
                 .isInstanceOf(IllegalArgumentException.class)
