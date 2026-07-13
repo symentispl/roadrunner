@@ -72,12 +72,12 @@ public final class SamplerExtensionPoint {
                     e);
         }
 
-        final Object[] boundArguments = prependTarget(target, expression.arguments());
-        final MethodHandle baseHandle = handle;
+        Object[] boundArguments = prependTarget(target, expression.arguments());
+        MethodHandle boundHandle = MethodHandles.insertArguments(handle, 0, boundArguments);
 
         return () -> {
             try {
-                return (Sampler) baseHandle.invokeWithArguments(boundArguments);
+                return (Sampler) boundHandle.invoke();
             } catch (Throwable t) {
                 throw new IllegalStateException(
                         "Failed to invoke extension point method '%s' on %s"
