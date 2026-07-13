@@ -83,9 +83,12 @@ public class Main {
         var runCommand = forAnnotatedObject(new RunCommand()).mixinStandardHelpOptions(true);
 
         for (var samplerPlugin : samplerPlugins.all()) {
-            runCommand
-                    .addSubcommand(samplerPlugin.name(), forAnnotatedObject(samplerPlugin.options()))
-                    .mixinStandardHelpOptions(true);
+            var samplerCmd = forAnnotatedObject(samplerPlugin.options()).mixinStandardHelpOptions(true);
+            var extensionPoints = samplerPlugin.extensionPoints();
+            if (!extensionPoints.isEmpty()) {
+                samplerCmd.usageMessage().footer(SamplerExtensionPointsUsage.format(extensionPoints));
+            }
+            runCommand.addSubcommand(samplerPlugin.name(), samplerCmd);
         }
 
         commandSpec.mixinStandardHelpOptions(true);
