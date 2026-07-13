@@ -410,7 +410,7 @@ which is no different from today's `newSampler()` contract.
 - Whether `SamplerExpression`'s grammar should reject or silently accept
   extra whitespace around literals/commas — lean toward accepting it, to be
   decided during implementation.
-- Whether a shared helper for "build a `DataSource`-backed methods class + a
+- Whether a shared helper for "bui`ld a `DataSource`-backed methods class + a
   `SamplerProvider` that delegates to `SamplerExtensionPoint`" is worth
   factoring out once a third sampler adopts this pattern. Not needed for two
   samplers — revisit if a third migration arrives.
