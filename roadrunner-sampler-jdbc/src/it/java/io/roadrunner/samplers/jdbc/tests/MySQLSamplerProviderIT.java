@@ -21,6 +21,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.samplers.jdbc.JDBCSamplerPlugin;
+import io.roadrunner.samplers.spi.SamplerContext;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
@@ -52,9 +53,9 @@ public class MySQLSamplerProviderIT {
             options.password = PASSWORD;
             options.query = "SELECT 1";
             options.driverPath = Paths.get(DRIVER_PATH);
-            try (var provider = plugin.newSamplerProvider(options);
-                    var sampler = provider.newSampler()) {
-                var response = sampler.execute(SamplerParameters.NONE);
+            var ctx = SamplerContext.create(plugin, options);
+            try (var sampler = ctx.newSampler()) {
+                var response = sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
                 assertThat(response)
                         .asInstanceOf(type(SamplerResponse.Response.class))
                         .satisfies(r -> {

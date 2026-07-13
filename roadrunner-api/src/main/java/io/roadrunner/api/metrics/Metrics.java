@@ -15,6 +15,7 @@
  */
 package io.roadrunner.api.metrics;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public final class Metrics {
@@ -22,10 +23,18 @@ public final class Metrics {
     private final Map<String, Metric> metrics;
 
     public static Metrics empty() {
-        return new Metrics(Map.of());
+        return new Metrics(new HashMap<>());
     }
 
     public Metrics(Map<String, Metric> metrics) {
         this.metrics = metrics;
+    }
+
+    public Metric get(String metric) {
+        return metrics.get(metric);
+    }
+
+    public void put(String metricName, Metric metric) {
+        metrics.put(metricName, metric);
     }
 }

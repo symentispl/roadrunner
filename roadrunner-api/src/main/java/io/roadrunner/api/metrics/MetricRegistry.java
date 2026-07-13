@@ -13,16 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-open module io.roadrunner.samplers.jdbc.tests {
-    requires io.roadrunner.api;
-    requires io.roadrunner.samplers.jdbc;
-    requires io.roadrunner.samplers.spi;
-    requires java.sql;
-    requires org.assertj.core;
-    requires org.junit.jupiter.api;
-    requires transitive org.junit.jupiter.engine;
-    requires testcontainers;
-    requires testcontainers.junit.jupiter;
+package io.roadrunner.api.metrics;
 
-    exports io.roadrunner.samplers.jdbc.tests;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+public final class MetricRegistry {
+
+    private final List<MetricKey> keys = new ArrayList<>();
+
+    public MetricKey register(String name, MetricUnit unit) {
+        var key = new MetricKey(keys.size(), name, unit);
+        keys.add(key);
+        return key;
+    }
+
+    public Collection<MetricKey> registeredKeys() {
+        return Collections.unmodifiableList(keys);
+    }
+
+    public int size() {
+        return keys.size();
+    }
 }
