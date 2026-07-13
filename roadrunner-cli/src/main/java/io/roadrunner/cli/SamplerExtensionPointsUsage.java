@@ -32,7 +32,7 @@ final class SamplerExtensionPointsUsage {
      *
      * <p>Example output:
      * <pre>
-     * Extension points:
+     * Expression syntax:
      *   query(&lt;sql&gt;)   Execute a SQL query
      * </pre>
      */
@@ -41,7 +41,7 @@ final class SamplerExtensionPointsUsage {
             return "";
         }
         var sb = new StringBuilder();
-        sb.append("Extension points:%n".formatted());
+        sb.append("Expression syntax:%n".formatted());
         int maxExpressionLength = extensionPoints.stream()
                 .mapToInt(ep -> ep.usageExpression().length())
                 .max()
@@ -49,7 +49,11 @@ final class SamplerExtensionPointsUsage {
         for (var ep : extensionPoints) {
             String expression = ep.usageExpression();
             int padding = maxExpressionLength - expression.length() + 2;
-            sb.append("  ").append(expression).append(" ".repeat(padding)).append(ep.description()).append("%n".formatted());
+            sb.append("  ")
+                    .append(expression)
+                    .append(" ".repeat(padding))
+                    .append(ep.description())
+                    .append("%n".formatted());
         }
         return sb.toString();
     }

@@ -34,7 +34,7 @@ class SamplerExtensionPointsUsageTest {
 
         String usage = SamplerExtensionPointsUsage.format(List.of(descriptor));
 
-        assertThat(usage).contains("Extension points:");
+        assertThat(usage).contains("Expression syntax:");
         assertThat(usage).contains("query(<sql>)");
         assertThat(usage).contains("Execute a SQL query");
     }

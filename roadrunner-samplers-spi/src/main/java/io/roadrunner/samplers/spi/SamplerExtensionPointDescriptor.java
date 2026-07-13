@@ -43,7 +43,8 @@ public record SamplerExtensionPointDescriptor(String name, List<String> paramete
         if (parameterNames.isEmpty()) {
             return name + "()";
         }
-        var params = String.join(", ", parameterNames.stream().map(p -> "<" + p + ">").toList());
+        var params = String.join(
+                ", ", parameterNames.stream().map(p -> "<" + p + ">").toList());
         return name + "(" + params + ")";
     }
 }
