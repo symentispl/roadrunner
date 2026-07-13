@@ -172,6 +172,77 @@ Binding (steps 1–3) happens once, when the `SamplerProvider` is constructed.
 Step 4's `Supplier` is invoked once per `SamplerProvider.newSampler()` call
 (once per virtual thread), same call frequency as today.
 
+Note what this means for the hot path: the `MethodHandle` is only ever
+invoked from step 4, i.e. once per virtual thread at startup. The object it
+returns (e.g. the lambda inside `JDBCSampler.query(String sql)`) is an
+ordinary, hand-written `Sampler` implementation — `execute(SamplerParameters)`
+itself is called through plain interface dispatch, exactly as it is today.
+No `MethodHandle` sits on the per-request path.
+
+## Microbenchmarks
+
+The open question is therefore narrower than "does MethodHandle dispatch
+slow down sampling" (it doesn't touch the per-request path at all) — it's
+"does binding+invoking the factory method through a `MethodHandle` cost
+meaningfully more than calling it directly, at the frequency `newSampler()`
+is actually called (once per virtual thread)?" The issue also explicitly
+motivates the `MethodHandle` choice by contrast with reflection, which is
+worth measuring rather than asserting.
+
+Add benchmarks to the existing `roadrunner-microbenchmarks` JMH module (no
+new module, no new dependency — `jmh-core` is already there) comparing three
+ways of turning a resolved target + literal argument into a `Sampler`:
+
+1. **Direct** — baseline: call `fixture.query(sql)` as an ordinary Java method
+   call (today's status quo — no indirection at all).
+2. **MethodHandle** — the design above: `Lookup.unreflect` + `insertArguments`
+   done once in `@Setup`, then `handle.invoke()` per benchmark invocation.
+3. **Reflection** — `Class.getMethod` done once in `@Setup`, then
+   `method.invoke(fixture, sql)` per benchmark invocation (Approach B from
+   this spec, included so its rejection is backed by a number, not just an
+   assertion).
+
+```java
+@State(Scope.Benchmark)
+public class SamplerFactoryDispatchState {
+    JDBCSamplerFixture fixture;   // trivial stand-in, no real DataSource needed
+    String sql;
+    MethodHandle boundHandle;     // fully saturated: unreflect + insertArguments
+    Method reflectMethod;
+
+    @Setup(Level.Trial)
+    public void setUp() throws Exception { ... }
+}
+
+@Benchmark
+public Sampler directDispatch(SamplerFactoryDispatchState s) {
+    return s.fixture.query(s.sql);
+}
+
+@Benchmark
+public Sampler methodHandleDispatch(SamplerFactoryDispatchState s) throws Throwable {
+    return (Sampler) s.boundHandle.invoke();
+}
+
+@Benchmark
+public Sampler reflectionDispatch(SamplerFactoryDispatchState s) throws Exception {
+    return (Sampler) s.reflectMethod.invoke(s.fixture, s.sql);
+}
+```
+
+JMH auto-blackholes the returned `Sampler`, so no manual `Blackhole` plumbing
+is needed. Runs through the existing `benchmarks/` tracking scripts
+(`task benchmark:run`) like the current `RoadrunnerBenchmarks` — no new
+tooling. This is a one-time comparison to sanity-check the design choice, not
+a regression gate: `newSampler()` runs once per virtual thread, so even a
+measurable per-call delta here is orders of magnitude below anything that
+would show up in end-to-end throughput.
+
+If the numbers show the `MethodHandle` path is unexpectedly costly relative
+to direct dispatch, the fallback is to cache/reuse resolved handles more
+aggressively — not to abandon `MethodHandle`s for `Method.invoke`, which the
+benchmark is expected to show is worse, not better.
+
 ## Migration: JDBC and Neo4j
 
 **JDBC.** New `JDBCSampler` class:
@@ -264,6 +335,9 @@ which is no different from today's `newSampler()` contract.
   exercise the migrated samplers end-to-end (real Postgres/Neo4j) — updated
   only to pass the new `query("...")` expression syntax instead of a bare SQL
   string, asserting identical behavior to before the migration.
+- The JMH microbenchmarks described above (direct vs `MethodHandle` vs
+  reflection dispatch) — a one-time design sanity check, run manually via
+  `task benchmark:run`, not part of the regular unit/integration test suite.
 
 ## Risks
 
