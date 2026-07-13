@@ -16,10 +16,9 @@
 package io.roadrunner;
 
 import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Method;
+import io.roadrunner.samplers.spi.SamplerExtensionPoint;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
@@ -35,46 +34,38 @@ import org.openjdk.jmh.annotations.State;
  * measure the per-request {@code execute()} hot path, which is unaffected by this design either
  * way.
  */
-public class SamplerFactoryDispatchBenchmarks {
+public class SamplerExtensionPointBenchmarks {
 
-    public static class DispatchFixture {
+    public static class NoOpSamplerProvider {
         public Sampler query(String sql) {
             return parameters -> SamplerResponse.empty(0, 0);
         }
     }
 
     @State(Scope.Benchmark)
-    public static class DispatchState {
-        DispatchFixture fixture;
-        String sql;
-        MethodHandle boundHandle;
-        Method reflectMethod;
+    public static class NoOpSamplerState {
+        NoOpSamplerProvider fixture;
+        private Sampler extensionPointSampler;
+        private Sampler sampler;
 
         @Setup(Level.Trial)
         public void setUp() throws Exception {
-            fixture = new DispatchFixture();
-            sql = "SELECT 1";
-            reflectMethod = DispatchFixture.class.getMethod("query", String.class);
-            MethodHandle handle = MethodHandles.publicLookup().unreflect(reflectMethod);
-            boundHandle = MethodHandles.insertArguments(handle, 0, fixture, sql);
+            fixture = new NoOpSamplerProvider();
+            sampler = fixture.query("SELECT 1");
+            extensionPointSampler =
+                    SamplerExtensionPoint.bind(fixture, "query(\"SELECT 1\")").get();
         }
     }
 
     @Benchmark
-    @Fork(value = 1, warmups = 1)
-    public Sampler directDispatch(DispatchState state) {
-        return state.fixture.query(state.sql);
+    @Fork(value = 1)
+    public SamplerResponse<?> directDispatch(NoOpSamplerState state) {
+        return state.sampler.execute(SamplerParameters.NONE);
     }
 
     @Benchmark
-    @Fork(value = 1, warmups = 1)
-    public Sampler methodHandleDispatch(DispatchState state) throws Throwable {
-        return (Sampler) state.boundHandle.invoke();
-    }
-
-    @Benchmark
-    @Fork(value = 1, warmups = 1)
-    public Sampler reflectionDispatch(DispatchState state) throws Exception {
-        return (Sampler) state.reflectMethod.invoke(state.fixture, state.sql);
+    @Fork(value = 1)
+    public SamplerResponse<?> extensionPointDispatch(NoOpSamplerState state) throws Throwable {
+        return state.extensionPointSampler.execute(SamplerParameters.NONE);
     }
 }
