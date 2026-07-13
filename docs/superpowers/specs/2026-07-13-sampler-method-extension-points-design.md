@@ -82,8 +82,10 @@ bind.
 
 ```
 roadrunner-samplers-spi
-  ├─ SamplerExpression   (new)  — parses "name(\"lit\", ...)" into an IR
-  └─ SamplerExtensionPoint (new) — validates + MethodHandle-binds + adapts
+  io.roadrunner.samplers.spi            (exported — public SPI surface)
+    └─ SamplerExtensionPoint (new) — validates + parses + MethodHandle-binds
+  io.roadrunner.samplers.spi.internal   (NOT exported — implementation detail)
+    └─ SamplerExpression (new) — parses "name(\"lit\", ...)" into an IR
 
            used by (construction time only)
                     │
@@ -103,17 +105,32 @@ ServiceLoader discovery, roadrunner-core's ExecutionStrategy — all unchanged.
 
 No new module. Both new types live in `roadrunner-samplers-spi`, alongside
 `SamplerOptions`/`SamplerPlugin`, since every sampler module already depends
-on it.
+on it. `SamplerExpression` is a parsing detail of *how* `SamplerExtensionPoint`
+turns a string into a bound `Sampler` — not something a sampler author (or
+any other module) ever names directly — so it lives in an unexported
+sub-package. `roadrunner-sampler-jdbc`/`roadrunner-sampler-neo4j` call only
+`SamplerExtensionPoint.bind(Object, String)`; they never import
+`SamplerExpression`, and JPMS enforces that (the package isn't `exports`-ed,
+so it's a compile error for another module to even name the type).
 
-## `SamplerExpression`
+## `SamplerExpression` (internal)
 
 ```java
-package io.roadrunner.samplers.spi;
+package io.roadrunner.samplers.spi.internal;
 
 public record SamplerExpression(String methodName, List<String> arguments) {
     public static SamplerExpression parse(String input) { ... }
 }
 ```
+
+`public` (so `SamplerExtensionPoint`, in the sibling `io.roadrunner.samplers.spi`
+package, can reference it — package-private wouldn't be visible across
+packages even within the same module), but the containing package is simply
+never named in `roadrunner-samplers-spi`'s `module-info.java`'s `exports`
+list, which is all JPMS needs to keep it invisible to every other module. No
+`module-info.java` change is required to achieve this — the module already
+only exports `io.roadrunner.samplers.spi`; a new package is unexported by
+default unless explicitly added.
 
 Grammar (intentionally minimal — only what JDBC/Neo4j need):
 
@@ -134,11 +151,21 @@ surfaced at CLI startup, before any sample is taken.
 package io.roadrunner.samplers.spi;
 
 public final class SamplerExtensionPoint {
-    public static Supplier<Sampler> bind(Object target, SamplerExpression expression) { ... }
+    public static Supplier<Sampler> bind(Object target, String expressionText) { ... }
 }
 ```
 
+This is the module's only exported entry point for the mechanism —
+`SamplerExpression` (the parsed IR) never appears in this signature, so
+callers in other modules (`JDBCSamplerPlugin`, `Neo4jSamplerPlugin`) pass
+`options.query` straight through as a `String` and never reference
+`SamplerExpression` at all.
+
 Binding steps:
+
+0. **Parse.** `SamplerExpression.parse(expressionText)` (internal package,
+   same module — see above). Parse errors propagate as the
+   `IllegalArgumentException` `SamplerExpression.parse` already throws.
 
 1. **Validate eligibility.** Scan `target.getClass().getMethods()` and
    consider only the methods whose return type is exactly `Sampler` — those
@@ -277,7 +304,7 @@ public class JDBCSampler {
 ```java
 @Override
 public Sampler newSampler() {
-    return samplerSupplier.get(); // samplerSupplier = SamplerExtensionPoint.bind(jdbcSampler, expression)
+    return samplerSupplier.get(); // samplerSupplier = SamplerExtensionPoint.bind(jdbcSampler, options.query)
 }
 ```
 
@@ -291,10 +318,12 @@ jdbc --url jdbc:postgresql://localhost/db --username u --password p \
      --driver driver.jar 'query("SELECT * FROM table WHERE id = ?")'
 ```
 
-`JDBCSamplerPlugin.newSamplerProvider` parses that string with
-`SamplerExpression.parse`, builds the `JDBCSampler` with the constructed
-`DataSource`, and calls `SamplerExtensionPoint.bind(jdbcSampler, expression)`
-once to get the `Supplier<Sampler>` handed to `JDBCSamplerProvider`.
+`JDBCSamplerPlugin.newSamplerProvider` builds the `JDBCSampler` with the
+constructed `DataSource` and calls `SamplerExtensionPoint.bind(jdbcSampler,
+options.query)` directly — passing the raw string straight through, once, to
+get the `Supplier<Sampler>` handed to `JDBCSamplerProvider`. Neither
+`JDBCSamplerPlugin` nor `JDBCSamplerProvider` ever imports `SamplerExpression`;
+parsing is entirely `SamplerExtensionPoint.bind`'s own concern.
 
 **Neo4j.** Same shape: `Neo4jSampler.query(String cypher)` returns a `Sampler`
 whose body is today's `Neo4jSamplerProvider.newSampler()` lambda (run
@@ -333,13 +362,16 @@ which is no different from today's `newSampler()` contract.
 
 - New `roadrunner-samplers-spi` test source set (none exists yet — add a
   junit dependency to its `pom.xml`, matching sibling sampler modules):
-  - `SamplerExpressionTest`: valid parses (zero/one/multiple string args),
-    malformed input (unterminated literal, missing parens, empty method
-    name).
-  - `SamplerExtensionPointTest`: successful bind + invoke round-trip against
-    a small in-test fixture class; rejection of a method with a non-`String`
-    parameter; rejection of a method returning something other than
-    `Sampler`; arity-mismatch and unknown-method-name errors.
+  - `SamplerExpressionTest` (package `io.roadrunner.samplers.spi.internal`):
+    valid parses (zero/one/multiple string args), malformed input
+    (unterminated literal, missing parens, empty method name).
+  - `SamplerExtensionPointTest` (package `io.roadrunner.samplers.spi`):
+    exercises the public `bind(Object, String)` entry point directly (never
+    imports `SamplerExpression`) — successful bind + invoke round-trip
+    against a small in-test fixture class; rejection of a method with a
+    non-`String` parameter; rejection of a method returning something other
+    than `Sampler`; arity-mismatch and unknown-method-name errors; malformed
+    expression text.
 - Existing `JDBCSamplerProviderIT` (`roadrunner-sampler-jdbc/src/it`) and
   `Neo4jSamplerPluginIT` (`roadrunner-sampler-neo4j/src/it`) continue to
   exercise the migrated samplers end-to-end (real Postgres/Neo4j) — updated
