@@ -4,7 +4,7 @@
 
 **Goal:** Let a sampler class expose multiple named, type-checked operations (instead of one fixed `execute()`), selected and literal-bound from a small CLI expression (`query("SELECT ...")`), while every existing sampler and downstream engine code keeps working unchanged.
 
-**Architecture:** Two new types in `roadrunner-samplers-spi`: `SamplerExpression` (hand-rolled parser: `name("lit", ...)` → method name + literal args), which lives in an **unexported** internal package since it's a parsing detail no other module should ever reference directly; and `SamplerExtensionPoint` (the module's only exported entry point for this mechanism — validates a target object's `Sampler`-returning methods, parses the expression internally, binds literal args via `MethodHandles.publicLookup()`, returns a `Supplier<Sampler>`). JDBC and Neo4j samplers migrate onto this: their per-call logic moves into a new `JDBCSampler`/`Neo4jSampler` "methods class" exposing `query(String sql)`; their `SamplerProvider`s become thin wrappers delegating to the bound `Supplier<Sampler>`. AB and VM are untouched, proving the old direct-`Sampler`-implementation style still works.
+**Architecture:** Two new types in `roadrunner-samplers-spi` — `SamplerExpression` (hand-rolled parser: `name("lit", ...)` → method name + literal args) and `SamplerExtensionPoint` (validates a target object's `Sampler`-returning methods, binds literal args via `MethodHandles.publicLookup()`, returns a `Supplier<Sampler>`). JDBC and Neo4j samplers migrate onto this: their per-call logic moves into a new `JDBCSampler`/`Neo4jSampler` "methods class" exposing `query(String sql)`; their `SamplerProvider`s become thin wrappers delegating to the bound `Supplier<Sampler>`. AB and VM are untouched, proving the old direct-`Sampler`-implementation style still works.
 
 **Tech Stack:** Java 25, Maven (multi-module, JPMS), JUnit 5 + AssertJ, JMH (`roadrunner-microbenchmarks`), `java.lang.invoke.MethodHandle`s (JDK stdlib, no new dependency).
 
@@ -17,22 +17,21 @@
 - Literal CLI arguments support only `String` in this change — no numeric/`URL`/file-content literals.
 - Binding uses `MethodHandles.publicLookup()`, never `MethodHandles.lookup()` — `roadrunner-samplers-spi` must not gain a `requires` edge onto sampler modules.
 - `SamplerExtensionPoint` validation only inspects methods whose return type is exactly `Sampler`; methods with any other return type are ignored, not rejected.
-- `SamplerExpression` lives in `io.roadrunner.samplers.spi.internal`, which is **not** listed in `roadrunner-samplers-spi`'s `module-info.java` `exports` — no other module may import it. `SamplerExtensionPoint` is the only public entry point (`bind(Object, String)`); it never exposes the parsed IR type in its signature.
 - AB and VM samplers are not touched by this plan.
 - Every new/modified `.java` file gets the existing Apache-2.0 header (copy verbatim from any existing file in the same module) and must pass `./mvnw spotless:apply -pl <module>` (Palantir Java format) before committing.
 - Use `./mvnw` (wrapper) for all build/test commands below, run from the repo root.
 
 ---
 
-### Task 1: `SamplerExpression` parser (internal)
+### Task 1: `SamplerExpression` parser
 
 **Files:**
 - Modify: `roadrunner-samplers-spi/pom.xml`
-- Create: `roadrunner-samplers-spi/src/main/java/io/roadrunner/samplers/spi/internal/SamplerExpression.java`
-- Test: `roadrunner-samplers-spi/src/test/java/io/roadrunner/samplers/spi/internal/SamplerExpressionTest.java`
+- Create: `roadrunner-samplers-spi/src/main/java/io/roadrunner/samplers/spi/SamplerExpression.java`
+- Test: `roadrunner-samplers-spi/src/test/java/io/roadrunner/samplers/spi/SamplerExpressionTest.java`
 
 **Interfaces:**
-- Produces: `record SamplerExpression(String methodName, List<String> arguments)` with `static SamplerExpression parse(String input)`, throwing `IllegalArgumentException` on malformed input. Package `io.roadrunner.samplers.spi.internal` (not exported by `roadrunner-samplers-spi`'s `module-info.java` — no edit needed there, a package absent from `exports` is unexported by default). Consumed only by `SamplerExtensionPoint` (Task 2), which lives in the sibling `io.roadrunner.samplers.spi` package in the *same* module — intra-module access doesn't need `exports`.
+- Produces: `record SamplerExpression(String methodName, List<String> arguments)` with `static SamplerExpression parse(String input)`, throwing `IllegalArgumentException` on malformed input. Package `io.roadrunner.samplers.spi`. Consumed by Task 2 and by `JDBCSamplerPlugin`/`Neo4jSamplerPlugin` in Tasks 3–4.
 
 - [ ] **Step 1: Add test dependencies to `roadrunner-samplers-spi/pom.xml`**
 
@@ -60,7 +59,7 @@ No test source set exists yet in this module. Add the same test dependencies eve
 
 - [ ] **Step 2: Write the failing test**
 
-Create `roadrunner-samplers-spi/src/test/java/io/roadrunner/samplers/spi/internal/SamplerExpressionTest.java`:
+Create `roadrunner-samplers-spi/src/test/java/io/roadrunner/samplers/spi/SamplerExpressionTest.java`:
 
 ```java
 /**
@@ -78,7 +77,7 @@ Create `roadrunner-samplers-spi/src/test/java/io/roadrunner/samplers/spi/interna
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.samplers.spi.internal;
+package io.roadrunner.samplers.spi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -153,7 +152,7 @@ Expected: COMPILE ERROR — `SamplerExpression` does not exist.
 
 - [ ] **Step 4: Write the implementation**
 
-Create `roadrunner-samplers-spi/src/main/java/io/roadrunner/samplers/spi/internal/SamplerExpression.java`:
+Create `roadrunner-samplers-spi/src/main/java/io/roadrunner/samplers/spi/SamplerExpression.java`:
 
 ```java
 /**
@@ -171,7 +170,7 @@ Create `roadrunner-samplers-spi/src/main/java/io/roadrunner/samplers/spi/interna
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.samplers.spi.internal;
+package io.roadrunner.samplers.spi;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -181,9 +180,6 @@ import java.util.List;
  * literals, e.g. {@code query("SELECT * FROM table")} or {@code post("url", "body")}.
  *
  * <p>Grammar: {@code expression := name '(' ( stringLiteral (',' stringLiteral)* )? ')'}
- *
- * <p>This is a parsing detail of {@link io.roadrunner.samplers.spi.SamplerExtensionPoint} — the
- * containing package is not exported by this module, so no other module can reference this type.
  */
 public record SamplerExpression(String methodName, List<String> arguments) {
 
@@ -294,9 +290,9 @@ Expected: PASS (all `SamplerExpressionTest` cases green).
 ```bash
 ./mvnw spotless:apply -pl roadrunner-samplers-spi
 git add roadrunner-samplers-spi/pom.xml \
-        roadrunner-samplers-spi/src/main/java/io/roadrunner/samplers/spi/internal/SamplerExpression.java \
-        roadrunner-samplers-spi/src/test/java/io/roadrunner/samplers/spi/internal/SamplerExpressionTest.java
-git commit -m "Add internal SamplerExpression parser for sampler operation CLI syntax"
+        roadrunner-samplers-spi/src/main/java/io/roadrunner/samplers/spi/SamplerExpression.java \
+        roadrunner-samplers-spi/src/test/java/io/roadrunner/samplers/spi/SamplerExpressionTest.java
+git commit -m "Add SamplerExpression parser for sampler operation CLI syntax"
 ```
 
 ---
@@ -308,12 +304,12 @@ git commit -m "Add internal SamplerExpression parser for sampler operation CLI s
 - Test: `roadrunner-samplers-spi/src/test/java/io/roadrunner/samplers/spi/SamplerExtensionPointTest.java`
 
 **Interfaces:**
-- Consumes: `io.roadrunner.samplers.spi.internal.SamplerExpression` (Task 1, same module — `SamplerExtensionPoint` is the only caller anywhere). `io.roadrunner.api.samplers.Sampler` (existing, single abstract method `execute(SamplerParameters)`). `io.roadrunner.samplers.spi.PluginInitializationException` (existing, `roadrunner-samplers-spi`, constructor `(String message, Throwable cause)`).
-- Produces: `final class SamplerExtensionPoint` with `static Supplier<Sampler> bind(Object target, String expressionText)` — the module's only exported entry point for this mechanism; the parsed IR type never appears in this signature. Consumed by `JDBCSamplerProvider`/`Neo4jSamplerProvider` in Tasks 3–4.
+- Consumes: `SamplerExpression` (Task 1) — `methodName()`, `arguments()`. `io.roadrunner.api.samplers.Sampler` (existing, single abstract method `execute(SamplerParameters)`). `io.roadrunner.samplers.spi.PluginInitializationException` (existing, `roadrunner-samplers-spi`, constructor `(String message, Throwable cause)`).
+- Produces: `final class SamplerExtensionPoint` with `static Supplier<Sampler> bind(Object target, SamplerExpression expression)`. Consumed by `JDBCSamplerProvider`/`Neo4jSamplerProvider` in Tasks 3–4.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `roadrunner-samplers-spi/src/test/java/io/roadrunner/samplers/spi/SamplerExtensionPointTest.java`. Note this test never imports `SamplerExpression` — it exercises `bind` exactly the way `JDBCSamplerProvider`/`Neo4jSamplerProvider` will, with a raw string:
+Create `roadrunner-samplers-spi/src/test/java/io/roadrunner/samplers/spi/SamplerExtensionPointTest.java`:
 
 ```java
 /**
@@ -368,9 +364,10 @@ class SamplerExtensionPointTest {
 
     @Test
     void bindsSingleArgumentMethodAndPassesTheLiteral() {
+        var expression = SamplerExpression.parse("query(\"SELECT 1\")");
         var fixture = new QueryFixture();
 
-        var sampler = SamplerExtensionPoint.bind(fixture, "query(\"SELECT 1\")").get();
+        var sampler = SamplerExtensionPoint.bind(fixture, expression).get();
         var response = sampler.execute(SamplerParameters.NONE);
 
         assertThat(fixture.lastSql()).isEqualTo("SELECT 1");
@@ -379,9 +376,10 @@ class SamplerExtensionPointTest {
 
     @Test
     void bindsZeroArgumentMethodAmongMultipleCandidates() {
+        var expression = SamplerExpression.parse("noArgs()");
         var fixture = new QueryFixture();
 
-        var sampler = SamplerExtensionPoint.bind(fixture, "noArgs()").get();
+        var sampler = SamplerExtensionPoint.bind(fixture, expression).get();
         var response = sampler.execute(SamplerParameters.NONE);
 
         assertThat(response).isInstanceOf(SamplerResponse.Response.class);
@@ -389,35 +387,35 @@ class SamplerExtensionPointTest {
 
     @Test
     void eachSupplierInvocationProducesAFreshSampler() {
-        var samplerSupplier = SamplerExtensionPoint.bind(new QueryFixture(), "query(\"SELECT 1\")");
+        var expression = SamplerExpression.parse("query(\"SELECT 1\")");
+        var samplerSupplier = SamplerExtensionPoint.bind(new QueryFixture(), expression);
 
         assertThat(samplerSupplier.get()).isNotSameAs(samplerSupplier.get());
     }
 
     @Test
-    void malformedExpressionThrows() {
-        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), "query(\"unterminated"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Unterminated string literal");
-    }
-
-    @Test
     void unknownMethodNameThrows() {
-        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), "update(\"SELECT 1\")"))
+        var expression = SamplerExpression.parse("update(\"SELECT 1\")");
+
+        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), expression))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("update");
     }
 
     @Test
     void arityMismatchThrows() {
-        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), "query(\"a\", \"b\")"))
+        var expression = SamplerExpression.parse("query(\"a\", \"b\")");
+
+        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), expression))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("query");
     }
 
     @Test
     void nonStringParameterThrows() {
-        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new NonStringParameterFixture(), "withInt(\"1\")"))
+        var expression = SamplerExpression.parse("withInt(\"1\")");
+
+        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new NonStringParameterFixture(), expression))
                 .isInstanceOf(PluginInitializationException.class)
                 .hasMessageContaining("withInt");
     }
@@ -452,7 +450,6 @@ Create `roadrunner-samplers-spi/src/main/java/io/roadrunner/samplers/spi/Sampler
 package io.roadrunner.samplers.spi;
 
 import io.roadrunner.api.samplers.Sampler;
-import io.roadrunner.samplers.spi.internal.SamplerExpression;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
@@ -462,10 +459,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * Binds a sampler operation expression (e.g. {@code query("SELECT 1")}) to a matching
- * {@code Sampler}-returning method on a target object, producing a factory for the resulting
- * {@link Sampler}. This is the module's only exported entry point for the mechanism — callers
- * pass the raw expression text and never see the parsed intermediate representation.
+ * Binds a parsed {@link SamplerExpression} to a matching {@code Sampler}-returning method on a
+ * target object, producing a factory for the resulting {@link Sampler}.
  *
  * <p>Uses {@link MethodHandles#publicLookup()} rather than {@link MethodHandles#lookup()}: the
  * target class typically lives in a different Maven/JPMS module than this class, and this module
@@ -475,9 +470,7 @@ public final class SamplerExtensionPoint {
 
     private SamplerExtensionPoint() {}
 
-    public static Supplier<Sampler> bind(Object target, String expressionText) {
-        SamplerExpression expression = SamplerExpression.parse(expressionText);
-
+    public static Supplier<Sampler> bind(Object target, SamplerExpression expression) {
         List<Method> candidates = candidateMethods(target.getClass());
 
         List<Method> matching = candidates.stream()
@@ -569,7 +562,7 @@ Expected: PASS (all `SamplerExtensionPointTest` cases green).
 ./mvnw spotless:apply -pl roadrunner-samplers-spi
 git add roadrunner-samplers-spi/src/main/java/io/roadrunner/samplers/spi/SamplerExtensionPoint.java \
         roadrunner-samplers-spi/src/test/java/io/roadrunner/samplers/spi/SamplerExtensionPointTest.java
-git commit -m "Add SamplerExtensionPoint: MethodHandle-bind an expression to a Sampler factory"
+git commit -m "Add SamplerExtensionPoint: MethodHandle-bind a parsed expression to a Sampler factory"
 ```
 
 ---
@@ -579,15 +572,14 @@ git commit -m "Add SamplerExtensionPoint: MethodHandle-bind an expression to a S
 **Files:**
 - Create: `roadrunner-sampler-jdbc/src/main/java/io/roadrunner/samplers/jdbc/JDBCSampler.java`
 - Modify: `roadrunner-sampler-jdbc/src/main/java/io/roadrunner/samplers/jdbc/JDBCSamplerProvider.java`
-- Modify: `roadrunner-sampler-jdbc/src/it/java/io/roadrunner/samplers/jdbc/tests/JDBCSamplerProviderIT.java`
+- Modify: `roadrunner-sampler-jdbc/src/main/java/io/roadrunner/samplers/jdbc/JDBCSamplerPlugin.java:47` (the `new JDBCSamplerProvider(dataSource, options.query)` line)
+- Modify: `roadrunner-sampler-jdbc/src/it/java/io/roadrunner/samplers/jdbc/tests/JDBCSamplerProviderIT.java:201-209` (`defaultSamplerOptions` helper)
 
 **Interfaces:**
-- Consumes: `SamplerExtensionPoint.bind(Object, String)` (Task 2).
-- Produces: `JDBCSampler` with `Sampler query(String sql)`, `long sampleCount()`, `long totalAcquireNanos()`, `long totalQueryNanos()`, `Connection getConnection()`. `JDBCSamplerProvider` keeps its existing public surface — `newSampler()`, `sampleCount()`, `totalAcquireNanos()`, `totalQueryNanos()`, `close()`, `getConnection()`, and its existing `(DataSource, String)` constructor, whose `String` now always means a full expression (`query("...")`) rather than bare SQL.
+- Consumes: `SamplerExpression.parse(String)` (Task 1), `SamplerExtensionPoint.bind(Object, SamplerExpression)` (Task 2).
+- Produces: `JDBCSampler` with `Sampler query(String sql)`, `long sampleCount()`, `long totalAcquireNanos()`, `long totalQueryNanos()`, `Connection getConnection()`. `JDBCSamplerProvider` keeps its existing public surface — `newSampler()`, `sampleCount()`, `totalAcquireNanos()`, `totalQueryNanos()`, `close()`, `getConnection()`, plus a new `(DataSource, SamplerExpression)` constructor alongside the existing `(DataSource, String)` one.
 
-**No changes to `JDBCSamplerPlugin.java`.** Its `newSamplerProvider` method already calls `new JDBCSamplerProvider(dataSource, options.query)` — that line is untouched; only what the `String` means changes (bare SQL → expression), which is why the IT test needs updating (next steps) but the plugin code doesn't.
-
-No new module-info changes: `roadrunner-sampler-jdbc`'s `module-info.java` already has `requires io.roadrunner.samplers.spi;` and `exports io.roadrunner.samplers.jdbc;` (unconditional), which is everything `MethodHandles.publicLookup()` needs. It has no dependency on the new internal package, and doesn't need one — it only ever calls `SamplerExtensionPoint.bind(Object, String)`.
+No new module-info changes: `roadrunner-sampler-jdbc`'s `module-info.java` already has `requires io.roadrunner.samplers.spi;` and `exports io.roadrunner.samplers.jdbc;` (unconditional), which is everything `MethodHandles.publicLookup()` needs.
 
 - [ ] **Step 1: Extract `JDBCSampler` — move the existing lambda body out of `JDBCSamplerProvider`**
 
@@ -766,6 +758,7 @@ package io.roadrunner.samplers.jdbc;
 
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
+import io.roadrunner.samplers.spi.SamplerExpression;
 import io.roadrunner.samplers.spi.SamplerExtensionPoint;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -777,9 +770,14 @@ public class JDBCSamplerProvider implements SamplerProvider {
     private final JDBCSampler jdbcSampler;
     private final Supplier<Sampler> samplerSupplier;
 
-    public JDBCSamplerProvider(DataSource dataSource, String expressionText) {
+    public JDBCSamplerProvider(DataSource dataSource, String sql) {
         this.jdbcSampler = new JDBCSampler(dataSource);
-        this.samplerSupplier = SamplerExtensionPoint.bind(jdbcSampler, expressionText);
+        this.samplerSupplier = () -> jdbcSampler.query(sql);
+    }
+
+    public JDBCSamplerProvider(DataSource dataSource, SamplerExpression expression) {
+        this.jdbcSampler = new JDBCSampler(dataSource);
+        this.samplerSupplier = SamplerExtensionPoint.bind(jdbcSampler, expression);
     }
 
     @Override
@@ -810,13 +808,33 @@ public class JDBCSamplerProvider implements SamplerProvider {
 }
 ```
 
-The constructor's `String` parameter now always means a full expression (e.g. `query("SELECT 1")`), never bare SQL — every caller, including the direct-construction IT test (next step), passes an expression.
+The `(DataSource, String)` constructor is unchanged from the caller's point of view (used directly by `JDBCSamplerProviderIT.errorOnConnectionFailure`, which stays untouched) — it just builds a `JDBCSampler` internally now instead of hand-writing the lambda inline.
 
-- [ ] **Step 3: Update the JDBC integration test to use the new expression syntax**
+- [ ] **Step 3: Wire the CLI-parsed expression through `JDBCSamplerPlugin`**
 
-In `roadrunner-sampler-jdbc/src/it/java/io/roadrunner/samplers/jdbc/tests/JDBCSamplerProviderIT.java`:
+In `roadrunner-sampler-jdbc/src/main/java/io/roadrunner/samplers/jdbc/JDBCSamplerPlugin.java`, add the import:
 
-First, change the `defaultSamplerOptions` helper so every test that goes through `JDBCSamplerOptions`/`JDBCSamplerPlugin` keeps passing bare SQL to the helper, which now wraps it:
+```java
+import io.roadrunner.samplers.spi.SamplerExpression;
+```
+
+And change this line inside `newSamplerProvider`:
+
+```java
+provider = new JDBCSamplerProvider(dataSource, options.query);
+```
+
+to:
+
+```java
+provider = new JDBCSamplerProvider(dataSource, SamplerExpression.parse(options.query));
+```
+
+`JDBCSamplerOptions.query` (the existing `@Parameters public String query` positional) now holds a full expression string, e.g. `query("SELECT * FROM table WHERE id = ?")`, instead of a bare SQL string. No change to `JDBCSamplerOptions.java` itself — only the meaning of the string it captures changes, which is why the IT test's helper needs to wrap the SQL in `query(...)` (next step).
+
+- [ ] **Step 4: Update the JDBC integration test to use the new expression syntax**
+
+In `roadrunner-sampler-jdbc/src/it/java/io/roadrunner/samplers/jdbc/tests/JDBCSamplerProviderIT.java`, change the `defaultSamplerOptions` helper:
 
 ```java
 private static JDBCSamplerOptions defaultSamplerOptions(JDBCSamplerPlugin plugin, String url, String query) {
@@ -830,41 +848,20 @@ private static JDBCSamplerOptions defaultSamplerOptions(JDBCSamplerPlugin plugin
 }
 ```
 
-Second, `errorOnConnectionFailure` constructs a `JDBCSamplerProvider` directly, bypassing options/plugin entirely — since the constructor's `String` now always means an expression, update the literal it passes:
+(Only the `options.query = query;` line changes to `options.query = "query(\"%s\")".formatted(query);` — every caller of this helper keeps passing bare SQL and is unaffected.) `errorOnConnectionFailure`, which constructs `new JDBCSamplerProvider(failingDataSource, "SELECT 1")` directly (bypassing options/plugin entirely), needs no change — it already uses the untouched `(DataSource, String)` constructor.
 
-```java
-@Test
-void errorOnConnectionFailure() {
-    var failingDataSource = new ExceptionThrowingDataSource();
-    try (var provider = new JDBCSamplerProvider(failingDataSource, "query(\"SELECT 1\")");
-         var sampler = provider.newSampler()) {
-        var response = sampler.execute(SamplerParameters.NONE);
-        assertThat(response)
-                .asInstanceOf(type(SamplerResponse.Error.class))
-                .satisfies(r -> {
-                    assertThat(r.timestamp()).isGreaterThan(0);
-                    assertThat(r.stopTime()).isGreaterThan(r.timestamp());
-                    assertThat(r.message()).isEqualTo("simulated connection failure");
-                });
-        assertThat(provider.sampleCount()).isEqualTo(1);
-        assertThat(provider.totalAcquireNanos()).isPositive();
-    }
-}
-```
-
-(Only the string literal `"SELECT 1"` → `"query(\"SELECT 1\")"` changes; the rest of the test is identical. `provider.sampleCount()`/`totalAcquireNanos()` still work because `JDBCSample.query("SELECT 1")`'s returned `Sampler` still records timings on the same `JDBCSampler` instance whether it's constructed by hand or through the extension point.)
-
-- [ ] **Step 4: Run unit and integration tests to verify they pass**
+- [ ] **Step 5: Run unit and integration tests to verify they pass**
 
 Run: `./mvnw -pl roadrunner-sampler-jdbc -am verify`
 Expected: PASS — all `JDBCSamplerProviderIT` cases green (uses the hsqldb driver copied into `target/jdbc-drivers` by the `pre-integration-test` phase already configured in the module's `pom.xml`).
 
-- [ ] **Step 5: Format and commit**
+- [ ] **Step 6: Format and commit**
 
 ```bash
 ./mvnw spotless:apply -pl roadrunner-sampler-jdbc
 git add roadrunner-sampler-jdbc/src/main/java/io/roadrunner/samplers/jdbc/JDBCSampler.java \
         roadrunner-sampler-jdbc/src/main/java/io/roadrunner/samplers/jdbc/JDBCSamplerProvider.java \
+        roadrunner-sampler-jdbc/src/main/java/io/roadrunner/samplers/jdbc/JDBCSamplerPlugin.java \
         roadrunner-sampler-jdbc/src/it/java/io/roadrunner/samplers/jdbc/tests/JDBCSamplerProviderIT.java
 git commit -m "Migrate JDBC sampler onto the SamplerExtensionPoint mechanism"
 ```
@@ -876,15 +873,14 @@ git commit -m "Migrate JDBC sampler onto the SamplerExtensionPoint mechanism"
 **Files:**
 - Create: `roadrunner-sampler-neo4j/src/main/java/io/roadrunner/samplers/neo4j/Neo4jSampler.java`
 - Modify: `roadrunner-sampler-neo4j/src/main/java/io/roadrunner/samplers/neo4j/Neo4jSamplerProvider.java`
+- Modify: `roadrunner-sampler-neo4j/src/main/java/io/roadrunner/samplers/neo4j/Neo4jSamplerPlugin.java:34-38`
 - Modify: `roadrunner-sampler-neo4j/src/it/java/io/roadrunner/samplers/neo4j/Neo4jSamplerPluginIT.java`
 
 **Interfaces:**
-- Consumes: `SamplerExtensionPoint.bind(Object, String)` (Task 2).
-- Produces: `Neo4jSampler` with `Sampler query(String cypher)` and `void close()`. `Neo4jSamplerProvider` keeps `newSampler()`/`close()` and its existing `(Driver, String)` constructor, whose `String` now always means a full expression rather than bare Cypher.
+- Consumes: `SamplerExpression.parse(String)` (Task 1), `SamplerExtensionPoint.bind(Object, SamplerExpression)` (Task 2).
+- Produces: `Neo4jSampler` with `Sampler query(String cypher)` and `void close()`. `Neo4jSamplerProvider` keeps `newSampler()`/`close()`, plus a new `(Driver, SamplerExpression)` constructor alongside the existing `(Driver, String)` one.
 
-**No changes to `Neo4jSamplerPlugin.java`.** Its `newSamplerProvider` method already calls `new Neo4jSamplerProvider(driver, options.query)` — untouched; only what the string means changes.
-
-No `module-info.java` changes needed (same reasoning as Task 3).
+No `module-info.java` changes needed (same reasoning as Task 3: `requires io.roadrunner.samplers.spi;` and unconditional `exports io.roadrunner.samplers.neo4j;` already present).
 
 - [ ] **Step 1: Extract `Neo4jSampler`**
 
@@ -972,6 +968,7 @@ package io.roadrunner.samplers.neo4j;
 
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
+import io.roadrunner.samplers.spi.SamplerExpression;
 import io.roadrunner.samplers.spi.SamplerExtensionPoint;
 import java.util.function.Supplier;
 import org.neo4j.driver.Driver;
@@ -981,9 +978,14 @@ public class Neo4jSamplerProvider implements SamplerProvider {
     private final Neo4jSampler neo4jSampler;
     private final Supplier<Sampler> samplerSupplier;
 
-    public Neo4jSamplerProvider(Driver driver, String expressionText) {
+    public Neo4jSamplerProvider(Driver driver, String cypher) {
         this.neo4jSampler = new Neo4jSampler(driver);
-        this.samplerSupplier = SamplerExtensionPoint.bind(neo4jSampler, expressionText);
+        this.samplerSupplier = () -> neo4jSampler.query(cypher);
+    }
+
+    public Neo4jSamplerProvider(Driver driver, SamplerExpression expression) {
+        this.neo4jSampler = new Neo4jSampler(driver);
+        this.samplerSupplier = SamplerExtensionPoint.bind(neo4jSampler, expression);
     }
 
     @Override
@@ -998,7 +1000,26 @@ public class Neo4jSamplerProvider implements SamplerProvider {
 }
 ```
 
-- [ ] **Step 3: Update the Neo4j integration test to use the new expression syntax**
+- [ ] **Step 3: Wire the CLI-parsed expression through `Neo4jSamplerPlugin`**
+
+In `roadrunner-sampler-neo4j/src/main/java/io/roadrunner/samplers/neo4j/Neo4jSamplerPlugin.java`, add the import:
+
+```java
+import io.roadrunner.samplers.spi.SamplerExpression;
+```
+
+And change `newSamplerProvider`:
+
+```java
+@Override
+public Neo4jSamplerProvider newSamplerProvider(Neo4jSamplerOptions options) {
+    var driver = GraphDatabase.driver(options.uri, AuthTokens.basic(options.username, options.password));
+
+    return new Neo4jSamplerProvider(driver, SamplerExpression.parse(options.query));
+}
+```
+
+- [ ] **Step 4: Update the Neo4j integration test to use the new expression syntax**
 
 In `roadrunner-sampler-neo4j/src/it/java/io/roadrunner/samplers/neo4j/Neo4jSamplerPluginIT.java`, update all three tests. `invalidQuery` previously left `options.query` unset (`null`) to exercise Neo4j's own "query text should not be null" validation; with the new syntax `options.query` is now always a parseable expression (a null/missing value would fail in `SamplerExpression.parse` before ever reaching Neo4j, with a different, clearer message), so this test now exercises an *empty* cypher literal instead, and asserts only that an error surfaces (not the exact driver wording, which may differ):
 
@@ -1060,17 +1081,18 @@ void validParameterizedQuery() throws Exception {
 }
 ```
 
-- [ ] **Step 4: Run integration tests to verify they pass**
+- [ ] **Step 5: Run integration tests to verify they pass**
 
 Run: `./mvnw -pl roadrunner-sampler-neo4j -am verify`
 Expected: PASS — all `Neo4jSamplerPluginIT` cases green (requires Docker for the Neo4j Testcontainers container).
 
-- [ ] **Step 5: Format and commit**
+- [ ] **Step 6: Format and commit**
 
 ```bash
 ./mvnw spotless:apply -pl roadrunner-sampler-neo4j
 git add roadrunner-sampler-neo4j/src/main/java/io/roadrunner/samplers/neo4j/Neo4jSampler.java \
         roadrunner-sampler-neo4j/src/main/java/io/roadrunner/samplers/neo4j/Neo4jSamplerProvider.java \
+        roadrunner-sampler-neo4j/src/main/java/io/roadrunner/samplers/neo4j/Neo4jSamplerPlugin.java \
         roadrunner-sampler-neo4j/src/it/java/io/roadrunner/samplers/neo4j/Neo4jSamplerPluginIT.java
 git commit -m "Migrate Neo4j sampler onto the SamplerExtensionPoint mechanism"
 ```
