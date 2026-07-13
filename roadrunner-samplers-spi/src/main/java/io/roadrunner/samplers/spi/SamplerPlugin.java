@@ -16,6 +16,7 @@
 package io.roadrunner.samplers.spi;
 
 import io.roadrunner.api.samplers.SamplerProvider;
+import java.util.List;
 
 public interface SamplerPlugin<T extends SamplerProvider, O extends SamplerOptions<T>> extends AutoCloseable {
     String name();
@@ -23,6 +24,19 @@ public interface SamplerPlugin<T extends SamplerProvider, O extends SamplerOptio
     T newSamplerProvider(O options);
 
     O options();
+
+    /**
+     * Returns descriptors for each extension point this sampler exposes.
+     *
+     * <p>Extension points are operations that can be expressed as CLI expressions such as
+     * {@code query("SELECT 1")}. Implementations should return one descriptor per available
+     * operation so that CLI tooling can include them in usage help.
+     *
+     * <p>Returns an empty list by default (for samplers that do not use extension points).
+     */
+    default List<SamplerExtensionPointDescriptor> extensionPoints() {
+        return List.of();
+    }
 
     default void close() {}
 }
