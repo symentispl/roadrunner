@@ -50,7 +50,7 @@ public class MySQLSamplerProviderIT {
             options.url = "jdbc:mysql://%s:%d/%s".formatted(mysql.getHost(), mysql.getMappedPort(3306), DB_NAME);
             options.username = USERNAME;
             options.password = PASSWORD;
-            options.query = "SELECT 1";
+            options.query = "query(\"SELECT 1\")";
             options.driverPath = Paths.get(DRIVER_PATH);
             try (var provider = plugin.newSamplerProvider(options);
                     var sampler = provider.newSampler()) {

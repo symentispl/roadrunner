@@ -15,129 +15,39 @@
  */
 package io.roadrunner.samplers.jdbc;
 
-import static java.util.Map.entry;
-import static java.util.Objects.requireNonNull;
-
-import io.roadrunner.api.events.SamplerResponse;
-import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
-import java.math.BigDecimal;
-import java.math.BigInteger;
+import io.roadrunner.samplers.spi.SamplerExtensionPoint;
 import java.sql.Connection;
-import java.sql.JDBCType;
 import java.sql.SQLException;
-import java.sql.SQLType;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
-import java.util.Map;
-import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Supplier;
 import javax.sql.DataSource;
 
 public class JDBCSamplerProvider implements SamplerProvider {
 
-    private final DataSource dataSource;
-    private final String query;
-    private final LongAdder sampleCount = new LongAdder();
-    private final LongAdder acquireNanos = new LongAdder();
-    private final LongAdder queryNanos = new LongAdder();
+    private final JDBCSampler jdbcSampler;
+    private final Supplier<Sampler> samplerSupplier;
 
-    public JDBCSamplerProvider(DataSource dataSource, String query) {
-        this.dataSource = dataSource;
-        this.query = query;
+    public JDBCSamplerProvider(DataSource dataSource, String expressionText) {
+        this.jdbcSampler = new JDBCSampler(dataSource);
+        this.samplerSupplier = SamplerExtensionPoint.bind(jdbcSampler, expressionText);
     }
 
     @Override
     public Sampler newSampler() {
-        return (SamplerParameters parameters) -> {
-            var tStarted = System.nanoTime();
-            try (var cnn = dataSource.getConnection();
-                    var stmt = cnn.prepareStatement(query)) {
-                var tAcquired = System.nanoTime();
-                try {
-                    long rowCount;
-                    parameters.forEach((index, type, value) -> stmt.setObject(index + 1, value, sqlTypeOf(type)));
-                    boolean hasResultSet = stmt.execute();
-                    if (hasResultSet) {
-                        try (var rs = stmt.getResultSet()) {
-                            rowCount = 0;
-                            while (rs.next()) {
-                                rowCount++;
-                            }
-                        }
-                    } else {
-                        rowCount = stmt.getUpdateCount();
-                    }
-                    var tDone = System.nanoTime();
-                    recordTimestamps(tStarted, tAcquired, tDone);
-                    return SamplerResponse.response(tStarted, tDone, rowCount);
-                } catch (Exception e) {
-                    var tDone = System.nanoTime();
-                    recordTimestamps(tStarted, tAcquired, tDone);
-                    return SamplerResponse.error(tStarted, tDone, e.getMessage());
-                }
-            } catch (SQLException e) {
-                var tDone = System.nanoTime();
-                // Connection acquisition failed: entire window is acquire time.
-                recordTimestamps(tStarted, tDone, tDone);
-                return SamplerResponse.error(tStarted, tDone, e.getMessage());
-            }
-        };
-    }
-
-    /**
-     * Java to SQL type mapping per the JDBC 4.3 spec (table B-4 / appendix B). Only the exact
-     * runtime classes a {@link io.roadrunner.api.parameters.ParameterSource} can produce are
-     * listed — subtypes (e.g. {@code java.util.Date}, {@code Number}) and primitive class
-     * literals (unreachable since values arrive via {@link Object#getClass()}) are out of scope.
-     */
-    private static final Map<Class<?>, SQLType> SQL_TYPE_BY_JAVA_TYPE = Map.ofEntries(
-            entry(String.class, JDBCType.VARCHAR),
-            entry(Character.class, JDBCType.CHAR),
-            entry(Boolean.class, JDBCType.BOOLEAN),
-            entry(Byte.class, JDBCType.TINYINT),
-            entry(Short.class, JDBCType.SMALLINT),
-            entry(Integer.class, JDBCType.INTEGER),
-            entry(Long.class, JDBCType.BIGINT),
-            entry(Float.class, JDBCType.REAL),
-            entry(Double.class, JDBCType.DOUBLE),
-            entry(BigDecimal.class, JDBCType.DECIMAL),
-            entry(BigInteger.class, JDBCType.NUMERIC),
-            entry(byte[].class, JDBCType.VARBINARY),
-            entry(java.sql.Date.class, JDBCType.DATE),
-            entry(java.sql.Time.class, JDBCType.TIME),
-            entry(java.sql.Timestamp.class, JDBCType.TIMESTAMP),
-            entry(LocalDate.class, JDBCType.DATE),
-            entry(LocalTime.class, JDBCType.TIME),
-            entry(LocalDateTime.class, JDBCType.TIMESTAMP),
-            entry(OffsetTime.class, JDBCType.TIME_WITH_TIMEZONE),
-            entry(OffsetDateTime.class, JDBCType.TIMESTAMP_WITH_TIMEZONE));
-
-    private static SQLType sqlTypeOf(Class<?> type) {
-        return requireNonNull(
-                SQL_TYPE_BY_JAVA_TYPE.get(type),
-                () -> "unsupported Java type for JDBC parameter binding: " + type.getName());
-    }
-
-    private void recordTimestamps(long tStarted, long tAcquired, long tDone) {
-        sampleCount.increment();
-        acquireNanos.add(tAcquired - tStarted);
-        queryNanos.add(tDone - tAcquired);
+        return samplerSupplier.get();
     }
 
     public long sampleCount() {
-        return sampleCount.sum();
+        return jdbcSampler.sampleCount();
     }
 
     public long totalAcquireNanos() {
-        return acquireNanos.sum();
+        return jdbcSampler.totalAcquireNanos();
     }
 
     public long totalQueryNanos() {
-        return queryNanos.sum();
+        return jdbcSampler.totalQueryNanos();
     }
 
     @Override
@@ -146,6 +56,6 @@ public class JDBCSamplerProvider implements SamplerProvider {
     }
 
     public Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
+        return jdbcSampler.getConnection();
     }
 }
