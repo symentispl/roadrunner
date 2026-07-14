@@ -56,57 +56,55 @@ public class Main {
                 return;
             }
 
-            if (subcommand != null && subcommand.commandSpec().userObject() instanceof RunCommand runCommand) {
-                var samplerSubCmd = subcommand.subcommand();
-                if (samplerSubCmd != null && samplerSubCmd.isUsageHelpRequested()) {
-                    printSamplerUsage(
-                            subcommand.commandSpec().commandLine(),
-                            samplerSubCmd.commandSpec().commandLine());
-                    return;
-                }
+            var samplerSubCmd = subcommand != null ? subcommand.subcommand() : null;
+            if (samplerSubCmd != null && samplerSubCmd.isUsageHelpRequested()) {
+                printSamplerUsage(
+                        subcommand.commandSpec().commandLine(),
+                        samplerSubCmd.commandSpec().commandLine());
+                return;
+            }
 
-                var errors = collectErrors(parseResult);
-                if (!errors.isEmpty()) {
-                    throw errors.get(0);
-                }
+            var errors = collectErrors(parseResult);
+            if (!errors.isEmpty()) {
+                throw errors.getFirst();
+            }
 
-                if (samplerSubCmd != null
-                        && samplerSubCmd.commandSpec().userObject() instanceof SamplerOptions samplerOptions) {
-                    try (var samplerProvider = samplerOptions.samplerProvider()) {
-                        runCommand.run(samplerProvider);
-                    }
-                }
-            } else {
-                var errors = collectErrors(parseResult);
-                if (!errors.isEmpty()) {
-                    throw errors.get(0);
+            if (subcommand != null
+                    && subcommand.commandSpec().userObject() instanceof RunCommand runCommand
+                    && samplerSubCmd != null
+                    && samplerSubCmd.commandSpec().userObject() instanceof SamplerOptions samplerOptions) {
+                try (var samplerProvider = samplerOptions.samplerProvider()) {
+                    runCommand.run(samplerProvider);
                 }
             }
         }
     }
 
-    /**
-     * Prints combined usage help for a sampler subcommand: the sampler's own synopsis and
-     * description, followed by the {@code run} command's options (concurrency/rate, report, etc.),
-     * the sampler's own options, and its expression syntax, so everything needed to invoke the
-     * sampler is visible in one place instead of split across {@code run --help} and
-     * {@code run <sampler> --help}.
-     */
+    // combines run + sampler + expression-syntax help into one printout
     private static void printSamplerUsage(CommandLine runCommandLine, CommandLine samplerCommandLine) {
         var runHelp = runCommandLine.getHelp();
         var samplerHelp = samplerCommandLine.getHelp();
         var synopsisHeading = samplerHelp.commandSpec().usageMessage().synopsisHeading();
 
-        var sb = new StringBuilder();
-        sb.append(synopsisHeading).append(samplerHelp.synopsis(synopsisHeading.length()));
-        sb.append(samplerHelp.description());
-        sb.append("Run command options:%n".formatted());
-        sb.append(runHelp.optionList());
-        sb.append("Sampler options:%n".formatted());
-        sb.append(samplerHelp.parameterList());
-        sb.append(samplerHelp.optionList());
-        sb.append(samplerHelp.footer());
-        System.out.print(sb);
+        System.out.print(synopsisHeading + samplerHelp.synopsis(synopsisHeading.length()));
+        System.out.print(samplerHelp.description());
+        System.out.printf("Run command options:%n");
+        System.out.print(runHelp.optionList());
+        System.out.printf("Sampler options:%n");
+        System.out.print(samplerHelp.parameterList());
+        System.out.print(optionListExcludingHelpOptions(samplerHelp));
+        System.out.print(samplerHelp.footer());
+    }
+
+    // -h/-V are already shown under "Run command options:"; skip them here to avoid listing them twice.
+    private static String optionListExcludingHelpOptions(CommandLine.Help help) {
+        var groupedOptions = help.optionSectionGroups().stream()
+                .flatMap(g -> g.allOptionsNested().stream())
+                .toList();
+        var options = help.commandSpec().options().stream()
+                .filter(o -> !groupedOptions.contains(o) && !o.usageHelp() && !o.versionHelp())
+                .toList();
+        return help.optionListExcludingGroups(options) + help.optionListGroupSections();
     }
 
     private static void enableCollectErrors(CommandLine commandLine) {

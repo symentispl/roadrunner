@@ -23,10 +23,10 @@ import picocli.CommandLine.Parameters;
 
 @Command(description = "Neo4j sampler")
 public class Neo4jSamplerOptions implements SamplerOptions<Neo4jSamplerProvider> {
-    @Parameters(paramLabel = "query", description = "Sampler operation expression, e.g. query(\"RETURN 1\")")
+    @Parameters(paramLabel = "query", description = "The operation to run on each request, e.g. query(\"RETURN 1\")")
     public String query;
 
-    @Option(names = "--uri", description = "Neo4j database uri", required = true)
+    @Option(names = "--uri", description = "Neo4j connection URI (e.g. neo4j://localhost:7687)", required = true)
     public URI uri;
 
     @Option(names = "--username", description = "Neo4j database username", required = true)

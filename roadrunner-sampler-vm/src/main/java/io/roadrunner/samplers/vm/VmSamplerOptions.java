@@ -19,11 +19,11 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 @Command(
-        description = "In-VM sampler, used as baseline to calculate roadrunner overhead",
+        description = "Runs in-process with no real work per request; use it to measure roadrunner's own overhead",
         mixinStandardHelpOptions = true)
 public class VmSamplerOptions implements io.roadrunner.samplers.spi.SamplerOptions<VmSamplerProvider> {
 
-    @Option(names = "--sleep-time", description = "sleep time in ms", required = true)
+    @Option(names = "--sleep-time", description = "Time to wait per request, in milliseconds", required = true)
     long sleepTime;
 
     private final VmSamplerPlugin vmSamplerPlugin;

@@ -48,30 +48,24 @@ public class AbSamplerOptions implements SamplerOptions<AbSamplerProvider> {
     @Option(names = "-T", description = "Content-type header for POST/PUT data", defaultValue = "text/plain")
     public String contentType = "text/plain";
 
-    @Option(
-            names = "-s",
-            description = "Seconds to max. wait for each response. Default is 30 seconds",
-            defaultValue = "30")
+    @Option(names = "-s", description = "Maximum seconds to wait for each response (default: 30)", defaultValue = "30")
     public int timeout = 30;
 
     @Option(names = "-i", description = "Use HEAD instead of GET", defaultValue = "false")
     public boolean useHEAD = false;
 
-    @Option(
-            names = "-H",
-            description =
-                    "Add Arbitrary header line, eg. 'Accept-Encoding: gzip'. Inserted after all normal header lines. (repeatable)")
+    @Option(names = "-H", description = "Add a custom HTTP header, e.g. 'Accept-Encoding: gzip' (can be repeated)")
     public String[] headers;
 
     @Option(
             names = "-X",
-            description = "Proxy server and port number to use",
+            description = "Send requests through this proxy server, in host:port format",
             converter = InetSocketAddressConverter.class)
     public InetSocketAddress proxyServer;
 
     @Option(
             names = "-B",
-            description = "Address to bind to when making outgoing connections",
+            description = "Local network address to send requests from (rarely needed)",
             converter = InetAddressConverter.class)
     public InetAddress localAddress;
 
