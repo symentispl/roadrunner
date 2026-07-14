@@ -30,12 +30,12 @@ import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
-@Command(description = "run roadrunner load generator")
+@Command(description = "Run a load test")
 class RunCommand {
 
     private static final Logger LOG = LoggerFactory.getLogger(RunCommand.class);
 
-    @ArgGroup(multiplicity = "1", heading = "Load model options:%n")
+    @ArgGroup(multiplicity = "1")
     LoadModelArgs loadModel;
 
     static class LoadModelArgs {
@@ -66,28 +66,32 @@ class RunCommand {
         Duration duration;
     }
 
-    @Option(names = "-s", description = "Loadtests results output directory")
+    @Option(names = "-s", description = "Directory to write the load test results to")
     Path outputDir;
 
-    @Option(names = "-r", description = "Report format type", converter = PrefixedMap.Converter.class)
+    @Option(
+            names = "-r",
+            description = "Report format to generate: console (default) or html",
+            converter = PrefixedMap.Converter.class)
     PrefixedMap report = new PrefixedMap("console", Map.of());
 
     @Option(
             names = "--pause-detectors",
             description =
-                    "Comma-separated list of pause detectors to record into the corrected-latency histogram: vt, jvm, or vt,jvm. Empty / unset disables pause-corrected recording.",
+                    "Correct latency measurements for pauses that would otherwise distort them: vt (virtual-thread pauses), jvm (JVM garbage-collection pauses), or vt,jvm for both. Leave unset to record raw latencies only.",
             converter = PauseDetectorKindConverter.class)
     EnumSet<PauseDetectorKind> pauseDetectors = EnumSet.noneOf(PauseDetectorKind.class);
 
     @Option(
             names = "--raw-latency",
             description =
-                    "Reports use the per-event CSV histogram even when a pause-corrected latency.hgrm is present.")
+                    "Always build reports from raw per-request latencies, even when pause-corrected data is available.")
     boolean rawLatency;
 
     @Option(
             names = "--parameters-source",
-            description = "Parameter source in 'type:key=value' format (e.g. csv:file=data.csv)",
+            description =
+                    "Where to read per-request parameters from, in 'type:key=value' format (e.g. csv:file=data.csv)",
             converter = PrefixedMap.Converter.class)
     PrefixedMap parametersSource;
 
