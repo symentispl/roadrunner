@@ -49,7 +49,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.12</version>
+            <version>42.7.13</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -108,7 +108,7 @@
                                 <artifactItem>
                                     <groupId>org.postgresql</groupId>
                                     <artifactId>postgresql</artifactId>
-                                    <version>42.7.12</version>
+                                    <version>42.7.13</version>
                                     <outputDirectory>${project.build.directory}/jdbc-drivers</outputDirectory>
                                     <destFileName>postgresql.jar</destFileName>
                                 </artifactItem>
