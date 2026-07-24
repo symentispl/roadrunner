@@ -1,0 +1,141 @@
+= Writing your own sampler
+
+Every sampler ultimately produces a `io.roadrunner.api.samplers.Sampler` — a functional
+interface whose `execute(SamplerParameters)` method runs one request per virtual-thread
+iteration and returns a `SamplerResponse`:
+
+[source,java]
+----
+public interface Sampler extends AutoCloseable {
+    SamplerResponse<?> execute(SamplerParameters parameters);
+
+    default void close() {}
+}
+----
+
+Roadrunner obtains these `Sampler` instances from a
+`io.roadrunner.api.samplers.SamplerProvider` (in the `roadrunner-api` module), which is
+discovered through the JDK `ServiceLoader`. There are two ways to wire a provider to your
+sampler logic, and you choose between them based on where the *operation* comes from:
+
+* **Implement `SamplerProvider` directly** — when the sampler runs a single, fixed
+operation whose configuration arrives entirely through CLI options.
+* **Bind a sampler operation expression via `SamplerExtensionPoint`** — when the operation
+(and its literal arguments) is selected at runtime from a user-supplied
+`query("...")`-style expression, especially if you want to expose several named operations.
+
+Both approaches register the same way and can live side by side. Pick whichever matches
+how users should describe the work the sampler performs.
+
+[#mechanism-provider]
+== Mechanism 1: implement `SamplerProvider` directly
+
+Implement `io.roadrunner.api.samplers.SamplerProvider` and return a fresh `Sampler` from
+`newSampler()`. This is the most direct approach: the provider holds whatever it needs
+(connection pools, executors, configuration parsed from CLI options) and hands out samplers.
+
+[source,java]
+----
+public class VmSamplerProvider implements SamplerProvider {
+
+    private final ExecutorService executorService;
+    private final long sleepTime;
+
+    public VmSamplerProvider(ExecutorService executorService, long sleepTime) {
+        this.executorService = executorService;
+        this.sleepTime = sleepTime;
+    }
+
+    @Override
+    public Sampler newSampler() {
+        return parameters -> { /* run one request, return a SamplerResponse */ };
+    }
+
+    @Override
+    public void close() {
+        executorService.close();
+    }
+}
+----
+
+Use this mechanism when the sampler performs one well-defined action and everything it
+needs is expressed through CLI options (e.g. `vm --sleep-time 10`, or `ab <url>`).
+
+See `VmSamplerProvider` and `AbSamplerProvider` in the source for reference implementations.
+
+[#mechanism-extension-point]
+== Mechanism 2: bind a sampler operation expression via `SamplerExtensionPoint`
+
+When the user selects *which* operation to run — and passes its literal arguments — through
+a xref:configuration.adoc#sampler-expressions[sampler operation expression] such as
+`query("SELECT 1")`, use `io.roadrunner.samplers.spi.SamplerExtensionPoint` from the
+`roadrunner-samplers-spi` module. This keeps the mapping from expression text to Java code
+declarative: you write ordinary `Sampler`-returning methods, and the extension point binds
+the expression to the matching one.
+
+Step 1 — write a plain "extension point" class whose public methods each return a `Sampler`
+and take only `String` parameters. Each method name becomes an operation callable from the
+CLI, and its `String` parameters receive the double-quoted literals from the expression:
+
+[source,java]
+----
+public class JDBCSampler {
+
+    private final DataSource dataSource;
+
+    public JDBCSampler(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    // Bound from the expression query("SELECT ...")
+    public Sampler query(String sql) {
+        return parameters -> { /* execute sql, return a SamplerResponse */ };
+    }
+}
+----
+
+Step 2 — in your `SamplerProvider`, call `SamplerExtensionPoint.bind(target, expressionText)`.
+It parses the expression, finds the public `Sampler`-returning method whose name and arity
+match, and returns a `Supplier<Sampler>` bound to that method with the literal arguments
+already applied. Delegate `newSampler()` to the supplier:
+
+[source,java]
+----
+public class JDBCSamplerProvider implements SamplerProvider {
+
+    private final Supplier<Sampler> samplerSupplier;
+
+    public JDBCSamplerProvider(DataSource dataSource, String expressionText) {
+        var jdbcSampler = new JDBCSampler(dataSource);
+        this.samplerSupplier = SamplerExtensionPoint.bind(jdbcSampler, expressionText);
+    }
+
+    @Override
+    public Sampler newSampler() {
+        return samplerSupplier.get();
+    }
+}
+----
+
+`bind` uses `MethodHandles.publicLookup()`, so the extension-point methods must be `public`
+and live on a `public` class. If no method matches the expression's name and argument count,
+`bind` throws `IllegalArgumentException` listing the available operations; a non-`String`
+parameter on a candidate method fails fast with a `PluginInitializationException`.
+
+Because operations are just named methods, exposing more than one is a matter of adding more
+methods — a future sampler could offer both `read("...")` and `write("...")` on the same
+class, and the expression grammar selects between them. See `JDBCSampler` /
+`JDBCSamplerProvider` and `Neo4jSampler` / `Neo4jSamplerProvider` in the source for reference
+implementations, and xref:configuration.adoc#sampler-expressions[sampler operation expressions]
+for the shared expression syntax.
+
+== Registering the provider
+
+However you build the provider, expose it with CLI options and register it for discovery:
+
+* Annotate it (or its plugin entry point) with `@Command` (picocli) to declare CLI options.
+* Register the implementation via `META-INF/services/io.roadrunner.api.samplers.SamplerProvider`
+or a `module-info.java` `provides io.roadrunner.api.samplers.SamplerProvider with ...` directive.
+
+Bundle plugin samplers as a JAR and drop it under `~/.roadrunner/plugins/protocols/`, as
+described for the xref:samplers/jdbc.adoc[JDBC] and xref:samplers/neo4j.adoc[Neo4j] samplers.
