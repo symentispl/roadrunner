@@ -247,6 +247,12 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
+                    <!-- @{argLine} carries the JaCoCo integration agent set by prepare-agent-integration
+                         (under the coverage profile) so integration-test coverage is recorded to
+                         jacoco-it.exec; empty otherwise. -->
+                    <configuration>
+                        <argLine>@{argLine}</argLine>
+                    </configuration>
                     <executions>
                         <execution>
                             <goals>

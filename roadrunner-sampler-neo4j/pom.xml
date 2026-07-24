@@ -53,8 +53,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
+                <!-- @{argLine} keeps the JaCoCo integration agent (from prepare-agent-integration)
+                     attached so integration-test coverage is recorded to jacoco-it.exec. -->
                 <configuration>
-                    <argLine>--add-reads org.neo4j.driver=jdk.unsupported</argLine>
+                    <argLine>@{argLine} --add-reads org.neo4j.driver=jdk.unsupported</argLine>
                 </configuration>
             </plugin>
         </plugins>

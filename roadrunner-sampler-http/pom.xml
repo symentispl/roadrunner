@@ -61,8 +61,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
+                <!-- @{argLine} keeps the JaCoCo integration agent (from prepare-agent-integration)
+                     attached; the add-modules/add-reads grant the tests access to jdk.httpserver. -->
                 <configuration>
-                    <argLine>--add-modules jdk.httpserver --add-reads io.roadrunner.samplers.http=jdk.httpserver</argLine>
+                    <argLine>@{argLine} --add-modules jdk.httpserver --add-reads io.roadrunner.samplers.http=jdk.httpserver</argLine>
                 </configuration>
             </plugin>
         </plugins>
