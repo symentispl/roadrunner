@@ -89,6 +89,9 @@
   <li class="nav-item is-current-page" data-depth="2">
     <a class="nav-link" href="neo4j.html">Neo4j</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="writing-samplers.html">Writing your own sampler</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -179,8 +182,12 @@ cp roadrunner-sampler-neo4j-*.jar ~/.roadrunner/plugins/protocols/</code></pre>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>&lt;cypher&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Cypher query to execute per request (required, positional)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>&lt;expression&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sampler operation expression (required, positional), e.g. <code>query("&lt;cypher&gt;")</code> —
+see <a href="../configuration.html#sampler-expressions" class="xref page">sampler operation expressions</a>
+for the shared syntax. The Neo4j sampler currently exposes a single
+<code>query(cypher)</code> operation, so the argument is not bare Cypher text but a
+<code>query("&#8230;&#8203;")</code> expression wrapping it.</p></td>
 </tr>
 </tbody>
 </table>
@@ -231,7 +238,7 @@ cp roadrunner-sampler-neo4j-*.jar ~/.roadrunner/plugins/protocols/</code></pre>
   --uri bolt://localhost:7687 \
   --username neo4j \
   --password secret \
-  "MATCH (n:Person) RETURN n.name LIMIT 1"</code></pre>
+  'query("MATCH (n:Person) RETURN n.name LIMIT 1")'</code></pre>
 </div>
 </div>
 </div>

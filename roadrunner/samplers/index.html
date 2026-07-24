@@ -89,6 +89,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="neo4j.html">Neo4j</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="writing-samplers.html">Writing your own sampler</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -207,12 +210,10 @@ Install them by placing the JAR under <code>~/.roadrunner/plugins/protocols/</co
 <h2 id="_writing_your_own_sampler"><a class="anchor" href="#_writing_your_own_sampler"></a>Writing your own sampler</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Implement <code>io.roadrunner.api.samplers.SamplerProvider</code> from the <code>roadrunner-samplers-spi</code> module,
-annotate it with <code>@Command</code> (picocli) for CLI options, and register it via
-<code>META-INF/services/io.roadrunner.api.samplers.SamplerProvider</code> or a <code>module-info.java</code> <code>provides</code> directive.</p>
-</div>
-<div class="paragraph">
-<p>See <code>VmSamplerProvider</code> and <code>AbSamplerProvider</code> in the source for reference implementations.</p>
+<p>A custom sampler produces a <code>Sampler</code> from a <code>SamplerProvider</code>, wired either by
+implementing <code>SamplerProvider</code> directly or by binding a sampler operation expression via
+<code>SamplerExtensionPoint</code>. See <a href="writing-samplers.html" class="xref page">Writing your own sampler</a>
+for both mechanisms, worked examples, and registration.</p>
 </div>
 </div>
 </div>

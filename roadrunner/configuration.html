@@ -89,6 +89,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="samplers/neo4j.html">Neo4j</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="samplers/writing-samplers.html">Writing your own sampler</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -137,6 +140,31 @@
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-none hljs">roadrunner [OPTIONS] &lt;sampler&gt; [SAMPLER_OPTIONS]</code></pre>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="sampler-expressions"><a class="anchor" href="#sampler-expressions"></a>Sampler operation expressions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Some samplers (currently <code>jdbc</code> and <code>neo4j</code>) take their positional argument as
+a <strong>sampler operation expression</strong> rather than bare query text — a method name
+followed by one or more double-quoted string literals:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">methodName("literal", "literal", ...)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Each such sampler exposes one or more named operations; the expression
+selects which operation to invoke and supplies its literal arguments. Today
+both the JDBC and Neo4j samplers expose a single <code>query(&#8230;&#8203;)</code> operation, so
+their positional argument always takes the form <code>query("&#8230;&#8203;")</code> — see
+<a href="samplers/jdbc.html" class="xref page">JDBC Sampler</a> and <a href="samplers/neo4j.html" class="xref page">Neo4j Sampler</a>
+for details. This syntax is shared across every sampler that adopts it, so a
+future sampler exposing multiple operations (e.g. <code>read(&#8230;&#8203;)</code>/<code>write(&#8230;&#8203;)</code>)
+uses the same expression grammar.</p>
 </div>
 </div>
 </div>
@@ -320,7 +348,7 @@ This models real-world arrival patterns and avoids coordinated omission.</p>
   --url jdbc:postgresql://localhost/mydb \
   --username app --password secret \
   --driver /opt/drivers/postgresql.jar \
-  "SELECT 1"</code></pre>
+  'query("SELECT 1")'</code></pre>
 </div>
 </div>
 </div>

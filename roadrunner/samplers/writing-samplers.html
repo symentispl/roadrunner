@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Writing your own sampler :: Roadrunner</title>
+    <link rel="canonical" href="https://symentispl.github.io/roadrunner/roadrunner/samplers/writing-samplers.html">
+    <meta name="generator" content="Antora 3.1.14">
+    <link rel="stylesheet" href="../../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://symentispl.github.io/roadrunner">Roadrunner</a>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="#">Home</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Products</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="#">Product A</a>
+            <a class="navbar-item" href="#">Product B</a>
+            <a class="navbar-item" href="#">Product C</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Services</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="#">Service A</a>
+            <a class="navbar-item" href="#">Service B</a>
+            <a class="navbar-item" href="#">Service C</a>
+          </div>
+        </div>
+        <div class="navbar-item">
+          <span class="control">
+            <a class="button is-primary" href="#">Download</a>
+          </span>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="roadrunner" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">Roadrunner</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Home</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../getting-started.html">Getting Started</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../configuration.html">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Samplers</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="vm.html">VM</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="ab.html">HTTP (ab)</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="zero.html">Zero</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="jdbc.html">JDBC</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="neo4j.html">Neo4j</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="writing-samplers.html">Writing your own sampler</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Roadrunner</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">Roadrunner</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Roadrunner</a></li>
+    <li>Samplers</li>
+    <li><a href="writing-samplers.html">Writing your own sampler</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/symentispl/roadrunner/edit/HEAD/site/modules/ROOT/pages/samplers/writing-samplers.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Writing your own sampler</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Every sampler ultimately produces a <code>io.roadrunner.api.samplers.Sampler</code> — a functional
+interface whose <code>execute(SamplerParameters)</code> method runs one request per virtual-thread
+iteration and returns a <code>SamplerResponse</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public interface Sampler extends AutoCloseable {
+    SamplerResponse&lt;?&gt; execute(SamplerParameters parameters);
+
+    default void close() {}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Roadrunner obtains these <code>Sampler</code> instances from a
+<code>io.roadrunner.api.samplers.SamplerProvider</code> (in the <code>roadrunner-api</code> module), which is
+discovered through the JDK <code>ServiceLoader</code>. There are two ways to wire a provider to your
+sampler logic, and you choose between them based on where the <strong>operation</strong> comes from:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Implement <code>SamplerProvider</code> directly</strong> — when the sampler runs a single, fixed
+operation whose configuration arrives entirely through CLI options.</p>
+</li>
+<li>
+<p><strong>Bind a sampler operation expression via <code>SamplerExtensionPoint</code></strong> — when the operation
+(and its literal arguments) is selected at runtime from a user-supplied
+<code>query("&#8230;&#8203;")</code>-style expression, especially if you want to expose several named operations.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Both approaches register the same way and can live side by side. Pick whichever matches
+how users should describe the work the sampler performs.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="mechanism-provider"><a class="anchor" href="#mechanism-provider"></a>Mechanism 1: implement <code>SamplerProvider</code> directly</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Implement <code>io.roadrunner.api.samplers.SamplerProvider</code> and return a fresh <code>Sampler</code> from
+<code>newSampler()</code>. This is the most direct approach: the provider holds whatever it needs
+(connection pools, executors, configuration parsed from CLI options) and hands out samplers.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class VmSamplerProvider implements SamplerProvider {
+
+    private final ExecutorService executorService;
+    private final long sleepTime;
+
+    public VmSamplerProvider(ExecutorService executorService, long sleepTime) {
+        this.executorService = executorService;
+        this.sleepTime = sleepTime;
+    }
+
+    @Override
+    public Sampler newSampler() {
+        return parameters -&gt; { /* run one request, return a SamplerResponse */ };
+    }
+
+    @Override
+    public void close() {
+        executorService.close();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Use this mechanism when the sampler performs one well-defined action and everything it
+needs is expressed through CLI options (e.g. <code>vm --sleep-time 10</code>, or <code>ab &lt;url&gt;</code>).</p>
+</div>
+<div class="paragraph">
+<p>See <code>VmSamplerProvider</code> and <code>AbSamplerProvider</code> in the source for reference implementations.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="mechanism-extension-point"><a class="anchor" href="#mechanism-extension-point"></a>Mechanism 2: bind a sampler operation expression via <code>SamplerExtensionPoint</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>When the user selects <strong>which</strong> operation to run — and passes its literal arguments — through
+a <a href="../configuration.html#sampler-expressions" class="xref page">sampler operation expression</a> such as
+<code>query("SELECT 1")</code>, use <code>io.roadrunner.samplers.spi.SamplerExtensionPoint</code> from the
+<code>roadrunner-samplers-spi</code> module. This keeps the mapping from expression text to Java code
+declarative: you write ordinary <code>Sampler</code>-returning methods, and the extension point binds
+the expression to the matching one.</p>
+</div>
+<div class="paragraph">
+<p>Step 1 — write a plain "extension point" class whose public methods each return a <code>Sampler</code>
+and take only <code>String</code> parameters. Each method name becomes an operation callable from the
+CLI, and its <code>String</code> parameters receive the double-quoted literals from the expression:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class JDBCSampler {
+
+    private final DataSource dataSource;
+
+    public JDBCSampler(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    // Bound from the expression query("SELECT ...")
+    public Sampler query(String sql) {
+        return parameters -&gt; { /* execute sql, return a SamplerResponse */ };
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Step 2 — in your <code>SamplerProvider</code>, call <code>SamplerExtensionPoint.bind(target, expressionText)</code>.
+It parses the expression, finds the public <code>Sampler</code>-returning method whose name and arity
+match, and returns a <code>Supplier&lt;Sampler&gt;</code> bound to that method with the literal arguments
+already applied. Delegate <code>newSampler()</code> to the supplier:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class JDBCSamplerProvider implements SamplerProvider {
+
+    private final Supplier&lt;Sampler&gt; samplerSupplier;
+
+    public JDBCSamplerProvider(DataSource dataSource, String expressionText) {
+        var jdbcSampler = new JDBCSampler(dataSource);
+        this.samplerSupplier = SamplerExtensionPoint.bind(jdbcSampler, expressionText);
+    }
+
+    @Override
+    public Sampler newSampler() {
+        return samplerSupplier.get();
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>bind</code> uses <code>MethodHandles.publicLookup()</code>, so the extension-point methods must be <code>public</code>
+and live on a <code>public</code> class. If no method matches the expression&#8217;s name and argument count,
+<code>bind</code> throws <code>IllegalArgumentException</code> listing the available operations; a non-<code>String</code>
+parameter on a candidate method fails fast with a <code>PluginInitializationException</code>.</p>
+</div>
+<div class="paragraph">
+<p>Because operations are just named methods, exposing more than one is a matter of adding more
+methods — a future sampler could offer both <code>read("&#8230;&#8203;")</code> and <code>write("&#8230;&#8203;")</code> on the same
+class, and the expression grammar selects between them. See <code>JDBCSampler</code> /
+<code>JDBCSamplerProvider</code> and <code>Neo4jSampler</code> / <code>Neo4jSamplerProvider</code> in the source for reference
+implementations, and <a href="../configuration.html#sampler-expressions" class="xref page">sampler operation expressions</a>
+for the shared expression syntax.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_registering_the_provider"><a class="anchor" href="#_registering_the_provider"></a>Registering the provider</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>However you build the provider, expose it with CLI options and register it for discovery:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Annotate it (or its plugin entry point) with <code>@Command</code> (picocli) to declare CLI options.</p>
+</li>
+<li>
+<p>Register the implementation via <code>META-INF/services/io.roadrunner.api.samplers.SamplerProvider</code>
+or a <code>module-info.java</code> <code>provides io.roadrunner.api.samplers.SamplerProvider with &#8230;&#8203;</code> directive.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Bundle plugin samplers as a JAR and drop it under <code>~/.roadrunner/plugins/protocols/</code>, as
+described for the <a href="jdbc.html" class="xref page">JDBC</a> and <a href="neo4j.html" class="xref page">Neo4j</a> samplers.</p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
