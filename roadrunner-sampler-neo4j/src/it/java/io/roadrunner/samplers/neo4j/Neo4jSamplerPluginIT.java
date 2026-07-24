@@ -20,6 +20,7 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.parameters.SamplerParameters;
+import io.roadrunner.api.samplers.SamplerResponseBuilder;
 import io.roadrunner.samplers.spi.SamplerContext;
 import java.net.URI;
 import org.junit.jupiter.api.Test;
@@ -47,7 +48,7 @@ public class Neo4jSamplerPluginIT {
             options.expression = "query(\"\")";
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
-                var response = sampler.execute(SamplerParameters.NONE);
+                var response = sampler.execute(SamplerParameters.NONE, SamplerResponseBuilder.newBuilder());
                 assertThat(response).asInstanceOf(type(SamplerResponse.Error.class)).satisfies(e -> {
                     assertThat(e.timestamp()).isLessThanOrEqualTo(e.stopTime());
                     assertThat(e.stopTime()).isLessThanOrEqualTo(System.nanoTime());

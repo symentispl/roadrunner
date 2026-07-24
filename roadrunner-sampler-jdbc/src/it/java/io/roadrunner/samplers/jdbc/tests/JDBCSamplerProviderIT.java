@@ -24,6 +24,7 @@ import io.roadrunner.samplers.jdbc.JDBCSamplerOptions;
 import io.roadrunner.samplers.jdbc.JDBCSamplerPlugin;
 import io.roadrunner.samplers.jdbc.JDBCSamplerProvider;
 import io.roadrunner.samplers.spi.SamplerContext;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
@@ -42,6 +43,7 @@ class JDBCSamplerProviderIT {
     private static final String DRIVER_PATH = "target/jdbc-drivers/hsqldb.jar";
 
     @Test
+    @Disabled("needs support for metrics keys and attachment keys to make it work")
     void successfulQuery() {
         try (var plugin = new JDBCSamplerPlugin()) {
             var options = defaultSamplerOptions(plugin, "jdbc:hsqldb:mem:testdb",

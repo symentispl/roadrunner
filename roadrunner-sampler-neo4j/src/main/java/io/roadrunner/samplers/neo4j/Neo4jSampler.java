@@ -15,7 +15,6 @@
  */
 package io.roadrunner.samplers.neo4j;
 
-import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.samplers.Sampler;
 import java.util.Map;
 import org.neo4j.driver.Driver;
@@ -33,7 +32,7 @@ public class Neo4jSampler {
     }
 
     public Sampler query(String cypher) {
-        return parameters -> {
+        return (parameters, builder) -> {
             var startTime = System.nanoTime();
             try (var session = driver.session()) {
                 // Neo4j's Session.run accepts Map<String, Object>; SamplerParameters.asMap returns
@@ -42,9 +41,14 @@ public class Neo4jSampler {
                 @SuppressWarnings("unchecked")
                 var params = (Map<String, Object>) parameters.asMap();
                 var result = session.run(cypher, params);
-                return SamplerResponse.response(startTime, System.nanoTime(), result.consume());
+                // TODO there is no way now, where sampler extension point can get hold of sampler provider,
+                // to get a attachment keys, or metrics keys,
+                // it looks like sampler extension points need to extended with ability to
+                // inject some custom object into methods,
+                // like sampler providers and others
+                return builder.response(startTime, System.nanoTime(), sink -> result.consume());
             } catch (Exception e) {
-                return SamplerResponse.error(startTime, System.nanoTime(), e.getMessage());
+                return builder.error(startTime, System.nanoTime(), e.getMessage());
             }
         };
     }

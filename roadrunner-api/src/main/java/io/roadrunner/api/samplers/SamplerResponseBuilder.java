@@ -27,4 +27,8 @@ public interface SamplerResponseBuilder {
     SamplerResponse.Error error(long start, long stop, String message);
 
     SamplerResponse.Error error(long start, long stop, String message, Consumer<SamplerSink> sink);
+
+    static SamplerResponseBuilder newBuilder() {
+        return new DefaultSamplerResponseBuilder(0, 1);
+    }
 }

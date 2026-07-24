@@ -15,16 +15,11 @@
  */
 package io.roadrunner.samplers.jdbc;
 
-import static java.util.Map.entry;
-import static java.util.Objects.requireNonNull;
-
 import io.roadrunner.api.metrics.MetricKey;
 import io.roadrunner.api.metrics.MetricRegistry;
 import io.roadrunner.api.metrics.MetricUnit;
-import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
-import io.roadrunner.api.samplers.SamplerResponseBuilder;
 import io.roadrunner.samplers.spi.SamplerExtensionPoint;
 import java.sql.Connection;
 import java.sql.SQLException;

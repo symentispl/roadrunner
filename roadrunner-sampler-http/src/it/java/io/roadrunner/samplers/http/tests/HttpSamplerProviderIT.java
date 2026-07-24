@@ -22,6 +22,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.parameters.SamplerParameters;
+import io.roadrunner.api.samplers.SamplerResponseBuilder;
 import io.roadrunner.samplers.http.HttpSamplerPlugin;
 import java.io.IOException;
 import java.io.InputStream;
@@ -155,7 +156,7 @@ class HttpSamplerProviderIT {
             options.expression = expression;
             try (var provider = plugin.newSamplerProvider(options);
                     var sampler = provider.newSampler()) {
-                return sampler.execute(SamplerParameters.NONE);
+                return sampler.execute(SamplerParameters.NONE, SamplerResponseBuilder.newBuilder());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

@@ -15,7 +15,6 @@
  */
 package io.roadrunner.samplers.http;
 
-import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.samplers.Sampler;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -56,20 +55,23 @@ public class HttpSampler {
 
     private Sampler request(HttpRequest.Builder requestBuilder) {
         var request = requestBuilder.build();
-        return parameters -> {
+        return (parameters, builder) -> {
             var tStarted = System.nanoTime();
             try {
                 HttpResponse<byte[]> response = httpClient.send(request, BodyHandlers.ofByteArray());
                 var tDone = System.nanoTime();
                 if (response.statusCode() >= 400) {
-                    return SamplerResponse.error(tStarted, tDone, "HTTP status " + response.statusCode());
+                    return builder.error(tStarted, tDone, "HTTP status " + response.statusCode());
                 }
-                return SamplerResponse.response(tStarted, tDone, response);
+                return builder.response(tStarted, tDone, samplerSink -> {
+                    // TODO again the same problem with registering attachments and metrics
+                    // samplerSink.attach("RESPONSE", response);
+                });
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                return SamplerResponse.error(tStarted, System.nanoTime(), messageOf(e));
+                return builder.error(tStarted, System.nanoTime(), messageOf(e));
             } catch (Exception e) {
-                return SamplerResponse.error(tStarted, System.nanoTime(), messageOf(e));
+                return builder.error(tStarted, System.nanoTime(), messageOf(e));
             }
         };
     }

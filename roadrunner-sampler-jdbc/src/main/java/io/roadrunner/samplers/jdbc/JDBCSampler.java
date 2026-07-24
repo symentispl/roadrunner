@@ -18,9 +18,9 @@ package io.roadrunner.samplers.jdbc;
 import static java.util.Map.entry;
 import static java.util.Objects.requireNonNull;
 
-import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
+import io.roadrunner.api.samplers.SamplerResponseBuilder;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -52,7 +52,7 @@ public class JDBCSampler {
     }
 
     public Sampler query(String sql) {
-        return (SamplerParameters parameters) -> {
+        return (SamplerParameters parameters, SamplerResponseBuilder builder) -> {
             var tStarted = System.nanoTime();
             try (var cnn = dataSource.getConnection();
                     var stmt = cnn.prepareStatement(sql)) {
@@ -73,17 +73,21 @@ public class JDBCSampler {
                     }
                     var tDone = System.nanoTime();
                     recordTimestamps(tStarted, tAcquired, tDone);
-                    return SamplerResponse.response(tStarted, tDone, rowCount);
+                    // TODO again problem that there is no way we can know how to store additional metrics,
+                    //  since extension points don't registered metrics or attachment keys
+                    return builder.response(tStarted, tDone, samplerSink -> {
+                        // samplerSink.add(ROWS,rowCount);
+                    });
                 } catch (Exception e) {
                     var tDone = System.nanoTime();
                     recordTimestamps(tStarted, tAcquired, tDone);
-                    return SamplerResponse.error(tStarted, tDone, e.getMessage());
+                    return builder.error(tStarted, tDone, e.getMessage());
                 }
             } catch (SQLException e) {
                 var tDone = System.nanoTime();
                 // Connection acquisition failed: entire window is acquire time.
                 recordTimestamps(tStarted, tDone, tDone);
-                return SamplerResponse.error(tStarted, tDone, e.getMessage());
+                return builder.error(tStarted, tDone, e.getMessage());
             }
         };
     }
