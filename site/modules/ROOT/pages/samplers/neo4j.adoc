@@ -19,7 +19,7 @@ cp roadrunner-sampler-neo4j-*.jar ~/.roadrunner/plugins/protocols/
 
 [source,bash]
 ----
-roadrunner -c <concurrency> -n <requests> neo4j [OPTIONS] '<expression>'
+roadrunner -c <concurrency> -n <requests> neo4j [OPTIONS] "<cypher>"
 ----
 
 == Arguments

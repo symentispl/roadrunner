@@ -15,7 +15,9 @@
  */
 package io.roadrunner.samplers.neo4j;
 
+import io.roadrunner.samplers.spi.SamplerExtensionPointDescriptor;
 import io.roadrunner.samplers.spi.SamplerPlugin;
+import java.util.List;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.GraphDatabase;
 
@@ -35,5 +37,10 @@ public class Neo4jSamplerPlugin implements SamplerPlugin<Neo4jSamplerProvider, N
         var driver = GraphDatabase.driver(options.uri, AuthTokens.basic(options.username, options.password));
 
         return new Neo4jSamplerProvider(driver, options.expression);
+    }
+
+    @Override
+    public List<SamplerExtensionPointDescriptor> extensionPoints() {
+        return List.of(new SamplerExtensionPointDescriptor("query", List.of("cypher"), "Execute a Cypher query"));
     }
 }

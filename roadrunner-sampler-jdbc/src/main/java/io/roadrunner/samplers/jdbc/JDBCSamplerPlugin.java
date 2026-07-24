@@ -18,11 +18,13 @@ package io.roadrunner.samplers.jdbc;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.roadrunner.samplers.spi.PluginInitializationException;
+import io.roadrunner.samplers.spi.SamplerExtensionPointDescriptor;
 import io.roadrunner.samplers.spi.SamplerPlugin;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.Driver;
 import java.sql.DriverManager;
+import java.util.List;
 import java.util.Locale;
 import java.util.ServiceLoader;
 import org.slf4j.Logger;
@@ -62,6 +64,11 @@ public class JDBCSamplerPlugin implements SamplerPlugin<JDBCSamplerProvider, JDB
     @Override
     public JDBCSamplerOptions options() {
         return new JDBCSamplerOptions(this);
+    }
+
+    @Override
+    public List<SamplerExtensionPointDescriptor> extensionPoints() {
+        return List.of(new SamplerExtensionPointDescriptor("query", List.of("sql"), "Execute a SQL query"));
     }
 
     private DriverWrapper registerDriver(JDBCSamplerOptions options) {
