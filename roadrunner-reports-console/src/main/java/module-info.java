@@ -21,6 +21,7 @@ module io.roadrunner.reports.console {
     requires io.roadrunner.hdrhistogram;
     requires org.apache.commons.text;
     requires org.apache.commons.io;
+    requires org.jline.terminal;
 
     exports io.roadrunner.reports.console;
 

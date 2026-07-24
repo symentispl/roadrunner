@@ -340,6 +340,11 @@
                 <version>4.7.7</version>
             </dependency>
             <dependency>
+                <groupId>org.jline</groupId>
+                <artifactId>jline-terminal</artifactId>
+                <version>4.3.1</version>
+            </dependency>
+            <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter</artifactId>
                 <version>${junit-jupiter.version}</version>
