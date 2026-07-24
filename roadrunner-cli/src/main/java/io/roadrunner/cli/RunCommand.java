@@ -15,6 +15,7 @@
  */
 package io.roadrunner.cli;
 
+import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.core.Bootstrap;
@@ -114,14 +115,17 @@ class RunCommand {
             bootstrap.withParameterSource(source);
         }
 
+        MeasurementProgress progress;
         if (loadModel.closedWorld != null) {
+            progress = new ProgressBar(100, 0, loadModel.closedWorld.numberOfRequests);
             bootstrap
                     .withClosedWorldModel(loadModel.closedWorld.concurrency, loadModel.closedWorld.numberOfRequests)
-                    .withMeasurementProgress(new ProgressBar(100, 0, loadModel.closedWorld.numberOfRequests));
+                    .withMeasurementProgress(progress);
         } else {
+            progress = new TimeBasedProgressBar(loadModel.openWorld.duration);
             bootstrap
                     .withOpenWorldModel(loadModel.openWorld.rate, loadModel.openWorld.duration)
-                    .withMeasurementProgress(new TimeBasedProgressBar(loadModel.openWorld.duration));
+                    .withMeasurementProgress(progress);
         }
 
         try (var roadrunner = bootstrap.build()) {
@@ -140,6 +144,15 @@ class RunCommand {
 
             var chartGenerator = reportGeneratorProvider.create(reportConfig);
             var measurements = roadrunner.execute(samplerProvider);
+            // Release the progress bar's terminal before the report renders, otherwise the
+            // report can't open its own system terminal and falls back to a dumb (ASCII) one.
+            if (progress instanceof AutoCloseable closeable) {
+                try {
+                    closeable.close();
+                } catch (Exception ignored) {
+                    // best-effort
+                }
+            }
             chartGenerator.generateChart(measurements.samplesReader());
         }
     }

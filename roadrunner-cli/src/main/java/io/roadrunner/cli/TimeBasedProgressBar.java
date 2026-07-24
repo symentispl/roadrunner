@@ -23,7 +23,7 @@ import java.time.Duration;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
-final class TimeBasedProgressBar implements MeasurementProgress {
+final class TimeBasedProgressBar implements MeasurementProgress, AutoCloseable {
 
     private final long totalDurationNanos;
     private final Terminal terminal;
@@ -77,5 +77,16 @@ final class TimeBasedProgressBar implements MeasurementProgress {
             writer.print("\r" + panel.lines().findFirst().orElse(panel));
         }
         writer.flush();
+    }
+
+    // Release the tty so a subsequent consumer (the end-of-run report) can open its own
+    // system terminal; leaving this open forces the report's terminal to a dumb fallback.
+    @Override
+    public void close() {
+        try {
+            terminal.close();
+        } catch (IOException e) {
+            // best-effort cleanup on a short-lived CLI; nothing to recover
+        }
     }
 }

@@ -17,6 +17,7 @@ package io.roadrunner.cli;
 
 import io.roadrunner.api.measurments.ProgressSnapshot;
 import io.roadrunner.console.Bars;
+import java.util.Locale;
 
 final class LiveProgressRenderer {
 
@@ -27,7 +28,9 @@ final class LiveProgressRenderer {
         var bar = Bars.horizontal(fraction, 24, unicode);
         var spark = Bars.sparkline(s.throughputSpark(), unicode);
         var errPct = s.processed() == 0 ? 0.0 : (double) s.errors() / s.processed() * 100;
+        // Locale.ROOT so the decimal separator is always '.' regardless of the user's locale
         return String.format(
+                Locale.ROOT,
                 "%s %d%%%n  %d reqs   %.0f req/s %s%n  errors %d (%.2f%%)",
                 bar, pct, s.processed(), s.throughput(), spark, s.errors(), errPct);
     }

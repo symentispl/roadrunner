@@ -18,9 +18,18 @@ package io.roadrunner.cli;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.roadrunner.api.measurments.ProgressSnapshot;
+import java.util.Locale;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 class LiveProgressRendererTest {
+
+    private final Locale defaultLocale = Locale.getDefault();
+
+    @AfterEach
+    void restoreLocale() {
+        Locale.setDefault(defaultLocale);
+    }
 
     @Test
     void showsPercentThroughputAndErrors() {
@@ -29,5 +38,15 @@ class LiveProgressRendererTest {
         assertThat(out).contains("63%");
         assertThat(out).contains("8932");
         assertThat(out).contains("31");
+    }
+
+    @Test
+    void formatsErrorPercentageWithDotUnderCommaLocale() {
+        // A locale whose decimal separator is ',' (e.g. Polish) must not leak into the output.
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"));
+        var snapshot = new ProgressSnapshot(2007, 2007, 5_000_000_000L, 364.0, new long[] {1});
+        var out = LiveProgressRenderer.render(1.0, snapshot, true);
+        assertThat(out).contains("(100.00%)");
+        assertThat(out).doesNotContain("100,00");
     }
 }
