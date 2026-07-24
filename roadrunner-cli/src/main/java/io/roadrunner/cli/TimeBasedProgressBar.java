@@ -42,14 +42,11 @@ final class TimeBasedProgressBar implements MeasurementProgress {
 
     private static Terminal buildTerminal() {
         try {
-            return TerminalBuilder.builder().build();
+            // ponytail: dumb(true) only kicks in silently when no system terminal is available (e.g. CI/piped) -
+            // a real tty still gets a full color-capable terminal, this just drops JLine's stderr warning
+            return TerminalBuilder.builder().dumb(true).build();
         } catch (IOException e) {
-            // ponytail: no real tty available (e.g. CI) -> degrade to a dumb terminal instead of failing the run
-            try {
-                return TerminalBuilder.builder().dumb(true).build();
-            } catch (IOException inner) {
-                throw new UncheckedIOException(inner);
-            }
+            throw new UncheckedIOException(e);
         }
     }
 
