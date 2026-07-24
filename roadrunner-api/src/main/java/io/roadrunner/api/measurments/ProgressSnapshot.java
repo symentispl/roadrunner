@@ -15,9 +15,5 @@
  */
 package io.roadrunner.api.measurments;
 
-public interface MeasurementProgress {
-
-    MeasurementProgress NO_OP = snapshot -> {};
-
-    void update(ProgressSnapshot snapshot);
-}
+public record ProgressSnapshot(
+        long processed, long errors, long elapsedNanos, double throughput, long[] throughputSpark) {}
