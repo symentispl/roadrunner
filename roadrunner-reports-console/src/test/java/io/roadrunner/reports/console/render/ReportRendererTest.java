@@ -17,6 +17,7 @@ package io.roadrunner.reports.console.render;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.roadrunner.console.ConsoleTheme;
 import io.roadrunner.reports.console.ReportModel;
 import java.util.Map;
 import org.jline.terminal.TerminalBuilder;

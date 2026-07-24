@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.reports.console.render;
+package io.roadrunner.console;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

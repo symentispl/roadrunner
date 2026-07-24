@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.reports.console.render;
+package io.roadrunner.console;
 
-final class Bars {
+public final class Bars {
     private static final String UNICODE_SPARK = "▁▂▃▄▅▆▇█";
     private static final String ASCII_SPARK = ".:-=+*#";
 
     private Bars() {}
 
-    static String horizontal(double fraction, int cells, boolean unicode) {
+    public static String horizontal(double fraction, int cells, boolean unicode) {
         var f = Math.max(0.0, Math.min(1.0, fraction));
         var full = (int) Math.round(f * cells);
         var fullChar = unicode ? '█' : '#';
@@ -33,7 +33,7 @@ final class Bars {
         return sb.toString();
     }
 
-    static String sparkline(long[] values, boolean unicode) {
+    public static String sparkline(long[] values, boolean unicode) {
         var ramp = unicode ? UNICODE_SPARK : ASCII_SPARK;
         if (values.length == 0) {
             return "";

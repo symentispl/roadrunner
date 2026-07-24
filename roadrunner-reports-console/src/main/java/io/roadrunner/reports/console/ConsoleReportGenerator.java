@@ -18,7 +18,7 @@ package io.roadrunner.reports.console;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.reports.ReportGenerator;
-import io.roadrunner.reports.console.render.ConsoleTheme;
+import io.roadrunner.console.ConsoleTheme;
 import io.roadrunner.reports.console.render.ReportRenderer;
 import io.roadrunner.shaded.hdrhistogram.EncodableHistogram;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
