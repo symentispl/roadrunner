@@ -22,6 +22,7 @@ import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -59,5 +60,21 @@ class ReportModelTest {
         var model = ReportModel.from(readerOf(List.of()), hist, 0L, 1_000_000_000L, 1L, 0L);
         assertThat(model.throughputSeries()).hasSize(30);
         assertThat(model.latencyBuckets()).hasSize(20);
+    }
+
+    @Test
+    void latencyBucketsDoNotDoubleCountConcentratedValues() {
+        // 1000 identical recorded values must land in exactly one bucket each,
+        // not be counted in every bucket (regression for percentile-boundary overlap).
+        var hist = new Histogram(3);
+        for (var i = 0; i < 1000; i++) {
+            hist.recordValue(5_000_000);
+        }
+        var model = ReportModel.from(readerOf(List.of()), hist, 0L, 1_000_000_000L, 1000L, 0L);
+
+        var buckets = model.latencyBuckets();
+        assertThat(Arrays.stream(buckets).sum()).isEqualTo(1000L);
+        var nonZeroBuckets = Arrays.stream(buckets).filter(c -> c > 0).count();
+        assertThat(nonZeroBuckets).isLessThanOrEqualTo(2L);
     }
 }

@@ -20,6 +20,7 @@ import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
 import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public record ReportModel(
@@ -53,7 +54,7 @@ public record ReportModel(
         var windowNanos = Math.max(1L, lastStop - firstStart);
         var status = new LinkedHashMap<String, Long>();
         var statusKey = reader.attachmentKeys().stream()
-                .filter(k -> k.name().toLowerCase().contains("status"))
+                .filter(k -> k.name().toLowerCase(Locale.ROOT).contains("status"))
                 .findFirst()
                 .orElse(null);
         for (var event : reader) {
@@ -73,10 +74,15 @@ public record ReportModel(
         }
 
         var buckets = new long[LATENCY_BUCKETS];
-        for (var i = 0; i < LATENCY_BUCKETS; i++) {
-            var lo = histogram.getValueAtPercentile(i * 100.0 / LATENCY_BUCKETS);
-            var hi = histogram.getValueAtPercentile((i + 1) * 100.0 / LATENCY_BUCKETS);
-            buckets[i] = histogram.getCountBetweenValues(lo, Math.max(lo, hi));
+        var minV = histogram.getMinValue();
+        var maxV = histogram.getMaxValue();
+        var range = Math.max(1L, maxV - minV);
+        for (var v : histogram.recordedValues()) {
+            var idx = (int) Math.min(
+                    LATENCY_BUCKETS - 1L, (v.getValueIteratedTo() - minV) * LATENCY_BUCKETS / range);
+            if (idx >= 0) {
+                buckets[idx] += v.getCountAtValueIteratedTo();
+            }
         }
 
         return new ReportModel(
