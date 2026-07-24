@@ -40,8 +40,7 @@ Install them by placing the JAR under `~/.roadrunner/plugins/protocols/`.
 
 == Writing your own sampler
 
-Implement `io.roadrunner.api.samplers.SamplerProvider` from the `roadrunner-samplers-spi` module,
-annotate it with `@Command` (picocli) for CLI options, and register it via
-`META-INF/services/io.roadrunner.api.samplers.SamplerProvider` or a `module-info.java` `provides` directive.
-
-See `VmSamplerProvider` and `AbSamplerProvider` in the source for reference implementations.
+A custom sampler produces a `Sampler` from a `SamplerProvider`, wired either by
+implementing `SamplerProvider` directly or by binding a sampler operation expression via
+`SamplerExtensionPoint`. See xref:samplers/writing-samplers.adoc[Writing your own sampler]
+for both mechanisms, worked examples, and registration.
