@@ -15,6 +15,7 @@
  */
 package io.roadrunner.api.samplers;
 
+import io.roadrunner.api.attachments.AttachmentRegistry;
 import io.roadrunner.api.events.SamplerResponse;
 import java.util.function.Consumer;
 
@@ -29,6 +30,7 @@ public interface SamplerResponseBuilder {
     SamplerResponse.Error error(long start, long stop, String message, Consumer<SamplerSink> sink);
 
     static SamplerResponseBuilder newBuilder() {
-        return new DefaultSamplerResponseBuilder(0, 1);
+        // Attachment capacity must cover the reserved ERROR_MESSAGE slot (id=0).
+        return new DefaultSamplerResponseBuilder(0, AttachmentRegistry.ERROR_MESSAGE.id() + 1);
     }
 }

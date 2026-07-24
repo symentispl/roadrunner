@@ -32,21 +32,26 @@ public class DefaultSamplerResponseBuilder implements SamplerResponseBuilder {
 
     @Override
     public SamplerResponse.Response response(long start, long stop) {
-        return new SamplerResponse.Response(start, stop, 0, 0);
+        // Allocate the configured capacities even without a writer: downstream serialization indexes
+        // every registered metric/attachment key by id, so a zero-capacity response would throw.
+        return new SamplerResponse.Response(start, stop, metricCapacity, attachmentCapacity);
     }
 
     @Override
     public SamplerResponse.Response response(long start, long stop, Consumer<SamplerSink> writer) {
         var response = new SamplerResponse.Response(start, stop, metricCapacity, attachmentCapacity);
         sink.attachTo(response);
-        writer.accept(sink);
-        sink.detach();
+        try {
+            writer.accept(sink);
+        } finally {
+            sink.detach();
+        }
         return response;
     }
 
     @Override
     public SamplerResponse.Error error(long start, long stop, String message) {
-        var error = new SamplerResponse.Error(start, stop, 0, attachmentCapacity);
+        var error = new SamplerResponse.Error(start, stop, metricCapacity, attachmentCapacity);
         error.setAttachmentValue(AttachmentRegistry.ERROR_MESSAGE, message);
         return error;
     }
@@ -56,8 +61,11 @@ public class DefaultSamplerResponseBuilder implements SamplerResponseBuilder {
         var error = new SamplerResponse.Error(start, stop, metricCapacity, attachmentCapacity);
         error.setAttachmentValue(AttachmentRegistry.ERROR_MESSAGE, message);
         sink.attachTo(error);
-        writer.accept(sink);
-        sink.detach();
+        try {
+            writer.accept(sink);
+        } finally {
+            sink.detach();
+        }
         return error;
     }
 }

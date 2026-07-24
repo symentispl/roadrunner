@@ -119,12 +119,25 @@ public class CsvOutputEventListener implements EventListener {
         }
         for (var key : attachmentRegistry.registeredKeys()) {
             var value = response.attachmentValueAt(key);
+            rowBuilder.append(',');
             if (value != null) {
-                rowBuilder.append(',').append(value);
-            } else {
-                rowBuilder.append(',');
+                appendEscaped(value);
             }
         }
+    }
+
+    /**
+     * Appends a field value using RFC 4180 quoting compatible with {@link org.apache.commons.csv.CSVFormat#DEFAULT}
+     * (which {@code CsvOutputEventReader} uses to parse). Attachment values are arbitrary strings — error
+     * messages, plugin-provided text — that may contain commas, quotes, or newlines and would otherwise
+     * corrupt the row structure.
+     */
+    private void appendEscaped(String value) {
+        if (value.indexOf(',') < 0 && value.indexOf('"') < 0 && value.indexOf('\n') < 0 && value.indexOf('\r') < 0) {
+            rowBuilder.append(value);
+            return;
+        }
+        rowBuilder.append('"').append(value.replace("\"", "\"\"")).append('"');
     }
 
     @Override

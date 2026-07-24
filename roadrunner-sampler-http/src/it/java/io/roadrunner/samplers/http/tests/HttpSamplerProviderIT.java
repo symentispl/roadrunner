@@ -22,8 +22,8 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.parameters.SamplerParameters;
-import io.roadrunner.api.samplers.SamplerResponseBuilder;
 import io.roadrunner.samplers.http.HttpSamplerPlugin;
+import io.roadrunner.samplers.spi.SamplerContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
@@ -115,6 +115,29 @@ class HttpSamplerProviderIT {
     }
 
     @Test
+    void successRecordsStatusAttachment() {
+        try (var plugin = new HttpSamplerPlugin()) {
+            var options = plugin.options();
+            options.expression = "GET(\"%s/echo\")".formatted(baseUrl);
+            try (var provider = plugin.newSamplerProvider(options)) {
+                var ctx = SamplerContext.of(provider);
+                var statusKey = ctx.attachmentRegistry().registeredKeys().stream()
+                        .filter(k -> "status".equals(k.name()))
+                        .findFirst()
+                        .orElseThrow();
+                try (var sampler = provider.newSampler()) {
+                    var response = sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
+                    assertThat(response)
+                            .asInstanceOf(type(SamplerResponse.Response.class))
+                            .satisfies(r -> assertThat(r.attachmentValueAt(statusKey)).isEqualTo("200"));
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Test
     void notFoundStatusReportedAsError() {
         var response = execute("""
                 GET("%s/not-found")""".formatted(baseUrl));
@@ -154,9 +177,11 @@ class HttpSamplerProviderIT {
         try (var plugin = new HttpSamplerPlugin()) {
             var options = plugin.options();
             options.expression = expression;
-            try (var provider = plugin.newSamplerProvider(options);
-                    var sampler = provider.newSampler()) {
-                return sampler.execute(SamplerParameters.NONE, SamplerResponseBuilder.newBuilder());
+            try (var provider = plugin.newSamplerProvider(options)) {
+                var ctx = SamplerContext.of(provider);
+                try (var sampler = provider.newSampler()) {
+                    return sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

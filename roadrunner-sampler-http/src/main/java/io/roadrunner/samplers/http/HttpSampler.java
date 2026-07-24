@@ -69,13 +69,12 @@ public class HttpSampler implements SamplerSinkRegistrar {
             try {
                 HttpResponse<byte[]> response = httpClient.send(request, BodyHandlers.ofByteArray());
                 var tDone = System.nanoTime();
-                if (response.statusCode() >= 400) {
-                    return builder.error(tStarted, tDone, "HTTP status " + response.statusCode());
+                var statusCode = response.statusCode();
+                if (statusCode >= 400) {
+                    return builder.error(tStarted, tDone, "HTTP status " + statusCode);
                 }
-                return builder.response(tStarted, tDone, samplerSink -> {
-                    // TODO again the same problem with registering attachments and metrics
-                    // samplerSink.attach("RESPONSE", response);
-                });
+                return builder.response(
+                        tStarted, tDone, samplerSink -> samplerSink.attach(statusKey, Integer.toString(statusCode)));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return builder.error(tStarted, System.nanoTime(), messageOf(e));

@@ -61,7 +61,8 @@ public abstract sealed class SamplerResponse<SELF extends SamplerResponse<SELF>>
      * Wraps it in a {@link WeakReference} so the GC can reclaim memory under pressure.
      * May be called at most once per response; throws {@link IllegalStateException} otherwise.
      *
-     * @return
+     * @param value the computed result to retain so it is not optimized away
+     * @return this response, to allow call chaining
      */
     public SamplerResponse<SELF> consume(Object value) {
         if (blackhole != null) {
