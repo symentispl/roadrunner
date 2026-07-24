@@ -59,13 +59,16 @@ final class ProgressBar implements MeasurementProgress {
         if (!live) {
             return;
         }
-        var fraction = (double) (snapshot.processed() - startPosition) / (finishPosition - startPosition);
+        var denominator = finishPosition - startPosition;
+        // ponytail: guard zero/negative span so we don't render NaN and freeze the panel
+        var fraction = denominator <= 0 ? 0.0 : (double) (snapshot.processed() - startPosition) / denominator;
         var panel = LiveProgressRenderer.render(fraction, snapshot, unicode);
         var writer = terminal.writer();
         if (unicode) {
             // ansi-capable: move up over the previous panel and clear each line before redrawing
+            writer.print("\r");
             if (lastLines > 0) {
-                writer.print("\r\033[" + lastLines + "A");
+                writer.print("\033[" + lastLines + "A");
             }
             for (var line : panel.split("\n")) {
                 writer.print("\033[2K");
