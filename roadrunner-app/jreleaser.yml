@@ -5,9 +5,10 @@ project:
     - Symentis.pl
   license: Apache-2.0
   inceptionYear: '2024'
-  java:
-    groupId: io.roadrunner
-    version: '25'
+  languages:
+    java:
+      groupId: io.roadrunner
+      version: '25'
 
 # The vX.Y.Z tag is already created and pushed by maven-release-plugin during
 # release:prepare; JReleaser only needs to publish a GitHub Release on top of
@@ -33,7 +34,7 @@ assemble:
   # Jlink assembler: self-contained runtime image (bundled JDK).
   # JARs in target/modules/ are used as module path; JReleaser auto-detects all modules.
   # No targetJdks -> JReleaser uses the current JDK (the one running the build).
-  # Note: jlink uses 'archiveFormat' (singular string).
+  # Note: jlink uses 'formats' (a list), same as javaArchive.
   jlink:
     roadrunner:
       active: ALWAYS
@@ -54,7 +55,8 @@ assemble:
       args:
         - --no-header-files
         - --no-man-pages
-      archiveFormat: ZIP
+      formats:
+        - ZIP
       imageName: 'roadrunner-app-{{projectVersion}}'
 
   # JavaArchive assembler: plain JAR distribution (requires user-supplied JDK).
