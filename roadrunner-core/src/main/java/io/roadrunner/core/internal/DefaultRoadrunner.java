@@ -22,6 +22,7 @@ import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.measurments.Measurements;
+import io.roadrunner.api.measurments.ProgressSnapshot;
 import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.latency.recording.LatencyRecorders;
@@ -98,10 +99,19 @@ public class DefaultRoadrunner implements Roadrunner {
     @Override
     public void close() {}
 
+    static EventListener newProgressListener(EventListener delegate, MeasurementProgress progress) {
+        return new ProgressTrackingResponseListener(delegate, progress);
+    }
+
     private static class ProgressTrackingResponseListener implements EventListener {
+        private static final int SPARK_SLICES = 16;
+
         private final EventListener delegate;
         private final MeasurementProgress measurementProgress;
-        private final AtomicLong processedRequests = new AtomicLong(0);
+        private final AtomicLong processed = new AtomicLong();
+        private final AtomicLong errors = new AtomicLong();
+        private final long[] spark = new long[SPARK_SLICES];
+        private volatile long startNanos = 0L;
 
         ProgressTrackingResponseListener(EventListener delegate, MeasurementProgress measurementProgress) {
             this.delegate = delegate;
@@ -116,10 +126,27 @@ public class DefaultRoadrunner implements Roadrunner {
         @Override
         public void onEvent(Collection<? extends Event> batch) {
             delegate.onEvent(batch);
-            // Update progress based on batch size
-            var currentProcessed = processedRequests.addAndGet(
-                    batch.stream().filter(SamplerResponse.class::isInstance).count());
-            measurementProgress.update(currentProcessed);
+            if (startNanos == 0L) {
+                startNanos = System.nanoTime();
+            }
+            long batchCount = 0;
+            long batchErrors = 0;
+            for (var e : batch) {
+                if (e instanceof SamplerResponse<?>) {
+                    batchCount++;
+                    if (e instanceof SamplerResponse.Error) {
+                        batchErrors++;
+                    }
+                }
+            }
+            var total = processed.addAndGet(batchCount);
+            var totalErrors = errors.addAndGet(batchErrors);
+            var elapsed = Math.max(1L, System.nanoTime() - startNanos);
+            var throughput = total / (elapsed / 1_000_000_000.0);
+            // ponytail: coarse 1s ring, replace with a proper sliding window only if the live sparkline looks jerky.
+            var slice = (int) ((elapsed / 1_000_000_000L) % SPARK_SLICES);
+            spark[slice] = batchCount;
+            measurementProgress.update(new ProgressSnapshot(total, totalErrors, elapsed, throughput, spark.clone()));
         }
 
         @Override
