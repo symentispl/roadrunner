@@ -23,8 +23,8 @@ import picocli.CommandLine.Parameters;
 
 @Command(description = "Neo4j sampler")
 public class Neo4jSamplerOptions implements SamplerOptions<Neo4jSamplerProvider> {
-    @Parameters(paramLabel = "query", description = "Neo4j query")
-    public String query;
+    @Parameters(paramLabel = "expression", description = "Sampler operation expression, e.g. query(\"RETURN 1\")")
+    public String expression;
 
     @Option(names = "--uri", description = "Neo4j database uri", required = true)
     public URI uri;

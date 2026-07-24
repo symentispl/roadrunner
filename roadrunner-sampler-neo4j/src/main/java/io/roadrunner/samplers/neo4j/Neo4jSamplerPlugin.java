@@ -34,6 +34,6 @@ public class Neo4jSamplerPlugin implements SamplerPlugin<Neo4jSamplerProvider, N
     public Neo4jSamplerProvider newSamplerProvider(Neo4jSamplerOptions options) {
         var driver = GraphDatabase.driver(options.uri, AuthTokens.basic(options.username, options.password));
 
-        return new Neo4jSamplerProvider(driver, options.query);
+        return new Neo4jSamplerProvider(driver, options.expression);
     }
 }

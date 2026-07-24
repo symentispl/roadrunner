@@ -7,6 +7,27 @@ Roadrunner is invoked as:
 roadrunner [OPTIONS] <sampler> [SAMPLER_OPTIONS]
 ----
 
+[#sampler-expressions]
+== Sampler operation expressions
+
+Some samplers (currently `jdbc` and `neo4j`) take their positional argument as
+a *sampler operation expression* rather than bare query text — a method name
+followed by one or more double-quoted string literals:
+
+[source]
+----
+methodName("literal", "literal", ...)
+----
+
+Each such sampler exposes one or more named operations; the expression
+selects which operation to invoke and supplies its literal arguments. Today
+both the JDBC and Neo4j samplers expose a single `query(...)` operation, so
+their positional argument always takes the form `query("...")` — see
+xref:samplers/jdbc.adoc[JDBC Sampler] and xref:samplers/neo4j.adoc[Neo4j Sampler]
+for details. This syntax is shared across every sampler that adopts it, so a
+future sampler exposing multiple operations (e.g. `read(...)`/`write(...)`)
+uses the same expression grammar.
+
 == Load model
 
 Exactly one load model must be chosen per run.
@@ -112,5 +133,5 @@ roadrunner -c 10 -n 100 --parameters-source csv:file=queries.csv jdbc \
   --url jdbc:postgresql://localhost/mydb \
   --username app --password secret \
   --driver /opt/drivers/postgresql.jar \
-  "SELECT 1"
+  'query("SELECT 1")'
 ----

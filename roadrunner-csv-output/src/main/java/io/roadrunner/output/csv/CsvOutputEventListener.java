@@ -61,8 +61,10 @@ public class CsvOutputEventListener implements EventListener {
             switch (response) {
                 case SamplerResponse.Error e -> appendResponseRow(e, "KO");
                 case SamplerResponse.Response<?> e -> appendResponseRow(e, "OK");
-                case UserEvent.Enter e -> rowBuilder.append("USER,").append(e.timestamp()).append(",ENTER");
-                case UserEvent.Exit e -> rowBuilder.append("USER,").append(e.timestamp()).append(",EXIT");
+                case UserEvent.Enter e ->
+                    rowBuilder.append("USER,").append(e.timestamp()).append(",ENTER");
+                case UserEvent.Exit e ->
+                    rowBuilder.append("USER,").append(e.timestamp()).append(",EXIT");
                 default -> throw new IllegalStateException("Unexpected value: " + response);
             }
             try {
