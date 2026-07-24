@@ -365,6 +365,7 @@
         <module>roadrunner-sampler-jdbc</module>
         <module>roadrunner-sampler-neo4j</module>
         <module>roadrunner-sampler-zero</module>
+        <module>roadrunner-sampler-http</module>
         <module>roadrunner-api</module>
         <module>roadrunner-hdrhistogram</module>
         <module>roadrunner-latency-utils</module>
