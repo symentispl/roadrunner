@@ -16,6 +16,7 @@
 open module io.roadrunner.samplers.jdbc.tests {
     requires io.roadrunner.api;
     requires io.roadrunner.samplers.jdbc;
+    requires io.roadrunner.samplers.spi;
     requires java.sql;
     requires org.assertj.core;
     requires org.junit.jupiter.api;

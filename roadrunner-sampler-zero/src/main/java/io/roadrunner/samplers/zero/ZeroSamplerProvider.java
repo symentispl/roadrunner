@@ -15,9 +15,10 @@
  */
 package io.roadrunner.samplers.zero;
 
-import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
+import io.roadrunner.api.samplers.SamplerResponseBuilder;
 
 public class ZeroSamplerProvider implements SamplerProvider {
 
@@ -25,9 +26,9 @@ public class ZeroSamplerProvider implements SamplerProvider {
 
     @Override
     public Sampler newSampler() {
-        return (parameters) -> {
+        return (SamplerParameters _, SamplerResponseBuilder builder) -> {
             var nanoTime = System.nanoTime();
-            return SamplerResponse.empty(nanoTime, nanoTime);
+            return builder.response(nanoTime, nanoTime);
         };
     }
 

@@ -18,9 +18,13 @@ package io.roadrunner.samplers.jdbc;
 import static java.util.Map.entry;
 import static java.util.Objects.requireNonNull;
 
-import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.metrics.MetricKey;
+import io.roadrunner.api.metrics.MetricRegistry;
+import io.roadrunner.api.metrics.MetricUnit;
 import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
+import io.roadrunner.api.samplers.SamplerResponseBuilder;
+import io.roadrunner.api.samplers.SamplerSinkRegistrar;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -40,19 +44,25 @@ import javax.sql.DataSource;
  * Extension-point methods class for the JDBC sampler: {@link #query(String)} is bound from a CLI
  * {@code query("SELECT ...")} expression via {@link io.roadrunner.samplers.spi.SamplerExtensionPoint}.
  */
-public class JDBCSampler {
+public class JDBCSampler implements SamplerSinkRegistrar {
 
     private final DataSource dataSource;
     private final LongAdder sampleCount = new LongAdder();
     private final LongAdder acquireNanos = new LongAdder();
     private final LongAdder queryNanos = new LongAdder();
+    private MetricKey rowCountKey;
 
     public JDBCSampler(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
+    @Override
+    public void registerMetrics(MetricRegistry registry) {
+        this.rowCountKey = registry.register("row_count", MetricUnit.COUNT);
+    }
+
     public Sampler query(String sql) {
-        return (SamplerParameters parameters) -> {
+        return (SamplerParameters parameters, SamplerResponseBuilder builder) -> {
             var tStarted = System.nanoTime();
             try (var cnn = dataSource.getConnection();
                     var stmt = cnn.prepareStatement(sql)) {
@@ -73,17 +83,18 @@ public class JDBCSampler {
                     }
                     var tDone = System.nanoTime();
                     recordTimestamps(tStarted, tAcquired, tDone);
-                    return SamplerResponse.response(tStarted, tDone, rowCount);
+                    var rows = rowCount;
+                    return builder.response(tStarted, tDone, samplerSink -> samplerSink.add(rowCountKey, rows));
                 } catch (Exception e) {
                     var tDone = System.nanoTime();
                     recordTimestamps(tStarted, tAcquired, tDone);
-                    return SamplerResponse.error(tStarted, tDone, e.getMessage());
+                    return builder.error(tStarted, tDone, e.getMessage());
                 }
             } catch (SQLException e) {
                 var tDone = System.nanoTime();
                 // Connection acquisition failed: entire window is acquire time.
                 recordTimestamps(tStarted, tDone, tDone);
-                return SamplerResponse.error(tStarted, tDone, e.getMessage());
+                return builder.error(tStarted, tDone, e.getMessage());
             }
         };
     }

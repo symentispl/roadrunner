@@ -18,6 +18,7 @@ package io.roadrunner;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
+import io.roadrunner.api.samplers.SamplerResponseBuilder;
 import io.roadrunner.samplers.spi.SamplerExtensionPoint;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
@@ -38,7 +39,7 @@ public class SamplerExtensionPointBenchmarks {
 
     public static class NoOpSamplerProvider {
         public Sampler query(String sql) {
-            return parameters -> SamplerResponse.empty(0, 0);
+            return (parameters, builder) -> builder.response(0, 1);
         }
     }
 
@@ -47,25 +48,26 @@ public class SamplerExtensionPointBenchmarks {
         NoOpSamplerProvider fixture;
         private Sampler extensionPointSampler;
         private Sampler sampler;
+        private final SamplerResponseBuilder responseBuilder = SamplerResponseBuilder.newBuilder();
 
         @Setup(Level.Trial)
-        public void setUp() throws Exception {
+        public void setUp() {
             fixture = new NoOpSamplerProvider();
             sampler = fixture.query("SELECT 1");
-            extensionPointSampler =
-                    SamplerExtensionPoint.bind(fixture, "query(\"SELECT 1\")").get();
+            extensionPointSampler = SamplerExtensionPoint.bind(fixture, """
+                            query("SELECT 1")""").get();
         }
     }
 
     @Benchmark
     @Fork(value = 1)
     public SamplerResponse<?> directDispatch(NoOpSamplerState state) {
-        return state.sampler.execute(SamplerParameters.NONE);
+        return state.sampler.execute(SamplerParameters.NONE, state.responseBuilder);
     }
 
     @Benchmark
     @Fork(value = 1)
     public SamplerResponse<?> extensionPointDispatch(NoOpSamplerState state) throws Throwable {
-        return state.extensionPointSampler.execute(SamplerParameters.NONE);
+        return state.extensionPointSampler.execute(SamplerParameters.NONE, state.responseBuilder);
     }
 }

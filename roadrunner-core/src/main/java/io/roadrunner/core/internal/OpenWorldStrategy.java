@@ -19,6 +19,8 @@ import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
+import io.roadrunner.api.samplers.SamplerResponseBuilder;
+import io.roadrunner.samplers.spi.SamplerContext;
 import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
@@ -54,7 +56,8 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
             SamplerProvider samplerSupplier,
             ParameterCarousel parameterFeed,
             QueueingSamplerResponsesJournal journal,
-            LatencyRecorder recorder)
+            LatencyRecorder recorder,
+            SamplerContext samplerContext)
             throws InterruptedException {
         long intervalNanos = 1_000_000_000L / usersArrivalRate;
         if (intervalNanos <= 0) {
@@ -92,8 +95,15 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 }
                 var scheduledStartTime = nextScheduledStartTime;
                 phaser.register();
+                var builder = samplerContext.newResponseBuilder();
                 requestsExecutor.submit(new RoadrunnerUser(
-                        journal, samplerSupplier.newSampler(), scheduledStartTime, phaser, parameterFeed, recorder));
+                        journal,
+                        samplerSupplier.newSampler(),
+                        scheduledStartTime,
+                        phaser,
+                        parameterFeed,
+                        recorder,
+                        builder));
             }
         } finally {
             // Deregister the main party; when the last in-flight user also deregisters, the phaser
@@ -115,6 +125,7 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
         private final Phaser phaser;
         private final ParameterCarousel parameters;
         private final LatencyRecorder recorder;
+        private final SamplerResponseBuilder builder;
 
         public RoadrunnerUser(
                 QueueingSamplerResponsesJournal journal,
@@ -122,20 +133,22 @@ public final class OpenWorldStrategy implements ExecutionStrategy {
                 long scheduledStartTime,
                 Phaser phaser,
                 ParameterCarousel parameters,
-                LatencyRecorder recorder) {
+                LatencyRecorder recorder,
+                SamplerResponseBuilder builder) {
             this.journal = journal;
             this.sampler = sampler;
             this.scheduledStartTime = scheduledStartTime;
             this.phaser = phaser;
             this.parameters = parameters;
             this.recorder = recorder;
+            this.builder = builder;
         }
 
         @Override
         public void run() {
             try {
                 journal.userEnters(UserEvent.enter());
-                var response = sampler.execute(parameters.next());
+                var response = sampler.execute(parameters.next(), builder);
                 var inQueueTime = response.timestamp() - scheduledStartTime;
                 var serviceTime = response.stopTime() - response.timestamp();
                 var correctedLatency = serviceTime + inQueueTime;

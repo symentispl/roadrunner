@@ -15,8 +15,10 @@
  */
 package io.roadrunner.samplers.http;
 
-import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.attachments.AttachmentKey;
+import io.roadrunner.api.attachments.AttachmentRegistry;
 import io.roadrunner.api.samplers.Sampler;
+import io.roadrunner.api.samplers.SamplerSinkRegistrar;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -30,12 +32,18 @@ import java.net.http.HttpResponse.BodyHandlers;
  * from a CLI operation expression such as {@code GET("http://localhost:8080/")} via
  * {@link io.roadrunner.samplers.spi.SamplerExtensionPoint}.
  */
-public class HttpSampler {
+public class HttpSampler implements SamplerSinkRegistrar {
 
     private final HttpClient httpClient;
+    private AttachmentKey statusKey;
 
     public HttpSampler(HttpClient httpClient) {
         this.httpClient = httpClient;
+    }
+
+    @Override
+    public void registerAttachments(AttachmentRegistry registry) {
+        this.statusKey = registry.register("status");
     }
 
     public Sampler GET(String url) {
@@ -56,20 +64,22 @@ public class HttpSampler {
 
     private Sampler request(HttpRequest.Builder requestBuilder) {
         var request = requestBuilder.build();
-        return parameters -> {
+        return (parameters, builder) -> {
             var tStarted = System.nanoTime();
             try {
                 HttpResponse<byte[]> response = httpClient.send(request, BodyHandlers.ofByteArray());
                 var tDone = System.nanoTime();
-                if (response.statusCode() >= 400) {
-                    return SamplerResponse.error(tStarted, tDone, "HTTP status " + response.statusCode());
+                var statusCode = response.statusCode();
+                if (statusCode >= 400) {
+                    return builder.error(tStarted, tDone, "HTTP status " + statusCode);
                 }
-                return SamplerResponse.response(tStarted, tDone, response);
+                return builder.response(
+                        tStarted, tDone, samplerSink -> samplerSink.attach(statusKey, Integer.toString(statusCode)));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                return SamplerResponse.error(tStarted, System.nanoTime(), messageOf(e));
+                return builder.error(tStarted, System.nanoTime(), messageOf(e));
             } catch (Exception e) {
-                return SamplerResponse.error(tStarted, System.nanoTime(), messageOf(e));
+                return builder.error(tStarted, System.nanoTime(), messageOf(e));
             }
         };
     }

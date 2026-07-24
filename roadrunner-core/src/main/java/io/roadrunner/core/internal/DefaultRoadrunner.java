@@ -27,6 +27,7 @@ import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.latency.recording.LatencyRecorders;
 import io.roadrunner.latency.recording.PauseDetectorKind;
 import io.roadrunner.output.csv.CsvOutputEventListener;
+import io.roadrunner.samplers.spi.SamplerContext;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -64,8 +65,12 @@ public class DefaultRoadrunner implements Roadrunner {
         var csvOutputFile = outputDir.resolve("output.csv");
         LOG.info("Writing responses to {}", csvOutputFile);
 
-        var progressTrackingResponseListener =
-                new ProgressTrackingResponseListener(new CsvOutputEventListener(csvOutputFile), measurementProgress);
+        var samplerContext = SamplerContext.of(samplerSupplier);
+
+        var progressTrackingResponseListener = new ProgressTrackingResponseListener(
+                new CsvOutputEventListener(
+                        csvOutputFile, samplerContext.metricRegistry(), samplerContext.attachmentRegistry()),
+                measurementProgress);
         try (var responsesJournal = new QueueingSamplerResponsesJournal(progressTrackingResponseListener);
                 var gcProfiler = new GCProfiler();
                 var latencyRecorder = LatencyRecorders.create(pauseDetectorKinds)) {
@@ -73,7 +78,7 @@ public class DefaultRoadrunner implements Roadrunner {
             gcProfiler.start();
             responsesJournal.start();
             try {
-                strategy.execute(samplerSupplier, parameterFeed, responsesJournal, latencyRecorder);
+                strategy.execute(samplerSupplier, parameterFeed, responsesJournal, latencyRecorder, samplerContext);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new RuntimeException(e);

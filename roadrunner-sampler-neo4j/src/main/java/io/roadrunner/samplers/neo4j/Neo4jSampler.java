@@ -15,8 +15,10 @@
  */
 package io.roadrunner.samplers.neo4j;
 
-import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.attachments.AttachmentKey;
+import io.roadrunner.api.attachments.AttachmentRegistry;
 import io.roadrunner.api.samplers.Sampler;
+import io.roadrunner.api.samplers.SamplerSinkRegistrar;
 import java.util.Map;
 import org.neo4j.driver.Driver;
 
@@ -24,16 +26,22 @@ import org.neo4j.driver.Driver;
  * Extension-point methods class for the Neo4j sampler: {@link #query(String)} is bound from a
  * CLI {@code query("RETURN 1")} expression via {@link io.roadrunner.samplers.spi.SamplerExtensionPoint}.
  */
-public class Neo4jSampler {
+public class Neo4jSampler implements SamplerSinkRegistrar {
 
     private final Driver driver;
+    private AttachmentKey resultsKey;
 
     public Neo4jSampler(Driver driver) {
         this.driver = driver;
     }
 
+    @Override
+    public void registerAttachments(AttachmentRegistry registry) {
+        this.resultsKey = registry.register("results");
+    }
+
     public Sampler query(String cypher) {
-        return parameters -> {
+        return (parameters, builder) -> {
             var startTime = System.nanoTime();
             try (var session = driver.session()) {
                 // Neo4j's Session.run accepts Map<String, Object>; SamplerParameters.asMap returns
@@ -42,9 +50,13 @@ public class Neo4jSampler {
                 @SuppressWarnings("unchecked")
                 var params = (Map<String, Object>) parameters.asMap();
                 var result = session.run(cypher, params);
-                return SamplerResponse.response(startTime, System.nanoTime(), result.consume());
+                var summary = result.consume();
+                return builder.response(
+                        startTime,
+                        System.nanoTime(),
+                        sink -> sink.attach(resultsKey, summary.counters().toString()));
             } catch (Exception e) {
-                return SamplerResponse.error(startTime, System.nanoTime(), e.getMessage());
+                return builder.error(startTime, System.nanoTime(), e.getMessage());
             }
         };
     }

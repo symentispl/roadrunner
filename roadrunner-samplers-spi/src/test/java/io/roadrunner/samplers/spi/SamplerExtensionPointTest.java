@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.api.samplers.Sampler;
+import io.roadrunner.api.samplers.SamplerResponseBuilder;
 import org.junit.jupiter.api.Test;
 
 class SamplerExtensionPointTest {
@@ -32,11 +33,11 @@ class SamplerExtensionPointTest {
             this.lastSql = sql;
             // Capture sql so the lambda isn't a non-capturing singleton, forcing a fresh
             // instance per call.
-            return parameters -> SamplerResponse.empty(0, sql.length());
+            return (parameters, builder) -> builder.response(0, sql.length());
         }
 
         public Sampler noArgs() {
-            return parameters -> SamplerResponse.empty(0, 0);
+            return (parameters, builder) -> builder.response(0, 1);
         }
 
         public String lastSql() {
@@ -46,7 +47,7 @@ class SamplerExtensionPointTest {
 
     public static class NonStringParameterFixture {
         public Sampler withInt(int notAString) {
-            return parameters -> SamplerResponse.empty(0, 0);
+            return (parameters, builder) -> builder.response(0, 1);
         }
     }
 
@@ -54,8 +55,9 @@ class SamplerExtensionPointTest {
     void bindsSingleArgumentMethodAndPassesTheLiteral() {
         var fixture = new QueryFixture();
 
-        var sampler = SamplerExtensionPoint.bind(fixture, "query(\"SELECT 1\")").get();
-        var response = sampler.execute(SamplerParameters.NONE);
+        var sampler = SamplerExtensionPoint.bind(fixture, """
+                query("SELECT 1")""").get();
+        var response = sampler.execute(SamplerParameters.NONE, SamplerResponseBuilder.newBuilder());
 
         assertThat(fixture.lastSql()).isEqualTo("SELECT 1");
         assertThat(response).isInstanceOf(SamplerResponse.Response.class);
@@ -66,42 +68,47 @@ class SamplerExtensionPointTest {
         var fixture = new QueryFixture();
 
         var sampler = SamplerExtensionPoint.bind(fixture, "noArgs()").get();
-        var response = sampler.execute(SamplerParameters.NONE);
+        var response = sampler.execute(SamplerParameters.NONE, SamplerResponseBuilder.newBuilder());
 
         assertThat(response).isInstanceOf(SamplerResponse.Response.class);
     }
 
     @Test
     void eachSupplierInvocationProducesAFreshSampler() {
-        var samplerSupplier = SamplerExtensionPoint.bind(new QueryFixture(), "query(\"SELECT 1\")");
+        var samplerSupplier = SamplerExtensionPoint.bind(new QueryFixture(), """
+                query("SELECT 1")""");
 
         assertThat(samplerSupplier.get()).isNotSameAs(samplerSupplier.get());
     }
 
     @Test
     void malformedExpressionThrows() {
-        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), "query(\"unterminated"))
+        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), """
+                query("unterminated"""))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Unterminated string literal");
     }
 
     @Test
     void unknownMethodNameThrows() {
-        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), "update(\"SELECT 1\")"))
+        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), """
+                update("SELECT 1")"""))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("update");
     }
 
     @Test
     void arityMismatchThrows() {
-        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), "query(\"a\", \"b\")"))
+        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), """
+                query("a", "b")"""))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("query");
     }
 
     @Test
     void nonStringParameterThrows() {
-        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new NonStringParameterFixture(), "withInt(\"1\")"))
+        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new NonStringParameterFixture(), """
+                withInt("1")"""))
                 .isInstanceOf(PluginInitializationException.class)
                 .hasMessageContaining("withInt");
     }

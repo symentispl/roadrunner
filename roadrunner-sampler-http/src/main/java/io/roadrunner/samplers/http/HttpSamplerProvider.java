@@ -15,26 +15,16 @@
  */
 package io.roadrunner.samplers.http;
 
-import io.roadrunner.api.samplers.Sampler;
-import io.roadrunner.api.samplers.SamplerProvider;
-import io.roadrunner.samplers.spi.SamplerExtensionPoint;
+import io.roadrunner.samplers.spi.SamplerExtension;
 import java.net.http.HttpClient;
-import java.util.function.Supplier;
 
-public class HttpSamplerProvider implements SamplerProvider {
+public class HttpSamplerProvider extends SamplerExtension {
 
-    private final Supplier<Sampler> samplerSupplier;
     private final HttpClient httpClient;
 
     public HttpSamplerProvider(HttpClient httpClient, String expressionText) {
+        super(new HttpSampler(httpClient), expressionText);
         this.httpClient = httpClient;
-        var httpSampler = new HttpSampler(httpClient);
-        this.samplerSupplier = SamplerExtensionPoint.bind(httpSampler, expressionText);
-    }
-
-    @Override
-    public Sampler newSampler() {
-        return samplerSupplier.get();
     }
 
     @Override
