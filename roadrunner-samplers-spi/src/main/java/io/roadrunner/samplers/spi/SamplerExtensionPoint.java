@@ -15,6 +15,8 @@
  */
 package io.roadrunner.samplers.spi;
 
+import static java.util.stream.Collectors.joining;
+
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.samplers.spi.internal.SamplerExpression;
 import java.lang.invoke.MethodHandle;
@@ -23,7 +25,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * Binds a sampler operation expression (e.g. {@code query("SELECT 1")}) to a matching
@@ -40,11 +41,11 @@ public final class SamplerExtensionPoint {
     private SamplerExtensionPoint() {}
 
     public static Supplier<Sampler> bind(Object target, String expressionText) {
-        SamplerExpression expression = SamplerExpression.parse(expressionText);
+        var expression = SamplerExpression.parse(expressionText);
 
-        List<Method> candidates = candidateMethods(target.getClass());
+        var candidates = candidateMethods(target.getClass());
 
-        List<Method> matching = candidates.stream()
+        var matching = candidates.stream()
                 .filter(method -> method.getName().equals(expression.methodName()))
                 .filter(method ->
                         method.getParameterCount() == expression.arguments().size())
@@ -60,7 +61,7 @@ public final class SamplerExtensionPoint {
                                     describe(candidates)));
         }
 
-        Method method = matching.get(0);
+        var method = matching.getFirst();
 
         MethodHandle handle;
         try {
@@ -72,8 +73,8 @@ public final class SamplerExtensionPoint {
                     e);
         }
 
-        Object[] boundArguments = prependTarget(target, expression.arguments());
-        MethodHandle boundHandle = MethodHandles.insertArguments(handle, 0, boundArguments);
+        var boundArguments = prependTarget(target, expression.arguments());
+        var boundHandle = MethodHandles.insertArguments(handle, 0, boundArguments);
 
         return () -> {
             try {
@@ -88,12 +89,12 @@ public final class SamplerExtensionPoint {
     }
 
     private static List<Method> candidateMethods(Class<?> type) {
-        List<Method> candidates = new ArrayList<>();
-        for (Method method : type.getMethods()) {
+        var candidates = new ArrayList<Method>();
+        for (var method : type.getMethods()) {
             if (method.getReturnType() != Sampler.class) {
                 continue;
             }
-            for (Class<?> parameterType : method.getParameterTypes()) {
+            for (var parameterType : method.getParameterTypes()) {
                 if (parameterType != String.class) {
                     throw new PluginInitializationException(
                             "Extension point method '%s' on %s has non-String parameter of type %s"
@@ -107,7 +108,7 @@ public final class SamplerExtensionPoint {
     }
 
     private static Object[] prependTarget(Object target, List<String> arguments) {
-        Object[] withTarget = new Object[arguments.size() + 1];
+        var withTarget = new Object[arguments.size() + 1];
         withTarget[0] = target;
         for (int i = 0; i < arguments.size(); i++) {
             withTarget[i + 1] = arguments.get(i);
@@ -118,6 +119,6 @@ public final class SamplerExtensionPoint {
     private static String describe(List<Method> candidates) {
         return candidates.stream()
                 .map(m -> "%s(%d args)".formatted(m.getName(), m.getParameterCount()))
-                .collect(Collectors.joining(", "));
+                .collect(joining(", "));
     }
 }

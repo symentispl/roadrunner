@@ -52,7 +52,7 @@ public class JDBCSamplerPlugin implements SamplerPlugin<JDBCSamplerProvider, JDB
         config.setUsername(options.username);
         config.setPassword(options.password);
         config.setMaximumPoolSize(options.poolSize);
-        config.setPoolName("roadrunner-sampler");
+        config.setPoolName("roadrunner-jdbc-sampler");
         dataSource = new HikariDataSource(config);
 
         provider = new JDBCSamplerProvider(dataSource, options.expression);
