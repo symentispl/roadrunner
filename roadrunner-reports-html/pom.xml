@@ -19,8 +19,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <!-- don't print GraalVM warnings -->
-                    <argLine>-Dpolyglot.engine.WarnInterpreterOnly=false --add-exports=org.graalvm.polyglot/org.graalvm.polyglot.impl=ALL-UNNAMED</argLine>
+                    <!-- @{argLine} keeps the JaCoCo unit agent (from prepare-agent) attached so
+                         coverage is recorded to jacoco.exec; the rest silences GraalVM warnings. -->
+                    <argLine>@{argLine} -Dpolyglot.engine.WarnInterpreterOnly=false --add-exports=org.graalvm.polyglot/org.graalvm.polyglot.impl=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
         </plugins>

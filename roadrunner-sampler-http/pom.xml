@@ -7,7 +7,7 @@
         <version>0.2.3-SNAPSHOT</version>
     </parent>
 
-    <artifactId>roadrunner-sampler-neo4j</artifactId>
+    <artifactId>roadrunner-sampler-http</artifactId>
 
     <dependencies>
         <dependency>
@@ -16,20 +16,8 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.neo4j.driver</groupId>
-            <artifactId>neo4j-java-driver-all</artifactId>
-            <version>6.2.0</version>
-        </dependency>
-        <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
-            <version>4.7.7</version>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers-junit-jupiter</artifactId>
-            <version>2.0.5</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -50,15 +38,36 @@
 
     <build>
         <plugins>
+            <!-- Integration tests use the JDK built-in com.sun.net.httpserver (module jdk.httpserver),
+                 which the production module deliberately does not require. Grant the test code
+                 readability at test-compile and test-run time only. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>--add-modules</arg>
+                                <arg>jdk.httpserver</arg>
+                                <arg>--add-reads</arg>
+                                <arg>io.roadrunner.samplers.http=jdk.httpserver</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <!-- @{argLine} keeps the JaCoCo integration agent (from prepare-agent-integration)
-                     attached so integration-test coverage is recorded to jacoco-it.exec. -->
+                     attached; the add-modules/add-reads grant the tests access to jdk.httpserver. -->
                 <configuration>
-                    <argLine>@{argLine} --add-reads org.neo4j.driver=jdk.unsupported</argLine>
+                    <argLine>@{argLine} --add-modules jdk.httpserver --add-reads io.roadrunner.samplers.http=jdk.httpserver</argLine>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
 </project>
