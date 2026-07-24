@@ -28,6 +28,11 @@
             <artifactId>roadrunner-samplers-spi</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-console</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>commons-io</groupId>

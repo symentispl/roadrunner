@@ -16,40 +16,65 @@
 package io.roadrunner.cli;
 
 import io.roadrunner.api.measurments.MeasurementProgress;
-import java.io.Console;
+import io.roadrunner.api.measurments.ProgressSnapshot;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Duration;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 
 final class TimeBasedProgressBar implements MeasurementProgress {
-    private static final char EMPTY = '░';
-    private static final char FULL = '█';
 
-    private final int progressBarSize;
     private final long totalDurationNanos;
-    private final long startNanos;
-    private final Console console;
+    private final Terminal terminal;
+    private final boolean unicode;
+    private final boolean live;
+    private int lastLines = 0;
 
     TimeBasedProgressBar(Duration duration) {
-        this.progressBarSize = 100;
         this.totalDurationNanos = duration.toNanos();
-        this.startNanos = System.nanoTime();
-        this.console = System.console();
+        this.terminal = buildTerminal();
+        var type = terminal.getType() == null ? "" : terminal.getType();
+        this.unicode = !type.contains("dumb");
+        // ponytail: mirror the old System.console() != null guard - stay silent when output isn't a real tty
+        this.live = System.console() != null;
+    }
+
+    private static Terminal buildTerminal() {
+        try {
+            return TerminalBuilder.builder().build();
+        } catch (IOException e) {
+            // ponytail: no real tty available (e.g. CI) -> degrade to a dumb terminal instead of failing the run
+            try {
+                return TerminalBuilder.builder().dumb(true).build();
+            } catch (IOException inner) {
+                throw new UncheckedIOException(inner);
+            }
+        }
     }
 
     @Override
-    public void update(long ignored) {
-        if (console != null) {
-            var elapsedNanos = System.nanoTime() - startNanos;
-            var status = (int) Math.min(100, 100 * elapsedNanos / totalDurationNanos);
-            var move = Math.min((progressBarSize * status) / 100, progressBarSize);
-
-            System.out.print(new StringBuilder(progressBarSize + 20)
-                    .append("\r")
-                    .append('[')
-                    .repeat(FULL, move)
-                    .append(status)
-                    .append('%')
-                    .repeat(EMPTY, progressBarSize - move)
-                    .append(']'));
+    public void update(ProgressSnapshot snapshot) {
+        if (!live) {
+            return;
         }
+        var fraction = Math.max(0.0, Math.min(1.0, snapshot.elapsedNanos() / (double) totalDurationNanos));
+        var panel = LiveProgressRenderer.render(fraction, snapshot, unicode);
+        var writer = terminal.writer();
+        if (unicode) {
+            // ansi-capable: move up over the previous panel and clear each line before redrawing
+            if (lastLines > 0) {
+                writer.print("\r\033[" + lastLines + "A");
+            }
+            for (var line : panel.split("\n")) {
+                writer.print("\033[2K");
+                writer.println(line);
+            }
+            lastLines = panel.split("\n").length;
+        } else {
+            // ponytail: dumb terminal -> collapse to one plain overwritten line, no ANSI
+            writer.print("\r" + panel.lines().findFirst().orElse(panel));
+        }
+        writer.flush();
     }
 }
