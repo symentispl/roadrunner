@@ -15,7 +15,11 @@
  */
 package io.roadrunner.samplers.http;
 
+import io.roadrunner.samplers.spi.SamplerExtensionPointDescriptor;
 import io.roadrunner.samplers.spi.SamplerPlugin;
+import java.net.http.HttpClient;
+import java.time.Duration;
+import java.util.List;
 
 public class HttpSamplerPlugin implements SamplerPlugin<HttpSamplerProvider, HttpSamplerOptions> {
 
@@ -26,11 +30,23 @@ public class HttpSamplerPlugin implements SamplerPlugin<HttpSamplerProvider, Htt
 
     @Override
     public HttpSamplerProvider newSamplerProvider(HttpSamplerOptions options) {
-        return new HttpSamplerProvider();
+        var httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(options.connectTimeoutMillis))
+                .build();
+        return new HttpSamplerProvider(httpClient, options.expression);
     }
 
     @Override
     public HttpSamplerOptions options() {
         return new HttpSamplerOptions(this);
+    }
+
+    @Override
+    public List<SamplerExtensionPointDescriptor> extensionPoints() {
+        return List.of(
+                new SamplerExtensionPointDescriptor("GET", List.of("url"), "Execute an HTTP GET request"),
+                new SamplerExtensionPointDescriptor("POST", List.of("url", "body"), "Execute an HTTP POST request"),
+                new SamplerExtensionPointDescriptor("PUT", List.of("url", "body"), "Execute an HTTP PUT request"),
+                new SamplerExtensionPointDescriptor("DELETE", List.of("url"), "Execute an HTTP DELETE request"));
     }
 }

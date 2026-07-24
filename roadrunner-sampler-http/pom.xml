@@ -36,4 +36,36 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <!-- Integration tests use the JDK built-in com.sun.net.httpserver (module jdk.httpserver),
+                 which the production module deliberately does not require. Grant the test code
+                 readability at test-compile and test-run time only. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>--add-modules</arg>
+                                <arg>jdk.httpserver</arg>
+                                <arg>--add-reads</arg>
+                                <arg>io.roadrunner.samplers.http=jdk.httpserver</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <argLine>--add-modules jdk.httpserver --add-reads io.roadrunner.samplers.http=jdk.httpserver</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

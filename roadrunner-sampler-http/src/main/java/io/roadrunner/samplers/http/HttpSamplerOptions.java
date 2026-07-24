@@ -17,9 +17,19 @@ package io.roadrunner.samplers.http;
 
 import io.roadrunner.samplers.spi.SamplerOptions;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 @Command(description = "HTTP protocol, executes a HTTP request", mixinStandardHelpOptions = true)
 public class HttpSamplerOptions implements SamplerOptions<HttpSamplerProvider> {
+
+    @Parameters(
+            paramLabel = "expression",
+            description = "The operation to run on each request, e.g. GET(\"http://localhost:8080/\")")
+    public String expression;
+
+    @Option(names = "--connect-timeout", description = "Connection timeout in milliseconds (default: ${DEFAULT-VALUE})")
+    public long connectTimeoutMillis = 10_000;
 
     private final HttpSamplerPlugin samplerPlugin;
 

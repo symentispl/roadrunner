@@ -17,7 +17,6 @@ import io.roadrunner.samplers.http.HttpSamplerPlugin;
 import io.roadrunner.samplers.spi.SamplerPlugin;
 
 module io.roadrunner.samplers.http {
-    requires java.sql;
     requires io.roadrunner.api;
     requires io.roadrunner.samplers.spi;
     requires info.picocli;
