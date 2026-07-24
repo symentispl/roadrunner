@@ -78,7 +78,7 @@ class JDBCSamplerProviderIT {
     @Test
     void errorOnConnectionFailure() {
         var failingDataSource = new ExceptionThrowingDataSource();
-        try (var provider = new JDBCSamplerProvider(failingDataSource, "SELECT 1");
+        try (var provider = new JDBCSamplerProvider(failingDataSource, "query(\"SELECT 1\")");
              var sampler = provider.newSampler()) {
             var response = sampler.execute(SamplerParameters.NONE);
             assertThat(response)
@@ -203,7 +203,7 @@ class JDBCSamplerProviderIT {
         options.url = url;
         options.username = "SA";
         options.password = "";
-        options.query = query;
+        options.expression = "query(\"%s\")".formatted(query);
         options.driverPath = Paths.get(DRIVER_PATH);
         return options;
     }

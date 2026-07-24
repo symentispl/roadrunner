@@ -15,42 +15,29 @@
  */
 package io.roadrunner.samplers.neo4j;
 
-import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
-import java.util.Map;
+import io.roadrunner.samplers.spi.SamplerExtensionPoint;
+import java.util.function.Supplier;
 import org.neo4j.driver.Driver;
 
 public class Neo4jSamplerProvider implements SamplerProvider {
 
-    private final Driver driver;
-    private final String query;
+    private final Neo4jSampler neo4jSampler;
+    private final Supplier<Sampler> samplerSupplier;
 
-    public Neo4jSamplerProvider(Driver driver, String query) {
-        this.driver = driver;
-        this.query = query;
+    public Neo4jSamplerProvider(Driver driver, String expressionText) {
+        this.neo4jSampler = new Neo4jSampler(driver);
+        this.samplerSupplier = SamplerExtensionPoint.bind(neo4jSampler, expressionText);
     }
 
     @Override
     public Sampler newSampler() {
-        return parameters -> {
-            var startTime = System.nanoTime();
-            try (var session = driver.session()) {
-                // Neo4j's Session.run accepts Map<String, Object>; SamplerParameters.asMap returns
-                // Map<String, ?>. Erasure makes the cast safe — Session.run is a read-only consumer
-                // of the map. See #137 for typed CSV values (Integer/Long/etc. instead of String).
-                @SuppressWarnings("unchecked")
-                var params = (Map<String, Object>) parameters.asMap();
-                var result = session.run(query, params);
-                return SamplerResponse.response(startTime, System.nanoTime(), result.consume());
-            } catch (Exception e) {
-                return SamplerResponse.error(startTime, System.nanoTime(), e.getMessage());
-            }
-        };
+        return samplerSupplier.get();
     }
 
     @Override
     public void close() {
-        driver.close();
+        neo4jSampler.close();
     }
 }

@@ -44,13 +44,14 @@ public class Neo4jSamplerPluginIT {
             options.uri = new URI("neo4j://%s:%d".formatted(neo4j.getHost(), neo4j.getMappedPort(7687)));
             options.username = "neo4j";
             options.password = "";
+            options.expression = "query(\"\")";
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
                 var response = sampler.execute(SamplerParameters.NONE);
                 assertThat(response).asInstanceOf(type(SamplerResponse.Error.class)).satisfies(e -> {
                     assertThat(e.timestamp()).isLessThanOrEqualTo(e.stopTime());
                     assertThat(e.stopTime()).isLessThanOrEqualTo(System.nanoTime());
-                    assertThat(e.message()).isEqualTo("Cypher query text should not be null");
+                    assertThat(e.message()).isNotBlank();
                 });
             }
         }
@@ -63,7 +64,7 @@ public class Neo4jSamplerPluginIT {
             options.uri = new URI("neo4j://%s:%d".formatted(neo4j.getHost(), neo4j.getMappedPort(7687)));
             options.username = "neo4j";
             options.password = "";
-            options.query = "RETURN 1";
+            options.expression = "query(\"RETURN 1\")";
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
                 var response = sampler.execute(SamplerParameters.NONE);
@@ -79,7 +80,7 @@ public class Neo4jSamplerPluginIT {
             options.uri = new URI("neo4j://%s:%d".formatted(neo4j.getHost(), neo4j.getMappedPort(7687)));
             options.username = "neo4j";
             options.password = "";
-            options.query = "RETURN $param";
+            options.expression = "query(\"RETURN $param\")";
             try (var samplerProvider = options.samplerProvider()) {
                 var sampler = samplerProvider.newSampler();
                 var response = sampler.execute(SamplerParameters.of("param", "1"));

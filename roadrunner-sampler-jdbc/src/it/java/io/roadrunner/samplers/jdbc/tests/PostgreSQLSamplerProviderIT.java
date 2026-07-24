@@ -50,7 +50,7 @@ public class PostgreSQLSamplerProviderIT {
             options.url = "jdbc:postgresql://%s:%d/%s".formatted(postgres.getHost(), postgres.getMappedPort(5432), DB_NAME);
             options.username = USERNAME;
             options.password = PASSWORD;
-            options.query = "SELECT 1";
+            options.expression = "query(\"SELECT 1\")";
             options.driverPath = Paths.get(DRIVER_PATH);
             try (var provider = plugin.newSamplerProvider(options);
                     var sampler = provider.newSampler()) {
