@@ -17,6 +17,7 @@ package io.roadrunner.samplers.http;
 
 import io.roadrunner.samplers.spi.SamplerExtensionPointDescriptor;
 import io.roadrunner.samplers.spi.SamplerPlugin;
+import java.net.ProxySelector;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
@@ -30,9 +31,13 @@ public class HttpSamplerPlugin implements SamplerPlugin<HttpSamplerProvider, Htt
 
     @Override
     public HttpSamplerProvider newSamplerProvider(HttpSamplerOptions options) {
-        var httpClient = HttpClient.newBuilder()
+        var builder = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(options.connectTimeoutMillis))
-                .build();
+                .followRedirects(options.followRedirects);
+        if (options.proxyAddress != null) {
+            builder.proxy(ProxySelector.of(options.proxyAddress));
+        }
+        var httpClient = builder.build();
         return new HttpSamplerProvider(httpClient, options.expression);
     }
 

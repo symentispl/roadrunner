@@ -16,6 +16,8 @@
 package io.roadrunner.samplers.http;
 
 import io.roadrunner.samplers.spi.SamplerOptions;
+import java.net.InetSocketAddress;
+import java.net.http.HttpClient;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -30,6 +32,18 @@ public class HttpSamplerOptions implements SamplerOptions<HttpSamplerProvider> {
 
     @Option(names = "--connect-timeout", description = "Connection timeout in milliseconds (default: ${DEFAULT-VALUE})")
     public long connectTimeoutMillis = 10_000;
+
+    @Option(
+            names = "--follow-redirects",
+            description =
+                    "Specifies whether requests will automatically follow redirects issued by the server. (default: ${DEFAULT-VALUE})")
+    public HttpClient.Redirect followRedirects = HttpClient.Redirect.NEVER;
+
+    @Option(
+            names = "--proxy-address",
+            description = "Specifies whether requests will user given proxy address",
+            converter = InetSocketAddressConverter.class)
+    public InetSocketAddress proxyAddress;
 
     private final HttpSamplerPlugin samplerPlugin;
 
