@@ -126,6 +126,11 @@ public class DefaultRoadrunner implements Roadrunner {
         @Override
         public void onEvent(Collection<? extends Event> batch) {
             delegate.onEvent(batch);
+            // Skip the snapshot bookkeeping/allocation when no one is listening (Bootstrap's default),
+            // so non-CLI usage doesn't pay for progress reporting on the event path.
+            if (measurementProgress == MeasurementProgress.NO_OP) {
+                return;
+            }
             if (startNanos == 0L) {
                 startNanos = System.nanoTime();
             }

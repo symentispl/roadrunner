@@ -46,7 +46,10 @@ public record ReportModel(
 
     public static ReportModel from(
             EventReader reader, Histogram histogram, long firstStart, long lastStop, long total, long errors) {
-        var durationSeconds = (lastStop - firstStart) / 1_000_000_000.0;
+        // Guard the empty/degenerate run: with no responses, firstStart stays Long.MAX_VALUE and
+        // lastStop stays 0, which would otherwise yield a huge negative duration.
+        var window = lastStop - firstStart;
+        var durationSeconds = window > 0 ? window / 1_000_000_000.0 : 0.0;
         var throughput = durationSeconds > 0 ? total / durationSeconds : 0.0;
         var errorPercentage = total == 0 ? 0.0 : (double) errors / total * 100;
 

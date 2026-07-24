@@ -28,10 +28,11 @@ final class LiveProgressRenderer {
         var bar = Bars.horizontal(fraction, 24, unicode);
         var spark = Bars.sparkline(s.throughputSpark(), unicode);
         var errPct = s.processed() == 0 ? 0.0 : (double) s.errors() / s.processed() * 100;
-        // Locale.ROOT so the decimal separator is always '.' regardless of the user's locale
+        // Locale.ROOT so the decimal separator is always '.' regardless of the user's locale.
+        // Use '\n' (not '%n') so the panel line separator matches ProgressBar's split("\n").
         return String.format(
                 Locale.ROOT,
-                "%s %d%%%n  %d reqs   %.0f req/s %s%n  errors %d (%.2f%%)",
+                "%s %d%%\n  %d reqs   %.0f req/s %s\n  errors %d (%.2f%%)",
                 bar, pct, s.processed(), s.throughput(), spark, s.errors(), errPct);
     }
 }
