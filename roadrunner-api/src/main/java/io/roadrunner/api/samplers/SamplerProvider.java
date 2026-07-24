@@ -15,15 +15,14 @@
  */
 package io.roadrunner.api.samplers;
 
-import io.roadrunner.api.attachments.AttachmentRegistry;
-import io.roadrunner.api.metrics.MetricRegistry;
-
-public interface SamplerProvider extends AutoCloseable {
+/**
+ * Factory for {@link Sampler} instances. Extends {@link SamplerSinkRegistrar} so the framework can
+ * register a provider's metric/attachment keys uniformly; providers that emit neither inherit the
+ * no-op defaults. {@code newSampler()} remains the single abstract method, so simple providers can
+ * still be written as a lambda.
+ */
+public interface SamplerProvider extends SamplerSinkRegistrar, AutoCloseable {
     Sampler newSampler();
-
-    default void registerMetrics(MetricRegistry registry) {}
-
-    default void registerAttachments(AttachmentRegistry registry) {}
 
     default void close() throws Exception {}
 }

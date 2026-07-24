@@ -15,7 +15,10 @@
  */
 package io.roadrunner.samplers.http;
 
+import io.roadrunner.api.attachments.AttachmentKey;
+import io.roadrunner.api.attachments.AttachmentRegistry;
 import io.roadrunner.api.samplers.Sampler;
+import io.roadrunner.api.samplers.SamplerSinkRegistrar;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -29,12 +32,18 @@ import java.net.http.HttpResponse.BodyHandlers;
  * from a CLI operation expression such as {@code GET("http://localhost:8080/")} via
  * {@link io.roadrunner.samplers.spi.SamplerExtensionPoint}.
  */
-public class HttpSampler {
+public class HttpSampler implements SamplerSinkRegistrar {
 
     private final HttpClient httpClient;
+    private AttachmentKey statusKey;
 
     public HttpSampler(HttpClient httpClient) {
         this.httpClient = httpClient;
+    }
+
+    @Override
+    public void registerAttachments(AttachmentRegistry registry) {
+        this.statusKey = registry.register("status");
     }
 
     public Sampler GET(String url) {

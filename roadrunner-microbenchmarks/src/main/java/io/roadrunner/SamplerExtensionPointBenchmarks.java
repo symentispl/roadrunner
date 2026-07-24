@@ -51,11 +51,11 @@ public class SamplerExtensionPointBenchmarks {
         private final SamplerResponseBuilder responseBuilder = SamplerResponseBuilder.newBuilder();
 
         @Setup(Level.Trial)
-        public void setUp() throws Exception {
+        public void setUp() {
             fixture = new NoOpSamplerProvider();
             sampler = fixture.query("SELECT 1");
-            extensionPointSampler =
-                    SamplerExtensionPoint.bind(fixture, "query(\"SELECT 1\")").get();
+            extensionPointSampler = SamplerExtensionPoint.bind(fixture, """
+                            query("SELECT 1")""").get();
         }
     }
 

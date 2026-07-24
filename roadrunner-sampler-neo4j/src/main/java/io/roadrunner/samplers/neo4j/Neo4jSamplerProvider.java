@@ -15,33 +15,20 @@
  */
 package io.roadrunner.samplers.neo4j;
 
-import io.roadrunner.api.attachments.AttachmentKey;
-import io.roadrunner.api.attachments.AttachmentRegistry;
-import io.roadrunner.api.samplers.Sampler;
-import io.roadrunner.api.samplers.SamplerProvider;
-import io.roadrunner.samplers.spi.SamplerExtensionPoint;
-import java.util.function.Supplier;
+import io.roadrunner.samplers.spi.SamplerExtension;
 import org.neo4j.driver.Driver;
 
-public class Neo4jSamplerProvider implements SamplerProvider {
+public class Neo4jSamplerProvider extends SamplerExtension {
 
     private final Neo4jSampler neo4jSampler;
-    private final Supplier<Sampler> samplerSupplier;
-    private AttachmentKey resultsAttachmentKey;
 
     public Neo4jSamplerProvider(Driver driver, String expressionText) {
-        this.neo4jSampler = new Neo4jSampler(driver);
-        this.samplerSupplier = SamplerExtensionPoint.bind(neo4jSampler, expressionText);
+        this(new Neo4jSampler(driver), expressionText);
     }
 
-    @Override
-    public Sampler newSampler() {
-        return samplerSupplier.get();
-    }
-
-    @Override
-    public void registerAttachments(AttachmentRegistry registry) {
-        resultsAttachmentKey = registry.register("results");
+    private Neo4jSamplerProvider(Neo4jSampler neo4jSampler, String expressionText) {
+        super(neo4jSampler, expressionText);
+        this.neo4jSampler = neo4jSampler;
     }
 
     @Override

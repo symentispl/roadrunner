@@ -15,36 +15,22 @@
  */
 package io.roadrunner.samplers.jdbc;
 
-import io.roadrunner.api.metrics.MetricKey;
-import io.roadrunner.api.metrics.MetricRegistry;
-import io.roadrunner.api.metrics.MetricUnit;
-import io.roadrunner.api.samplers.Sampler;
-import io.roadrunner.api.samplers.SamplerProvider;
-import io.roadrunner.samplers.spi.SamplerExtensionPoint;
+import io.roadrunner.samplers.spi.SamplerExtension;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Supplier;
 import javax.sql.DataSource;
 
-public class JDBCSamplerProvider implements SamplerProvider {
+public class JDBCSamplerProvider extends SamplerExtension {
 
     private final JDBCSampler jdbcSampler;
-    private final Supplier<Sampler> samplerSupplier;
-    private MetricKey rowCountKey;
 
     public JDBCSamplerProvider(DataSource dataSource, String expressionText) {
-        this.jdbcSampler = new JDBCSampler(dataSource);
-        this.samplerSupplier = SamplerExtensionPoint.bind(jdbcSampler, expressionText);
+        this(new JDBCSampler(dataSource), expressionText);
     }
 
-    @Override
-    public void registerMetrics(MetricRegistry registry) {
-        rowCountKey = registry.register("row_count", MetricUnit.COUNT);
-    }
-
-    @Override
-    public Sampler newSampler() {
-        return samplerSupplier.get();
+    private JDBCSamplerProvider(JDBCSampler jdbcSampler, String expressionText) {
+        super(jdbcSampler, expressionText);
+        this.jdbcSampler = jdbcSampler;
     }
 
     public long sampleCount() {

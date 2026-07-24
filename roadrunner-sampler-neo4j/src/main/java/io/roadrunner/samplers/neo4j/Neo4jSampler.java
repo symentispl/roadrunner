@@ -15,7 +15,10 @@
  */
 package io.roadrunner.samplers.neo4j;
 
+import io.roadrunner.api.attachments.AttachmentKey;
+import io.roadrunner.api.attachments.AttachmentRegistry;
 import io.roadrunner.api.samplers.Sampler;
+import io.roadrunner.api.samplers.SamplerSinkRegistrar;
 import java.util.Map;
 import org.neo4j.driver.Driver;
 
@@ -23,12 +26,18 @@ import org.neo4j.driver.Driver;
  * Extension-point methods class for the Neo4j sampler: {@link #query(String)} is bound from a
  * CLI {@code query("RETURN 1")} expression via {@link io.roadrunner.samplers.spi.SamplerExtensionPoint}.
  */
-public class Neo4jSampler {
+public class Neo4jSampler implements SamplerSinkRegistrar {
 
     private final Driver driver;
+    private AttachmentKey resultsKey;
 
     public Neo4jSampler(Driver driver) {
         this.driver = driver;
+    }
+
+    @Override
+    public void registerAttachments(AttachmentRegistry registry) {
+        this.resultsKey = registry.register("results");
     }
 
     public Sampler query(String cypher) {
@@ -41,12 +50,11 @@ public class Neo4jSampler {
                 @SuppressWarnings("unchecked")
                 var params = (Map<String, Object>) parameters.asMap();
                 var result = session.run(cypher, params);
-                // TODO there is no way now, where sampler extension point can get hold of sampler provider,
-                // to get a attachment keys, or metrics keys,
-                // it looks like sampler extension points need to extended with ability to
-                // inject some custom object into methods,
-                // like sampler providers and others
-                return builder.response(startTime, System.nanoTime(), sink -> result.consume());
+                var summary = result.consume();
+                return builder.response(
+                        startTime,
+                        System.nanoTime(),
+                        sink -> sink.attach(resultsKey, summary.counters().toString()));
             } catch (Exception e) {
                 return builder.error(startTime, System.nanoTime(), e.getMessage());
             }
