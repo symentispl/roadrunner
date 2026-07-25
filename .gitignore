@@ -6,3 +6,4 @@ dependency-reduced-pom.xml
 .mise/
 benchmarks/charts/
 /roadrunner-[0-9]*/
+.worktrees/
