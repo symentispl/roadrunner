@@ -16,41 +16,77 @@
 package io.roadrunner.cli;
 
 import io.roadrunner.api.measurments.MeasurementProgress;
-import java.io.Console;
+import io.roadrunner.api.measurments.ProgressSnapshot;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 
-final class ProgressBar implements MeasurementProgress {
-    private static final char EMPTY = '░';
-    private static final char FULL = '█';
+final class ProgressBar implements MeasurementProgress, AutoCloseable {
 
-    private final int progressBarSize;
     private final long startPosition;
     private final long finishPosition;
-    private final Console console;
+    private final Terminal terminal;
+    private final boolean unicode;
+    private final boolean live;
+    private int lastLines = 0;
 
     ProgressBar(int progressBarSize, long startPosition, long finishPosition) {
-        this.progressBarSize = progressBarSize;
         this.startPosition = startPosition;
         this.finishPosition = finishPosition;
-        this.console = System.console();
+        this.terminal = buildTerminal();
+        var type = terminal.getType() == null ? "" : terminal.getType();
+        this.unicode = !type.contains("dumb");
+        // ponytail: mirror the old System.console() != null guard - stay silent when output isn't a real tty
+        this.live = System.console() != null;
+    }
+
+    private static Terminal buildTerminal() {
+        try {
+            // ponytail: dumb(true) only kicks in silently when no system terminal is available (e.g. CI/piped) -
+            // a real tty still gets a full color-capable terminal, this just drops JLine's stderr warning
+            return TerminalBuilder.builder().dumb(true).build();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
-    public void update(long currentPosition) {
-        if (console != null) {
-            var status = (int) (100 * (currentPosition - startPosition) / (finishPosition - startPosition));
-            var move = Math.min((progressBarSize * status) / 100, progressBarSize);
+    public void update(ProgressSnapshot snapshot) {
+        if (!live) {
+            return;
+        }
+        var denominator = finishPosition - startPosition;
+        // ponytail: guard zero/negative span so we don't render NaN and freeze the panel
+        var fraction = denominator <= 0 ? 0.0 : (double) (snapshot.processed() - startPosition) / denominator;
+        var panel = LiveProgressRenderer.render(fraction, snapshot, unicode);
+        var writer = terminal.writer();
+        if (unicode) {
+            // ansi-capable: move up over the previous panel and clear each line before redrawing
+            writer.print("\r");
+            if (lastLines > 0) {
+                writer.print("\033[" + lastLines + "A");
+            }
+            for (var line : panel.split("\n")) {
+                writer.print("\033[2K");
+                writer.println(line);
+            }
+            lastLines = panel.split("\n").length;
+        } else {
+            // ponytail: dumb terminal -> collapse to one plain overwritten line, no ANSI
+            writer.print("\r" + panel.lines().findFirst().orElse(panel));
+        }
+        writer.flush();
+    }
 
-            System.out.print(new StringBuilder(progressBarSize + 20)
-                    .append("\r")
-                    .append('[')
-                    .repeat(FULL, move)
-                    .append(status)
-                    .append('%')
-                    .repeat(EMPTY, progressBarSize - move)
-                    .append("] ")
-                    .append(currentPosition)
-                    .append('/')
-                    .append(finishPosition));
+    // Release the tty so a subsequent consumer (the end-of-run report) can open its own
+    // system terminal; leaving this open forces the report's terminal to a dumb fallback.
+    @Override
+    public void close() {
+        try {
+            terminal.close();
+        } catch (IOException e) {
+            // best-effort cleanup on a short-lived CLI; nothing to recover
         }
     }
 }

@@ -21,12 +21,13 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-text</artifactId>
-        </dependency>
-        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-console</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>

@@ -19,8 +19,8 @@ import io.roadrunner.reports.console.ConsoleReportGeneratorProvider;
 module io.roadrunner.reports.console {
     requires io.roadrunner.api;
     requires io.roadrunner.hdrhistogram;
-    requires org.apache.commons.text;
     requires org.apache.commons.io;
+    requires io.roadrunner.console;
 
     exports io.roadrunner.reports.console;
 

@@ -18,21 +18,17 @@ package io.roadrunner.reports.console;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.reports.ReportGenerator;
+import io.roadrunner.console.ConsoleTheme;
+import io.roadrunner.reports.console.render.ReportRenderer;
 import io.roadrunner.shaded.hdrhistogram.EncodableHistogram;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
 import io.roadrunner.shaded.hdrhistogram.HistogramLogReader;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
-import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.text.StringSubstitutor;
-import org.apache.commons.text.io.StringSubstitutorReader;
-import org.apache.commons.text.lookup.StringLookupFactory;
+import org.jline.terminal.TerminalBuilder;
 
 final class ConsoleReportGenerator implements ReportGenerator {
 
@@ -77,43 +73,11 @@ final class ConsoleReportGenerator implements ReportGenerator {
             }
         }
 
-        // Calculate total duration in seconds
-        double totalDurationSeconds = (lastStopTime - firstStartTime) / 1_000_000_000.0;
-
-        // Calculate requests per second
-        double requestsPerSecond = totalRequests / totalDurationSeconds;
-
-        // Calculate error percentage
-        double errorPercentage = totalRequests == 0 ? 0.0 : (double) errorRequests / totalRequests * 100;
-
-        // Calculate error rate (errors per second)
-        double errorRate = errorRequests / totalDurationSeconds;
-
-        var lookups = new HashMap<String, String>();
-        lookups.put("totalCount", Long.toString(totalRequests));
-        lookups.put("successCount", Long.toString(totalRequests - errorRequests));
-        lookups.put("errorCount", Long.toString(errorRequests));
-        lookups.put("errorPercentage", String.format("%.2f", errorPercentage));
-        lookups.put("errorRate", String.format("%.2f", errorRate));
-        lookups.put("maxValue", Long.toString(toMillis(histogram.getMaxValue())));
-        lookups.put("minValue", Long.toString(toMillis(histogram.getMinValue())));
-        lookups.put(
-                "meanValue",
-                Long.toString(toMillis(Double.valueOf(histogram.getMean()).longValue())));
-        lookups.put("p50", Long.toString(toMillis(percentileOf(histogram, 50))));
-        lookups.put("p90", Long.toString(toMillis(percentileOf(histogram, 90))));
-        lookups.put("p99", Long.toString(toMillis(percentileOf(histogram, 99))));
-        lookups.put("p999", Long.toString(toMillis(percentileOf(histogram, 99.9))));
-        lookups.put("requestsPerSecond", String.format("%.2f", requestsPerSecond));
-        lookups.put("totalDurationSeconds", String.format("%.2f", totalDurationSeconds));
-
-        var stringSubstitutor = new StringSubstitutor(StringLookupFactory.INSTANCE.interpolatorStringLookup(lookups));
-
-        try (var reader = new BufferedReader(new StringSubstitutorReader(
-                new InputStreamReader(
-                        ConsoleReportGenerator.class.getResourceAsStream("/reports/console/console.tmpl")),
-                stringSubstitutor))) {
-            reader.lines().forEach(System.out::println);
+        try (var terminal = TerminalBuilder.builder().dumb(true).build()) {
+            var theme = ConsoleTheme.of(terminal);
+            var model = ReportModel.from(
+                    eventReader, histogram, firstStartTime, lastStopTime, totalRequests, errorRequests);
+            System.out.println(ReportRenderer.render(model, theme));
         }
     }
 
@@ -128,13 +92,5 @@ final class ConsoleReportGenerator implements ReportGenerator {
             }
         }
         return combined;
-    }
-
-    private static long percentileOf(Histogram histogram, double percentile) {
-        return histogram.getValueAtPercentile(percentile);
-    }
-
-    private static long toMillis(long maxValue) {
-        return Duration.ofNanos(maxValue).toMillis();
     }
 }
