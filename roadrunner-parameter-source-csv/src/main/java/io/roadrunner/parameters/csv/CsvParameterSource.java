@@ -83,11 +83,11 @@ public final class CsvParameterSource implements ParameterSource {
                 SequencedMap<String, Function<String, Object>> columns = names.stream()
                         .map(columnName -> {
                             String[] strings = columnName.split(":");
-                            var name = strings[0];
+                            var name = strings[0].strip();
                             if (strings.length == 1) {
                                 return Map.<String, Function<String, Object>>entry(name, s -> s);
                             } else if (strings.length == 2) {
-                                var type = typeOf(strings[1]);
+                                var type = typeOf(strings[1].strip());
                                 return Map.entry(name, type);
                             } else {
                                 throw new IllegalArgumentException(
@@ -99,7 +99,7 @@ public final class CsvParameterSource implements ParameterSource {
                                 Map.Entry::getKey,
                                 Map.Entry::getValue,
                                 (x, y) -> {
-                                    throw new IllegalArgumentException("Duplicate columns names are not allowed");
+                                    throw new IllegalArgumentException("Duplicate column names are not allowed");
                                 },
                                 LinkedHashMap::new));
                 return new CsvParameterFeed(csvRecords, columns);
@@ -117,12 +117,23 @@ public final class CsvParameterSource implements ParameterSource {
                 case "short" -> Short::valueOf;
                 case "float" -> Float::valueOf;
                 case "double" -> Double::valueOf;
-                case "boolean" -> Boolean::valueOf;
+                case "boolean" -> CsvParameterFeed::parseStrictBoolean;
                 default ->
                     throw new IllegalArgumentException(
                             "Unknown column type '%s', expected one of: file, int, long, short, float, double, boolean"
                                     .formatted(type));
             };
+        }
+
+        private static Boolean parseStrictBoolean(String value) {
+            if (value.equalsIgnoreCase("true")) {
+                return Boolean.TRUE;
+            }
+            if (value.equalsIgnoreCase("false")) {
+                return Boolean.FALSE;
+            }
+            throw new IllegalArgumentException(
+                    "Not a boolean value: '%s', expected 'true' or 'false'".formatted(value));
         }
 
         private final CSVParser csvParser;
@@ -144,12 +155,29 @@ public final class CsvParameterSource implements ParameterSource {
                         SequencedMap<String, String> row = new LinkedHashMap<>();
                         int i = 0;
                         for (var value : record) {
-                            row.put(names.get(i), value);
+                            var name = names.get(i);
+                            validate(record.getRecordNumber(), name, value);
+                            row.put(name, value);
                             i++;
                         }
                         return SamplerParameters.of(row, columns);
                     })
                     .iterator();
+        }
+
+        // Converts each cell up front so a bad value fails the whole load with row/column context,
+        // rather than surfacing deep in a benchmark run the first time that row happens to be read.
+        // TypedSamplerParameters still converts lazily per access; this is a validating dry run.
+        private void validate(long rowNumber, String name, String value) {
+            if (value.isEmpty()) {
+                return;
+            }
+            try {
+                columns.get(name).apply(value);
+            } catch (Exception e) {
+                throw new IllegalArgumentException(
+                        "row %d, column '%s': cannot convert value '%s'".formatted(rowNumber, name, value), e);
+            }
         }
 
         @Override

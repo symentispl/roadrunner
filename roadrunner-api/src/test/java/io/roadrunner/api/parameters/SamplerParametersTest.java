@@ -16,6 +16,7 @@
 package io.roadrunner.api.parameters;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -72,5 +73,23 @@ class SamplerParametersTest {
         parameters1.forEach((index, type, value) -> bound.add(new Bound(index, type, value)));
 
         assertThat(bound).containsExactly(new Bound(0, String.class, ""));
+    }
+
+    @Test
+    void typedParametersFailClearlyWhenColumnHasNoConverter() {
+        // "extra" has no entry in columns - a caller misusing the of(map, columns) factory
+        // directly, not something CsvParameterSource can produce given its own construction.
+        SequencedMap<String, String> parameters = new LinkedHashMap<>();
+        parameters.put("age", "30");
+        parameters.put("extra", "value");
+
+        SequencedMap<String, Function<String, Object>> columns = new LinkedHashMap<>();
+        columns.put("age", Integer::valueOf);
+
+        var parameters1 = SamplerParameters.of(parameters, columns);
+
+        assertThatThrownBy(() -> parameters1.valueOf("extra"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("extra");
     }
 }

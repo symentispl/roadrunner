@@ -93,7 +93,13 @@ public interface SamplerParameters {
             if (value.isEmpty()) {
                 return value;
             }
-            return columns.get(key).apply(value);
+            var converter = columns.get(key);
+            if (converter == null) {
+                throw new IllegalArgumentException(
+                        "No converter registered for parameter '%s' — columns must have an entry for every key in parameters"
+                                .formatted(key));
+            }
+            return converter.apply(value);
         }
 
         @Override

@@ -246,4 +246,81 @@ class CsvParameterSourceTest {
         var source = new CsvParameterSource(csvFile, ',');
         assertThatThrownBy(source::load).isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void trimsWhitespaceAroundColumnNameAndType() throws Exception {
+        var csvFile = tempDir.resolve("data.csv");
+        Files.writeString(csvFile, """
+                name, value : int
+                alice,1
+                """);
+
+        var source = new CsvParameterSource(csvFile, ',');
+        try (var feed = source.load()) {
+            List<SamplerParameters> rows = new ArrayList<>();
+            feed.forEach(rows::add);
+
+            assertThat(rows).hasSize(1);
+            assertThat(rows.get(0).valueOf("value")).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void throwsForInvalidBooleanValue() throws Exception {
+        var csvFile = tempDir.resolve("data.csv");
+        Files.writeString(csvFile, """
+                active:boolean
+                yes
+                """);
+
+        var source = new CsvParameterSource(csvFile, ',');
+        try (var feed = source.load()) {
+            List<SamplerParameters> rows = new ArrayList<>();
+            assertThatThrownBy(() -> feed.forEach(rows::add))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("row 1")
+                    .hasMessageContaining("active")
+                    .hasMessageContaining("yes");
+        }
+    }
+
+    @Test
+    void acceptsCaseInsensitiveBooleanValues() throws Exception {
+        var csvFile = tempDir.resolve("data.csv");
+        Files.writeString(csvFile, """
+                active:boolean
+                TRUE
+                False
+                """);
+
+        var source = new CsvParameterSource(csvFile, ',');
+        try (var feed = source.load()) {
+            List<SamplerParameters> rows = new ArrayList<>();
+            feed.forEach(rows::add);
+
+            assertThat(rows).hasSize(2);
+            assertThat(rows.get(0).valueOf("active")).isEqualTo(true);
+            assertThat(rows.get(1).valueOf("active")).isEqualTo(false);
+        }
+    }
+
+    @Test
+    void invalidTypedValueFailsWithRowAndColumnContextBeforeAnySamplingHappens() throws Exception {
+        var csvFile = tempDir.resolve("data.csv");
+        Files.writeString(csvFile, """
+                name,value:int
+                alice,1
+                bob,not-a-number
+                """);
+
+        var source = new CsvParameterSource(csvFile, ',');
+        try (var feed = source.load()) {
+            List<SamplerParameters> rows = new ArrayList<>();
+            assertThatThrownBy(() -> feed.forEach(rows::add))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("row 2")
+                    .hasMessageContaining("value")
+                    .hasMessageContaining("not-a-number");
+        }
+    }
 }
