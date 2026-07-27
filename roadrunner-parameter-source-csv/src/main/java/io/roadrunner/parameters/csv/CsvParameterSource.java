@@ -15,14 +15,21 @@
  */
 package io.roadrunner.parameters.csv;
 
+import static java.util.stream.Collectors.toMap;
+
 import io.roadrunner.api.parameters.ParameterFeed;
 import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.parameters.SamplerParameters;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SequencedMap;
+import java.util.function.Function;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.slf4j.Logger;
@@ -66,25 +73,82 @@ public final class CsvParameterSource implements ParameterSource {
 
         static ParameterFeed of(Path csvFile, CSVFormat format) throws IOException {
             LOG.info("Loading CSV parameters from file {}", csvFile);
+
+            // first read header
+
             var reader = Files.newBufferedReader(csvFile);
             try {
-                return new CsvParameterFeed(format.parse(reader));
+                CSVParser csvRecords = format.parse(reader);
+                List<String> names = csvRecords.getHeaderNames();
+                SequencedMap<String, Function<String, Object>> columns = names.stream()
+                        .map(columnName -> {
+                            String[] strings = columnName.split(":");
+                            var name = strings[0];
+                            if (strings.length == 1) {
+                                return Map.<String, Function<String, Object>>entry(name, s -> s);
+                            } else if (strings.length == 2) {
+                                var type = typeOf(strings[1]);
+                                return Map.entry(name, type);
+                            } else {
+                                throw new IllegalArgumentException(
+                                        "Invalid column header '%s', expected 'name' or 'name:type'"
+                                                .formatted(columnName));
+                            }
+                        })
+                        .collect(toMap(
+                                Map.Entry::getKey,
+                                Map.Entry::getValue,
+                                (x, y) -> {
+                                    throw new IllegalArgumentException("Duplicate columns names are not allowed");
+                                },
+                                LinkedHashMap::new));
+                return new CsvParameterFeed(csvRecords, columns);
             } catch (Exception e) {
                 reader.close();
                 throw e;
             }
         }
 
-        private final CSVParser csvParser;
+        private static Function<String, Object> typeOf(String type) {
+            return switch (type) {
+                case "file" -> File::new;
+                case "int" -> Integer::valueOf;
+                case "long" -> Long::valueOf;
+                case "short" -> Short::valueOf;
+                case "float" -> Float::valueOf;
+                case "double" -> Double::valueOf;
+                case "boolean" -> Boolean::valueOf;
+                default ->
+                    throw new IllegalArgumentException(
+                            "Unknown column type '%s', expected one of: file, int, long, short, float, double, boolean"
+                                    .formatted(type));
+            };
+        }
 
-        public CsvParameterFeed(CSVParser csvParser) {
+        private final CSVParser csvParser;
+        private final SequencedMap<String, Function<String, Object>> columns;
+
+        public CsvParameterFeed(CSVParser csvParser, SequencedMap<String, Function<String, Object>> columns) {
             this.csvParser = csvParser;
+            this.columns = columns;
         }
 
         @Override
         public Iterator<SamplerParameters> iterator() {
+            // NOTE: this is looking hacky it assumes both
+            // parameters and columns have exactly the same
+            // order of columns
+            var names = List.copyOf(columns.keySet());
             return csvParser.stream()
-                    .map(record -> SamplerParameters.of(new LinkedHashMap<>(record.toMap())))
+                    .map(record -> {
+                        SequencedMap<String, String> row = new LinkedHashMap<>();
+                        int i = 0;
+                        for (var value : record) {
+                            row.put(names.get(i), value);
+                            i++;
+                        }
+                        return SamplerParameters.of(row, columns);
+                    })
                     .iterator();
         }
 

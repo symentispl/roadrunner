@@ -69,5 +69,6 @@ roadrunner -c 20 -n 1000 neo4j \
 == Parameter sources
 
 Combine with `--parameters-source csv:file=<path>` to execute a different query per
-request using values from a CSV file.
-See xref:configuration.adoc#parameter-sources[Parameter sources] for details.
+request using values from a CSV file. The Neo4j sampler binds CSV columns *by name* to
+the Cypher query's `$name` parameters — see xref:parameter-sources.adoc[Parameter sources]
+for the file format, positional vs. named binding, and typed columns.

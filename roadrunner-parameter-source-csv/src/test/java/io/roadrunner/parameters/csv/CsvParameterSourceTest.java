@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.roadrunner.api.parameters.SamplerParameters;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,9 +35,13 @@ class CsvParameterSourceTest {
     Path tempDir;
 
     @Test
-    void shouldLoadParametersFromCsv() throws Exception {
+    void loadParametersFromCsv() throws Exception {
         var csvFile = tempDir.resolve("data.csv");
-        Files.writeString(csvFile, "name,value\nalice,1\nbob,2\n");
+        Files.writeString(csvFile, """
+                name,value
+                alice,1
+                bob,2
+                """);
 
         var source = new CsvParameterSource(csvFile, ',');
         try (var feed = source.load()) {
@@ -52,7 +57,7 @@ class CsvParameterSourceTest {
     }
 
     @Test
-    void shouldLoadParametersWithCustomSeparator() throws Exception {
+    void loadParametersWithCustomSeparator() throws Exception {
         var csvFile = tempDir.resolve("data.csv");
         Files.writeString(csvFile, "name;value\nalice;1\nbob;2\n");
 
@@ -68,13 +73,13 @@ class CsvParameterSourceTest {
     }
 
     @Test
-    void shouldThrowWhenFileNotFound() {
+    void throwWhenFileNotFound() {
         var source = new CsvParameterSource(tempDir.resolve("nonexistent.csv"), ',');
         assertThatThrownBy(source::load).isInstanceOf(IOException.class);
     }
 
     @Test
-    void providerShouldThrowWhenFileKeyMissing() {
+    void providerThrowsWhenFileKeyMissing() {
         var provider = new CsvParameterSourceProvider();
         assertThatThrownBy(() -> provider.create(Map.of()))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -82,7 +87,7 @@ class CsvParameterSourceTest {
     }
 
     @Test
-    void providerShouldThrowWhenSeparatorIsMultiChar() {
+    void providerThrowsWhenSeparatorIsMultiChar() {
         var provider = new CsvParameterSourceProvider();
         assertThatThrownBy(() -> provider.create(Map.of("file", "data.csv", "separator", ",,")))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -90,9 +95,12 @@ class CsvParameterSourceTest {
     }
 
     @Test
-    void providerShouldUseDefaultCommaSeparator() throws Exception {
+    void providerUsesDefaultCommaSeparator() throws Exception {
         var csvFile = tempDir.resolve("data.csv");
-        Files.writeString(csvFile, "key\nval\n");
+        Files.writeString(csvFile, """
+                key
+                val
+                """);
 
         var provider = new CsvParameterSourceProvider();
         var source = provider.create(Map.of("file", csvFile.toString()));
@@ -105,7 +113,7 @@ class CsvParameterSourceTest {
     }
 
     @Test
-    void shouldYieldNoRowsForHeaderOnlyFile() throws Exception {
+    void yieldNoRowsForHeaderOnlyFile() throws Exception {
         var csvFile = tempDir.resolve("data.csv");
         Files.writeString(csvFile, "name,value\n");
 
@@ -118,9 +126,44 @@ class CsvParameterSourceTest {
     }
 
     @Test
-    void shouldPreserveEmptyValues() throws Exception {
+    void preserveValueType() throws Exception {
         var csvFile = tempDir.resolve("data.csv");
-        Files.writeString(csvFile, "name,value\nalice,\n,2\n");
+        Files.writeString(csvFile, """
+                name,value:int,report:file
+                alice,1,report1.txt
+                bob,2,report2.txt
+                """);
+
+        var source = new CsvParameterSource(csvFile, ',');
+        try (var feed = source.load()) {
+            List<SamplerParameters> rows = new ArrayList<>();
+            feed.forEach(rows::add);
+
+            assertThat(rows).hasSize(2);
+            assertThat(rows.get(0)).satisfies(row -> {
+                assertThat(row.valueOf("name")).isEqualTo("alice");
+                assertThat(row.valueOf("value")).isEqualTo(1);
+                assertThat(row.valueOf("report")).isEqualTo(new File("report1.txt"));
+            });
+
+            assertThat(rows.get(1)).satisfies(row -> {
+                assertThat(row.valueOf("name")).isEqualTo("bob");
+                assertThat(row.valueOf("value")).isEqualTo(2);
+                assertThat(row.valueOf("report")).isEqualTo(new File("report2.txt"));
+            });
+        }
+    }
+
+    private record Bound(int index, Class<?> type, Object value) {}
+
+    @Test
+    void preserveEmptyValues() throws Exception {
+        var csvFile = tempDir.resolve("data.csv");
+        Files.writeString(csvFile, """
+                name,value
+                alice,
+                ,2
+                """);
 
         var source = new CsvParameterSource(csvFile, ',');
         try (var feed = source.load()) {
@@ -133,5 +176,74 @@ class CsvParameterSourceTest {
             assertThat(rows.get(1).valueOf("name")).isEqualTo("");
             assertThat(rows.get(1).valueOf("value")).isEqualTo("2");
         }
+    }
+
+    @Test
+    void bindTypedValuesByColumnOrderRegardlessOfHeaderOrder() throws Exception {
+        var csvFile = tempDir.resolve("data.csv");
+        Files.writeString(csvFile, """
+                report:file,name,value:int
+                report1.txt,alice,1
+                """);
+
+        var source = new CsvParameterSource(csvFile, ',');
+        try (var feed = source.load()) {
+            List<SamplerParameters> rows = new ArrayList<>();
+            feed.forEach(rows::add);
+
+            assertThat(rows).hasSize(1);
+            List<Bound> bound = new ArrayList<>();
+            rows.get(0).forEach((index, type, value) -> bound.add(new Bound(index, type, value)));
+
+            assertThat(bound)
+                    .containsExactly(
+                            new Bound(0, File.class, new File("report1.txt")),
+                            new Bound(1, String.class, "alice"),
+                            new Bound(2, Integer.class, 1));
+        }
+    }
+
+    @Test
+    void preserveBlankValueForTypedColumn() throws Exception {
+        var csvFile = tempDir.resolve("data.csv");
+        Files.writeString(csvFile, """
+                name,value:int
+                alice,
+                """);
+
+        var source = new CsvParameterSource(csvFile, ',');
+        try (var feed = source.load()) {
+            List<SamplerParameters> rows = new ArrayList<>();
+            feed.forEach(rows::add);
+
+            assertThat(rows).hasSize(1);
+            assertThat(rows.get(0).valueOf("value")).isEqualTo("");
+        }
+    }
+
+    @Test
+    void throwsForUnknownColumnType() throws Exception {
+        var csvFile = tempDir.resolve("data.csv");
+        Files.writeString(csvFile, """
+                value:notatype
+                1
+                """);
+
+        var source = new CsvParameterSource(csvFile, ',');
+        assertThatThrownBy(source::load)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("notatype");
+    }
+
+    @Test
+    void throwsForDuplicateColumnNames() throws Exception {
+        var csvFile = tempDir.resolve("data.csv");
+        Files.writeString(csvFile, """
+                value:int,value:long
+                1,2
+                """);
+
+        var source = new CsvParameterSource(csvFile, ',');
+        assertThatThrownBy(source::load).isInstanceOf(IllegalArgumentException.class);
     }
 }

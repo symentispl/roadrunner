@@ -1,6 +1,7 @@
 * xref:index.adoc[Home]
 * xref:getting-started.adoc[Getting Started]
 * xref:configuration.adoc[Configuration]
+* xref:parameter-sources.adoc[Parameter sources]
 * Samplers
 ** xref:samplers/index.adoc[Overview]
 ** xref:samplers/vm.adoc[VM]
