@@ -24,12 +24,14 @@ import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.samplers.http.HttpSamplerPlugin;
 import io.roadrunner.samplers.spi.SamplerContext;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -80,7 +82,7 @@ class HttpSamplerProviderIT {
     @Test
     void getRequestReturnsResponse() {
         var response = execute("""
-                GET("%s/echo")""".formatted(baseUrl));
+                GET("%s/${path}")""".formatted(baseUrl));
         assertThat(response)
                 .asInstanceOf(type(SamplerResponse.Response.class))
                 .satisfies(r -> {
@@ -93,7 +95,7 @@ class HttpSamplerProviderIT {
     @Test
     void postRequestSendsBody() {
         var response = execute("""
-                POST("%s/echo", "payload-123")""".formatted(baseUrl));
+                POST("%s/${path}", "payload-123")""".formatted(baseUrl));
         assertThat(response).isInstanceOf(SamplerResponse.Response.class);
         assertThat(requests).contains(new RecordedRequest("POST", "payload-123"));
     }
@@ -101,7 +103,7 @@ class HttpSamplerProviderIT {
     @Test
     void putRequestSendsBody() {
         var response = execute("""
-                PUT("%s/echo", "updated")""".formatted(baseUrl));
+                PUT("%s/${path}", "updated")""".formatted(baseUrl));
         assertThat(response).isInstanceOf(SamplerResponse.Response.class);
         assertThat(requests).contains(new RecordedRequest("PUT", "updated"));
     }
@@ -109,7 +111,7 @@ class HttpSamplerProviderIT {
     @Test
     void deleteRequestReturnsResponse() {
         var response = execute("""
-                DELETE("%s/echo")""".formatted(baseUrl));
+                DELETE("%s/${path}")""".formatted(baseUrl));
         assertThat(response).isInstanceOf(SamplerResponse.Response.class);
         assertThat(requests).contains(new RecordedRequest("DELETE", ""));
     }
@@ -163,7 +165,7 @@ class HttpSamplerProviderIT {
     void connectionFailureReportedAsError() {
         // Port 1 is reserved/unbound: connecting fails fast.
         var response = execute("""
-                GET("http://127.0.0.1:1/echo")""");
+                GET("http://127.0.0.1:1/${path}")""");
         assertThat(response)
                 .asInstanceOf(type(SamplerResponse.Error.class))
                 .satisfies(r -> {
@@ -180,7 +182,7 @@ class HttpSamplerProviderIT {
             try (var provider = plugin.newSamplerProvider(options)) {
                 var ctx = SamplerContext.of(provider);
                 try (var sampler = provider.newSampler()) {
-                    return sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
+                    return sampler.execute(SamplerParameters.of("path", "echo"), ctx.newResponseBuilder());
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -194,5 +196,6 @@ class HttpSamplerProviderIT {
         }
     }
 
-    private record RecordedRequest(String method, String body) {}
+    private record RecordedRequest(String method, String body) {
+    }
 }

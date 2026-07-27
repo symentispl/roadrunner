@@ -21,6 +21,7 @@ module io.roadrunner.samplers.http {
     requires io.roadrunner.samplers.spi;
     requires info.picocli;
     requires java.net.http;
+    requires org.apache.commons.text;
 
     exports io.roadrunner.samplers.http;
 

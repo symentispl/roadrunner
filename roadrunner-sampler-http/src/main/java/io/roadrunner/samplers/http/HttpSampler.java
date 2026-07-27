@@ -19,12 +19,12 @@ import io.roadrunner.api.attachments.AttachmentKey;
 import io.roadrunner.api.attachments.AttachmentRegistry;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerSinkRegistrar;
-import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.function.Function;
 
 /**
  * Extension-point methods class for the HTTP sampler. Each method ({@link #GET(String)},
@@ -47,24 +47,26 @@ public class HttpSampler implements SamplerSinkRegistrar {
     }
 
     public Sampler GET(String url) {
-        return request(HttpRequest.newBuilder(URI.create(url)).GET());
+        return request(url, request -> request.GET());
     }
 
     public Sampler POST(String url, String body) {
-        return request(HttpRequest.newBuilder(URI.create(url)).POST(BodyPublishers.ofString(body)));
+        return request(url, request -> request.POST(BodyPublishers.ofString(body)));
     }
 
     public Sampler PUT(String url, String body) {
-        return request(HttpRequest.newBuilder(URI.create(url)).PUT(BodyPublishers.ofString(body)));
+        return request(url, request -> request.PUT(BodyPublishers.ofString(body)));
     }
 
     public Sampler DELETE(String url) {
-        return request(HttpRequest.newBuilder(URI.create(url)).DELETE());
+        return request(url, request -> request.DELETE());
     }
 
-    private Sampler request(HttpRequest.Builder requestBuilder) {
-        var request = requestBuilder.build();
+    private Sampler request(String uriTemplate, Function<HttpRequest.Builder, HttpRequest.Builder> requestMapping) {
         return (parameters, builder) -> {
+            var request = requestMapping
+                    .apply(HttpRequest.newBuilder(URIBuilder.replace(uriTemplate, parameters.asMap())))
+                    .build();
             var tStarted = System.nanoTime();
             try {
                 HttpResponse<byte[]> response = httpClient.send(request, BodyHandlers.ofByteArray());
