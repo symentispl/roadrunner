@@ -33,6 +33,12 @@ final class LiveProgressRenderer {
         return String.format(
                 Locale.ROOT,
                 "%s %d%%\n  %d reqs   %.0f req/s %s\n  errors %d (%.2f%%)",
-                bar, pct, s.processed(), s.throughput(), spark, s.errors(), errPct);
+                bar,
+                pct,
+                s.processed(),
+                s.throughput(),
+                spark,
+                s.errors(),
+                errPct);
     }
 }

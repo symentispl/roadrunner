@@ -20,14 +20,18 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.parameters.SamplerParameters;
+import io.roadrunner.parameters.csv.CsvParameterSource;
 import io.roadrunner.samplers.jdbc.JDBCSamplerOptions;
 import io.roadrunner.samplers.jdbc.JDBCSamplerPlugin;
 import io.roadrunner.samplers.jdbc.JDBCSamplerProvider;
 import io.roadrunner.samplers.spi.SamplerContext;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.sql.DataSource;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -157,6 +161,42 @@ class JDBCSamplerProviderIT {
                 var response = sampler.execute(SamplerParameters.of(queryParameters), ctx.newResponseBuilder());
                 assertThat(response).asInstanceOf(type(SamplerResponse.Response.class)).satisfies(r ->
                         assertThat(r.timestamp()).isLessThanOrEqualTo(System.nanoTime()));
+            }
+        }
+    }
+
+    // Issue #137 acceptance criterion: a CSV "id:int" column must drive a WHERE id = ? query
+    // against a real INT column, proving the value is bound as an INTEGER rather than a VARCHAR
+    // the driver has to coerce.
+    @Test
+    void typedCsvColumnBindsToIntColumnWithoutDriverCoercion(@TempDir Path tempDir) throws Exception {
+        try (var plugin = new JDBCSamplerPlugin()) {
+            var options = defaultSamplerOptions(
+                    plugin, "jdbc:hsqldb:mem:typedcsv", "SELECT 1 FROM orders WHERE id = ?");
+            var provider = plugin.newSamplerProvider(options);
+            var ctx = SamplerContext.of(provider);
+            try (Connection connection = provider.getConnection()) {
+                connection.createStatement().execute("CREATE TABLE orders (id INT, name VARCHAR(255))");
+                connection.createStatement().execute("INSERT INTO orders VALUES (42, 'widget')");
+            }
+
+            var csvFile = tempDir.resolve("orders.csv");
+            Files.writeString(csvFile, "id:int\n42\n");
+            SamplerParameters parameters;
+            try (var feed = new CsvParameterSource(csvFile, ',').load()) {
+                parameters = feed.iterator().next();
+            }
+            assertThat(parameters.valueOf("id")).isInstanceOf(Integer.class);
+
+            var rowCountKey = ctx.metricRegistry().registeredKeys().stream()
+                    .filter(k -> "row_count".equals(k.name()))
+                    .findFirst()
+                    .orElseThrow();
+            try (var sampler = ctx.newSampler()) {
+                var response = sampler.execute(parameters, ctx.newResponseBuilder());
+                assertThat(response)
+                        .asInstanceOf(type(SamplerResponse.Response.class))
+                        .satisfies(r -> assertThat(r.metricValueAt(rowCountKey)).isEqualTo(1.0));
             }
         }
     }
