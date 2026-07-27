@@ -29,6 +29,8 @@ import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.BiFunction;
 
 /**
@@ -87,14 +89,21 @@ public class HttpSampler implements SamplerSinkRegistrar {
         return (parameters, builder) -> {
             var tStarted = System.nanoTime();
             try {
-                var requestBuilder = HttpRequest.newBuilder(URIBuilder.replace(uriTemplate, parameters.asMap()));
+                // single pass over asMap(): TypedSamplerParameters converts on every call, and
+                // header:/body values never appear in the uri template, so there's no reason to
+                // convert+encode them twice (once here, once for URIBuilder.replace).
+                Map<String, Object> urlParameters = new HashMap<>();
+                Map<String, String> headers = new HashMap<>();
                 for (var entry : parameters.asMap().entrySet()) {
                     var name = entry.getKey();
                     if (name.startsWith(HEADER_PARAMETER_PREFIX)) {
-                        requestBuilder.header(
-                                name.substring(HEADER_PARAMETER_PREFIX.length()), String.valueOf(entry.getValue()));
+                        headers.put(name.substring(HEADER_PARAMETER_PREFIX.length()), String.valueOf(entry.getValue()));
+                    } else {
+                        urlParameters.put(name, entry.getValue());
                     }
                 }
+                var requestBuilder = HttpRequest.newBuilder(URIBuilder.replace(uriTemplate, urlParameters));
+                headers.forEach(requestBuilder::header);
                 var request = requestMapping.apply(requestBuilder, parameters).build();
 
                 HttpResponse<byte[]> response = httpClient.send(request, BodyHandlers.ofByteArray());
@@ -121,7 +130,7 @@ public class HttpSampler implements SamplerSinkRegistrar {
         var name = literalBody.substring(BODY_PARAMETER_REFERENCE_PREFIX.length());
         var value = parameters.valueOf(name);
         if (value == null) {
-            throw new IllegalStateException(
+            throw new IllegalArgumentException(
                     "No parameter named '%s' for body reference '%s'".formatted(name, literalBody));
         }
         if (value instanceof File file) {
