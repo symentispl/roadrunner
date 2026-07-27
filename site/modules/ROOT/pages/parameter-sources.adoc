@@ -65,6 +65,10 @@ each request binds the next row's `id` value to the query's `?` placeholder.
 * Samplers that bind parameters *by name* (e.g. xref:samplers/neo4j.adoc[Neo4j]'s `$name`
   Cypher parameters) use the header name directly — a column must be named `id` for a
   query to reference it as `$id`.
+* The xref:samplers/http.adoc[HTTP sampler] uses column names in several ways: `${name}`
+  in the URL is replaced with column `name`'s value, a `header:<name>` column becomes an
+  HTTP header, and a body argument written as `@<name>` in the expression resolves that
+  column's value as the request body.
 
 Either way, every value read from the CSV file is a plain string unless the column
 declares a type (see below).
@@ -119,9 +123,10 @@ CAUTION: Whether a converted value can actually be *used* still depends on the s
 binding it. The JDBC sampler supports `int`, `long`, `short`, `float`, `double`, and
 `boolean`, but has no mapping for `java.io.File` yet — a `:file` column bound into a
 JDBC `?` placeholder fails at request time with
-`unsupported Java type for JDBC parameter binding: java.io.File`. `file` is meant for
-consumers that read the value directly (`valueOf`/`asMap`), such as a custom sampler,
-rather than positional JDBC binding.
+`unsupported Java type for JDBC parameter binding: java.io.File`. The
+xref:samplers/http.adoc[HTTP sampler], on the other hand, uses `:file` specifically to
+stream a request body from disk instead of loading it into memory as a string — see its
+body section.
 
 === Blank values
 

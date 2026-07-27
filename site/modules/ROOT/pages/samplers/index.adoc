@@ -18,6 +18,10 @@ The following samplers are bundled with the standard distribution:
 | xref:samplers/ab.adoc[ab]
 | HTTP benchmarking, API-compatible with Apache's `ab` tool.
 
+| xref:samplers/http.adoc[http]
+| Scriptable HTTP requests (`GET`/`POST`/`PUT`/`DELETE`) with URL templating, and
+per-request headers and body driven by a parameter source.
+
 | xref:samplers/zero.adoc[zero]
 | Zero-latency no-op. Useful for measuring the absolute ceiling throughput of the engine.
 |===

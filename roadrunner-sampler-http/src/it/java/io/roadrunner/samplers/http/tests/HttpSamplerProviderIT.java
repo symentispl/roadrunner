@@ -29,16 +29,26 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.SequencedMap;
+import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.io.TempDir;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class HttpSamplerProviderIT {
+
+    @TempDir
+    Path tempDir;
 
     private HttpServer server;
     private String baseUrl;
@@ -50,7 +60,9 @@ class HttpSamplerProviderIT {
 
         server.createContext("/echo", exchange -> {
             var body = readBody(exchange);
-            requests.add(new RecordedRequest(exchange.getRequestMethod(), body));
+            var headers = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+            exchange.getRequestHeaders().forEach((name, values) -> headers.put(name, values.get(0)));
+            requests.add(new RecordedRequest(exchange.getRequestMethod(), body, headers));
             var payload = ("method=" + exchange.getRequestMethod() + ";body=" + body).getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, payload.length);
             try (var os = exchange.getResponseBody()) {
@@ -89,7 +101,7 @@ class HttpSamplerProviderIT {
                     assertThat(r.timestamp()).isGreaterThan(0);
                     assertThat(r.stopTime()).isGreaterThan(r.timestamp());
                 });
-        assertThat(requests).contains(new RecordedRequest("GET", ""));
+        assertThat(requests).anyMatch(r -> r.method().equals("GET") && r.body().isEmpty());
     }
 
     @Test
@@ -97,7 +109,7 @@ class HttpSamplerProviderIT {
         var response = execute("""
                 POST("%s/${path}", "payload-123")""".formatted(baseUrl));
         assertThat(response).isInstanceOf(SamplerResponse.Response.class);
-        assertThat(requests).contains(new RecordedRequest("POST", "payload-123"));
+        assertThat(requests).anyMatch(r -> r.method().equals("POST") && r.body().equals("payload-123"));
     }
 
     @Test
@@ -105,7 +117,7 @@ class HttpSamplerProviderIT {
         var response = execute("""
                 PUT("%s/${path}", "updated")""".formatted(baseUrl));
         assertThat(response).isInstanceOf(SamplerResponse.Response.class);
-        assertThat(requests).contains(new RecordedRequest("PUT", "updated"));
+        assertThat(requests).anyMatch(r -> r.method().equals("PUT") && r.body().equals("updated"));
     }
 
     @Test
@@ -113,7 +125,66 @@ class HttpSamplerProviderIT {
         var response = execute("""
                 DELETE("%s/${path}")""".formatted(baseUrl));
         assertThat(response).isInstanceOf(SamplerResponse.Response.class);
-        assertThat(requests).contains(new RecordedRequest("DELETE", ""));
+        assertThat(requests).anyMatch(r -> r.method().equals("DELETE") && r.body().isEmpty());
+    }
+
+    @Test
+    void headerParameterIsSentAsHttpHeader() {
+        SequencedMap<String, Object> row = new LinkedHashMap<>();
+        row.put("path", "echo");
+        row.put("header:X-Api-Key", "secret-123");
+
+        var response = execute(
+                """
+                GET("%s/${path}")""".formatted(baseUrl),
+                SamplerParameters.of(row));
+
+        assertThat(response).isInstanceOf(SamplerResponse.Response.class);
+        assertThat(requests)
+                .anyMatch(r -> r.method().equals("GET") && "secret-123".equals(r.headers().get("X-Api-Key")));
+    }
+
+    @Test
+    void bodyReferenceResolvesStringParameterValue() {
+        SequencedMap<String, Object> row = new LinkedHashMap<>();
+        row.put("path", "echo");
+        row.put("payload", "from-parameter");
+
+        var response = execute(
+                """
+                POST("%s/${path}", "@payload")""".formatted(baseUrl),
+                SamplerParameters.of(row));
+
+        assertThat(response).isInstanceOf(SamplerResponse.Response.class);
+        assertThat(requests).anyMatch(r -> r.method().equals("POST") && r.body().equals("from-parameter"));
+    }
+
+    @Test
+    void bodyReferenceUploadsFileParameterValue() throws IOException {
+        var file = tempDir.resolve("upload.txt");
+        Files.writeString(file, "file-contents");
+
+        SequencedMap<String, Object> row = new LinkedHashMap<>();
+        row.put("path", "echo");
+        row.put("payload", file.toFile());
+
+        var response = execute(
+                """
+                PUT("%s/${path}", "@payload")""".formatted(baseUrl),
+                SamplerParameters.of(row));
+
+        assertThat(response).isInstanceOf(SamplerResponse.Response.class);
+        assertThat(requests).anyMatch(r -> r.method().equals("PUT") && r.body().equals("file-contents"));
+    }
+
+    @Test
+    void bodyReferenceToMissingParameterReportedAsError() {
+        var response = execute("""
+                POST("%s/${path}", "@missing")""".formatted(baseUrl));
+
+        assertThat(response)
+                .asInstanceOf(type(SamplerResponse.Error.class))
+                .satisfies(r -> assertThat(r.message()).contains("missing"));
     }
 
     @Test
@@ -176,13 +247,17 @@ class HttpSamplerProviderIT {
     }
 
     private SamplerResponse<?> execute(String expression) {
+        return execute(expression, SamplerParameters.of("path", "echo"));
+    }
+
+    private SamplerResponse<?> execute(String expression, SamplerParameters parameters) {
         try (var plugin = new HttpSamplerPlugin()) {
             var options = plugin.options();
             options.expression = expression;
             try (var provider = plugin.newSamplerProvider(options)) {
                 var ctx = SamplerContext.of(provider);
                 try (var sampler = provider.newSampler()) {
-                    return sampler.execute(SamplerParameters.of("path", "echo"), ctx.newResponseBuilder());
+                    return sampler.execute(parameters, ctx.newResponseBuilder());
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -196,6 +271,5 @@ class HttpSamplerProviderIT {
         }
     }
 
-    private record RecordedRequest(String method, String body) {
-    }
+    private record RecordedRequest(String method, String body, Map<String, String> headers) {}
 }
