@@ -15,6 +15,7 @@
  */
 open module io.roadrunner.samplers.jdbc.tests {
     requires io.roadrunner.api;
+    requires io.roadrunner.parameters.csv;
     requires io.roadrunner.samplers.jdbc;
     requires io.roadrunner.samplers.spi;
     requires java.sql;
