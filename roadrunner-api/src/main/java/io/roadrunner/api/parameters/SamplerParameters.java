@@ -15,16 +15,19 @@
  */
 package io.roadrunner.api.parameters;
 
+import static java.util.stream.Collectors.toMap;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.SequencedMap;
+import java.util.function.Function;
 
-public final class SamplerParameters {
+public interface SamplerParameters {
 
-    public static final SamplerParameters NONE = new SamplerParameters(new LinkedHashMap<>());
+    SamplerParameters NONE = new DefaultSamplerParameters(new LinkedHashMap<>());
 
-    public static SamplerParameters of(String key, Object value) {
-        return new SamplerParameters(new LinkedHashMap<>(Map.of(key, value)));
+    static SamplerParameters of(String key, Object value) {
+        return new DefaultSamplerParameters(new LinkedHashMap<>(Map.of(key, value)));
     }
 
     /**
@@ -32,29 +35,91 @@ public final class SamplerParameters {
      * binding order in samplers (e.g. JDBC placeholders), so the API requires a
      * {@link SequencedMap} — passing a {@link java.util.HashMap} won't compile.
      */
-    public static SamplerParameters of(SequencedMap<String, ?> map) {
-        return new SamplerParameters(map);
+    static SamplerParameters of(SequencedMap<String, ?> map) {
+        return new DefaultSamplerParameters(map);
     }
 
-    private final SequencedMap<String, ?> parameters;
-
-    private SamplerParameters(SequencedMap<String, ?> parameters) {
-        this.parameters = parameters;
+    static SamplerParameters of(
+            SequencedMap<String, String> map, SequencedMap<String, Function<String, Object>> columns) {
+        return new TypedSamplerParameters(map, columns);
     }
 
-    public Object valueOf(String key) {
-        return parameters.get(key);
+    Object valueOf(String key);
+
+    SequencedMap<String, ?> asMap();
+
+    void forEach(IndexedParameterSink sink) throws Exception;
+
+    class DefaultSamplerParameters implements SamplerParameters {
+        private final SequencedMap<String, ?> parameters;
+
+        private DefaultSamplerParameters(SequencedMap<String, ?> parameters) {
+            this.parameters = parameters;
+        }
+
+        @Override
+        public Object valueOf(String key) {
+            return parameters.get(key);
+        }
+
+        @Override
+        public SequencedMap<String, ?> asMap() {
+            return parameters;
+        }
+
+        @Override
+        public void forEach(IndexedParameterSink sink) throws Exception {
+            int i = 0;
+            for (var value : parameters.values()) {
+                sink.accept(i, value.getClass(), value);
+                i++;
+            }
+        }
     }
 
-    public Map<String, ?> asMap() {
-        return parameters;
-    }
+    class TypedSamplerParameters implements SamplerParameters {
+        private final SequencedMap<String, String> parameters;
+        private final SequencedMap<String, Function<String, Object>> columns;
 
-    public void forEach(IndexedParameterSink sink) throws Exception {
-        int i = 0;
-        for (var value : parameters.values()) {
-            sink.accept(i, value.getClass(), value);
-            i++;
+        private TypedSamplerParameters(
+                SequencedMap<String, String> parameters, SequencedMap<String, Function<String, Object>> columns) {
+            this.parameters = parameters;
+            this.columns = columns;
+        }
+
+        // blank cells are kept as-is rather than run through the column's converter, since e.g.
+        // Integer.valueOf("") throws instead of yielding a sensible "no value" result.
+        private Object convert(String key, String value) {
+            if (value.isEmpty()) {
+                return value;
+            }
+            return columns.get(key).apply(value);
+        }
+
+        @Override
+        public Object valueOf(String key) {
+            String value = parameters.get(key);
+            if (value != null) {
+                return convert(key, value);
+            }
+            return null;
+        }
+
+        @Override
+        public SequencedMap<String, ?> asMap() {
+            return parameters.entrySet().stream()
+                    .map(entry -> Map.entry(entry.getKey(), convert(entry.getKey(), entry.getValue())))
+                    .collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (x, y) -> y, LinkedHashMap::new));
+        }
+
+        @Override
+        public void forEach(IndexedParameterSink sink) throws Exception {
+            int i = 0;
+            for (var entry : parameters.entrySet()) {
+                Object applied = convert(entry.getKey(), entry.getValue());
+                sink.accept(i, applied.getClass(), applied);
+                i++;
+            }
         }
     }
 }

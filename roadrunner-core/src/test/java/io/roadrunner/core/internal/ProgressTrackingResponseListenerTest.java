@@ -51,8 +51,8 @@ class ProgressTrackingResponseListenerTest {
         };
         var listener = DefaultRoadrunner.newProgressListener(noop, progress);
 
-        listener.onEvent(List.of(
-                new SamplerResponse.Response(0L, 1_000_000L), new SamplerResponse.Error(0L, 2_000_000L)));
+        listener.onEvent(
+                List.of(new SamplerResponse.Response(0L, 1_000_000L), new SamplerResponse.Error(0L, 2_000_000L)));
 
         assertThat(captured.get().processed()).isEqualTo(2L);
         assertThat(captured.get().errors()).isEqualTo(1L);

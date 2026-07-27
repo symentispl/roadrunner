@@ -35,10 +35,12 @@ public final class ReportRenderer {
         var healthColor = m.errorPercentage() == 0
                 ? ConsoleTheme.GREEN
                 : (m.errorPercentage() < 1.0 ? ConsoleTheme.YELLOW : ConsoleTheme.RED);
-        var health = t.paint(String.format(Locale.ROOT, "%d errors (%.2f%%)", m.errors(), m.errorPercentage()), healthColor);
+        var health =
+                t.paint(String.format(Locale.ROOT, "%d errors (%.2f%%)", m.errors(), m.errorPercentage()), healthColor);
 
         sb.append(String.format("  requests   %d total   %d ok   %s%n", m.total(), m.success(), health));
-        sb.append(String.format(Locale.ROOT, "  duration   %.2f s   throughput %.2f req/s%n", m.durationSeconds(), m.throughput()));
+        sb.append(String.format(
+                Locale.ROOT, "  duration   %.2f s   throughput %.2f req/s%n", m.durationSeconds(), m.throughput()));
         sb.append(nl);
 
         sb.append("  latency (ms)").append(nl);

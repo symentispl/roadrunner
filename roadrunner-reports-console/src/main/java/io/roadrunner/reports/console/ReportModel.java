@@ -81,8 +81,7 @@ public record ReportModel(
         var maxV = histogram.getMaxValue();
         var range = Math.max(1L, maxV - minV);
         for (var v : histogram.recordedValues()) {
-            var idx = (int) Math.min(
-                    LATENCY_BUCKETS - 1L, (v.getValueIteratedTo() - minV) * LATENCY_BUCKETS / range);
+            var idx = (int) Math.min(LATENCY_BUCKETS - 1L, (v.getValueIteratedTo() - minV) * LATENCY_BUCKETS / range);
             if (idx >= 0) {
                 buckets[idx] += v.getCountAtValueIteratedTo();
             }

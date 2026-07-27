@@ -32,8 +32,19 @@ class ReportRendererTest {
 
     private static ReportModel sampleModel() {
         return new ReportModel(
-                100, 95, 5, 10.0, 10.0, 5.0,
-                1, 8, 120, 5, 15, 90, 118,
+                100,
+                95,
+                5,
+                10.0,
+                10.0,
+                5.0,
+                1,
+                8,
+                120,
+                5,
+                15,
+                90,
+                118,
                 new long[] {50, 30, 15, 5},
                 new long[] {8, 10, 12, 9},
                 Map.of("200", 95L, "500", 5L));
