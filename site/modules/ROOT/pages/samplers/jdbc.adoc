@@ -84,5 +84,8 @@ roadrunner -c 20 -n 1000 jdbc \
 == Parameter sources
 
 Combine with `--parameters-source csv:file=<path>` to execute a different query per
-request using values from a CSV file.
-See xref:configuration.adoc#parameter-sources[Parameter sources] for details.
+request using values from a CSV file. The JDBC sampler binds CSV columns
+*positionally* to the query's `?` placeholders — see
+xref:parameter-sources.adoc[Parameter sources] for the file format, positional vs.
+named binding, and typed columns (e.g. `age:int`) so numeric/file values reach the
+driver as real Java types instead of strings.
