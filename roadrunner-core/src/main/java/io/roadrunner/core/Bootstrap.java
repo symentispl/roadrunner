@@ -23,6 +23,7 @@ import io.roadrunner.core.internal.DefaultRoadrunner;
 import io.roadrunner.core.internal.ExecutionStrategy;
 import io.roadrunner.core.internal.OpenWorldStrategy;
 import io.roadrunner.latency.recording.PauseDetectorKind;
+import io.roadrunner.logging.LoggingFacade;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,11 +32,10 @@ import java.time.Duration;
 import java.util.EnumSet;
 import java.util.Objects;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Bootstrap {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
+    private static final Logger LOG = LoggingFacade.getLogger(Bootstrap.class);
 
     private ExecutionStrategy strategy;
     private MeasurementProgress measurementProgress = MeasurementProgress.NO_OP;

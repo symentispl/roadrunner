@@ -17,6 +17,7 @@ module io.roadrunner.output.csv {
     requires io.roadrunner.api;
     requires org.apache.commons.csv;
     requires org.slf4j;
+    requires io.roadrunner.logging;
 
     exports io.roadrunner.output.csv;
 }

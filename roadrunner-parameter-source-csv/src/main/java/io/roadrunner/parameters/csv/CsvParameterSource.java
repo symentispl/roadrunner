@@ -20,6 +20,7 @@ import static java.util.stream.Collectors.toMap;
 import io.roadrunner.api.parameters.ParameterFeed;
 import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.parameters.SamplerParameters;
+import io.roadrunner.logging.LoggingFacade;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -33,7 +34,6 @@ import java.util.function.Function;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link ParameterSource} that reads parameters from a CSV file.
@@ -69,7 +69,7 @@ public final class CsvParameterSource implements ParameterSource {
 
     private static class CsvParameterFeed implements ParameterFeed {
 
-        private static final Logger LOG = LoggerFactory.getLogger(CsvParameterFeed.class);
+        private static final Logger LOG = LoggingFacade.getLogger(CsvParameterFeed.class);
 
         static ParameterFeed of(Path csvFile, CSVFormat format) throws IOException {
             LOG.info("Loading CSV parameters from file {}", csvFile);

@@ -22,6 +22,7 @@ import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.metrics.MetricRegistry;
+import io.roadrunner.logging.LoggingFacade;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,11 +30,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class CsvOutputEventListener implements EventListener {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CsvOutputEventListener.class);
+    private static final Logger LOG = LoggingFacade.getLogger(CsvOutputEventListener.class);
 
     private static final int ROW_BUFFER_SIZE = 128;
 

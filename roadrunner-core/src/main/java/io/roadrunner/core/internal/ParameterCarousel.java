@@ -18,10 +18,10 @@ package io.roadrunner.core.internal;
 import io.roadrunner.api.parameters.ParameterFeed;
 import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.parameters.SamplerParameters;
+import io.roadrunner.logging.LoggingFacade;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.StreamSupport;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Engine-internal parameter dispatcher. Holds the preloaded parameter rows in a flat array and
@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  */
 final class ParameterCarousel {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ParameterCarousel.class);
+    private static final Logger LOG = LoggingFacade.getLogger(ParameterCarousel.class);
 
     /**
      * Drains the user-supplied {@link ParameterSource} once, copies its rows into a flat array,

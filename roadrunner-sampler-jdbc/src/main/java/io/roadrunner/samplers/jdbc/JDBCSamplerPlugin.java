@@ -17,6 +17,7 @@ package io.roadrunner.samplers.jdbc;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import io.roadrunner.logging.LoggingFacade;
 import io.roadrunner.samplers.spi.PluginInitializationException;
 import io.roadrunner.samplers.spi.SamplerExtensionPointDescriptor;
 import io.roadrunner.samplers.spi.SamplerPlugin;
@@ -28,11 +29,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ServiceLoader;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JDBCSamplerPlugin implements SamplerPlugin<JDBCSamplerProvider, JDBCSamplerOptions> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JDBCSamplerPlugin.class);
+    private static final Logger LOG = LoggingFacade.getLogger(JDBCSamplerPlugin.class);
     private static final double ACQUIRE_RATIO_WARN_THRESHOLD = 0.20;
 
     private URLClassLoader driverClassLoader;

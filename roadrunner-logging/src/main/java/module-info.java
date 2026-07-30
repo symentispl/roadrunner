@@ -13,25 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.samplers.jdbc.JDBCSamplerPlugin;
-import io.roadrunner.samplers.spi.SamplerPlugin;
-
-module io.roadrunner.samplers.jdbc {
-    requires java.sql;
-    requires io.roadrunner.api;
-    requires io.roadrunner.samplers.spi;
-    requires info.picocli;
-    requires com.zaxxer.hikari;
+module io.roadrunner.logging {
     requires org.slf4j;
-    requires io.roadrunner.logging;
 
-    uses java.sql.Driver;
-
-    exports io.roadrunner.samplers.jdbc;
-
-    provides SamplerPlugin with
-            JDBCSamplerPlugin;
-
-    opens io.roadrunner.samplers.jdbc to
-            info.picocli;
+    exports io.roadrunner.logging;
 }

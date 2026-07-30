@@ -27,6 +27,7 @@ import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.latency.recording.LatencyRecorders;
 import io.roadrunner.latency.recording.PauseDetectorKind;
+import io.roadrunner.logging.LoggingFacade;
 import io.roadrunner.output.csv.CsvOutputEventListener;
 import io.roadrunner.samplers.spi.SamplerContext;
 import java.io.IOException;
@@ -35,11 +36,10 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DefaultRoadrunner implements Roadrunner {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultRoadrunner.class);
+    private static final Logger LOG = LoggingFacade.getLogger(DefaultRoadrunner.class);
 
     private final ExecutionStrategy strategy;
     private final MeasurementProgress measurementProgress;

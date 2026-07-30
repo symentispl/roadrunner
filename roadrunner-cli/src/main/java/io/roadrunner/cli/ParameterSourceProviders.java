@@ -19,15 +19,15 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
 import io.roadrunner.api.parameters.ParameterSourceProvider;
+import io.roadrunner.logging.LoggingFacade;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 final class ParameterSourceProviders {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ParameterSourceProviders.class);
+    private static final Logger LOG = LoggingFacade.getLogger(ParameterSourceProviders.class);
     private final Map<String, ParameterSourceProvider> providers;
 
     ParameterSourceProviders(Map<String, ParameterSourceProvider> providers) {

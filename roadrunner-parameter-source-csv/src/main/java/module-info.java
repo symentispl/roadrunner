@@ -20,6 +20,7 @@ module io.roadrunner.parameters.csv {
     requires io.roadrunner.api;
     requires org.apache.commons.csv;
     requires org.slf4j;
+    requires io.roadrunner.logging;
 
     provides ParameterSourceProvider with
             CsvParameterSourceProvider;

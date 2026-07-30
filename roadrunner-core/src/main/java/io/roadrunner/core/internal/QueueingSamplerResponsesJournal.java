@@ -17,6 +17,7 @@ package io.roadrunner.core.internal;
 
 import io.roadrunner.api.events.*;
 import io.roadrunner.api.measurments.EventReader;
+import io.roadrunner.logging.LoggingFacade;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -24,11 +25,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 final class QueueingSamplerResponsesJournal implements ResponsesJournal {
 
-    private static final Logger LOG = LoggerFactory.getLogger(QueueingSamplerResponsesJournal.class);
+    private static final Logger LOG = LoggingFacade.getLogger(QueueingSamplerResponsesJournal.class);
 
     private static final int BATCH_SIZE = 1000;
 

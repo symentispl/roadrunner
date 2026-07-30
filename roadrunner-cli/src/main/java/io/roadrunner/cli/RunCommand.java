@@ -20,13 +20,13 @@ import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.latency.recording.PauseDetectorKind;
+import io.roadrunner.logging.LoggingFacade;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -34,7 +34,7 @@ import picocli.CommandLine.Option;
 @Command(description = "Run a load test")
 class RunCommand {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RunCommand.class);
+    private static final Logger LOG = LoggingFacade.getLogger(RunCommand.class);
 
     @ArgGroup(multiplicity = "1")
     LoadModelArgs loadModel;
