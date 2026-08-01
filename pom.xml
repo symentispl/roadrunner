@@ -387,6 +387,7 @@
         <module>roadrunner-reports-console</module>
         <module>roadrunner-csv-output</module>
         <module>roadrunner-parameter-source-csv</module>
+        <module>roadrunner-reports</module>
     </modules>
     <profiles>
         <profile>

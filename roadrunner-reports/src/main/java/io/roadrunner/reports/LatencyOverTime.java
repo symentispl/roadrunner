@@ -13,17 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.api.reports.ReportGeneratorProvider;
-import io.roadrunner.reports.console.ConsoleReportGeneratorProvider;
+package io.roadrunner.reports;
 
-module io.roadrunner.reports.console {
-    requires io.roadrunner.api;
-    requires io.roadrunner.reports;
-    requires io.roadrunner.console;
-    requires org.apache.commons.io;
-
-    exports io.roadrunner.reports.console;
-
-    provides ReportGeneratorProvider with
-            ConsoleReportGeneratorProvider;
-}
+/**
+ * Latency percentiles per time slice, in milliseconds, aligned with
+ * {@link ReportModel#throughputSeries()}. Slices with no responses hold zero.
+ *
+ * <p>These come from the raw samples even when the summary percentiles come from a
+ * pause-corrected snapshot: the snapshot is a merge of interval histograms and carries no time
+ * dimension, so it cannot be sliced.
+ */
+public record LatencyOverTime(long[] p50, long[] p90, long[] p99) {}

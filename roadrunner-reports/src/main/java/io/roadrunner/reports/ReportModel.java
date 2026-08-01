@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.reports.console;
+package io.roadrunner.reports;
 
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -39,12 +40,54 @@ public record ReportModel(
         long p999,
         long[] latencyBuckets,
         long[] throughputSeries,
-        Map<String, Long> statusBreakdown) {
+        Map<String, Long> statusBreakdown,
+        LatencyOverTime latencyOverTime) {
 
     private static final int LATENCY_BUCKETS = 20;
     private static final int TIME_SLICES = 30;
 
-    public static ReportModel from(
+    /**
+     * Builds a model from a run's events alone, recording latencies as they were measured.
+     */
+    public static ReportModel from(EventReader reader) {
+        return from(reader, null);
+    }
+
+    /**
+     * Builds a model from a run directory: latencies come from the run's pause-corrected snapshot
+     * when it recorded one, unless {@code rawLatency} asks for the measured values instead.
+     */
+    public static ReportModel from(EventReader reader, RunDirectory runDirectory, boolean rawLatency)
+            throws IOException {
+        var snapshot = rawLatency ? null : runDirectory.latencySnapshot().orElse(null);
+        return from(reader, snapshot);
+    }
+
+    private static ReportModel from(EventReader reader, Histogram snapshot) {
+        var histogram = snapshot != null ? snapshot : new Histogram(3);
+        var total = 0L;
+        var errors = 0L;
+        var firstStart = Long.MAX_VALUE;
+        var lastStop = 0L;
+        for (var event : reader) {
+            if (event instanceof SamplerResponse<?> response) {
+                total++;
+                if (snapshot == null) {
+                    histogram.recordValue(response.latency());
+                }
+                firstStart = Math.min(firstStart, response.scheduledStartTime());
+                lastStop = Math.max(lastStop, response.stopTime());
+                if (response instanceof SamplerResponse.Error) {
+                    errors++;
+                }
+            }
+        }
+        return from(reader, histogram, firstStart, lastStop, total, errors);
+    }
+
+    // Package private rather than private: the statistics seam is worth testing directly, with a
+    // histogram and a window handed in, instead of only through a synthesized event stream.
+    static ReportModel from(
             EventReader reader, Histogram histogram, long firstStart, long lastStop, long total, long errors) {
         // Guard the empty/degenerate run: with no responses, firstStart stays Long.MAX_VALUE and
         // lastStop stays 0, which would otherwise yield a huge negative duration.
@@ -54,6 +97,7 @@ public record ReportModel(
         var errorPercentage = total == 0 ? 0.0 : (double) errors / total * 100;
 
         var series = new long[TIME_SLICES];
+        var sliceHistograms = new Histogram[TIME_SLICES];
         var windowNanos = Math.max(1L, lastStop - firstStart);
         var status = new LinkedHashMap<String, Long>();
         var statusKey = reader.attachmentKeys().stream()
@@ -66,6 +110,10 @@ public record ReportModel(
                 var slice = (int) Math.min(TIME_SLICES - 1, offset * TIME_SLICES / windowNanos);
                 if (slice >= 0) {
                     series[slice]++;
+                    if (sliceHistograms[slice] == null) {
+                        sliceHistograms[slice] = new Histogram(3);
+                    }
+                    sliceHistograms[slice].recordValue(response.latency());
                 }
                 if (statusKey != null) {
                     var v = response.attachmentValueAt(statusKey);
@@ -103,7 +151,24 @@ public record ReportModel(
                 toMillis(histogram.getValueAtPercentile(99.9)),
                 buckets,
                 series,
-                status);
+                status,
+                latencyOverTime(sliceHistograms));
+    }
+
+    private static LatencyOverTime latencyOverTime(Histogram[] sliceHistograms) {
+        var p50 = new long[sliceHistograms.length];
+        var p90 = new long[sliceHistograms.length];
+        var p99 = new long[sliceHistograms.length];
+        for (var i = 0; i < sliceHistograms.length; i++) {
+            var slice = sliceHistograms[i];
+            if (slice == null) {
+                continue;
+            }
+            p50[i] = toMillis(slice.getValueAtPercentile(50));
+            p90[i] = toMillis(slice.getValueAtPercentile(90));
+            p99[i] = toMillis(slice.getValueAtPercentile(99));
+        }
+        return new LatencyOverTime(p50, p90, p99);
     }
 
     private static long toMillis(long nanos) {

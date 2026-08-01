@@ -15,17 +15,13 @@
  */
 package io.roadrunner.reports.console;
 
-import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.reports.ReportGenerator;
 import io.roadrunner.console.ConsoleTheme;
+import io.roadrunner.reports.ReportModel;
+import io.roadrunner.reports.RunDirectory;
 import io.roadrunner.reports.console.render.ReportRenderer;
-import io.roadrunner.shaded.hdrhistogram.EncodableHistogram;
-import io.roadrunner.shaded.hdrhistogram.Histogram;
-import io.roadrunner.shaded.hdrhistogram.HistogramLogReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import org.jline.terminal.TerminalBuilder;
@@ -45,52 +41,12 @@ final class ConsoleReportGenerator implements ReportGenerator {
 
         var rawLatency = Boolean.parseBoolean(properties.getOrDefault("rawLatency", "false"));
         var outputDirProp = properties.get("outputDir");
-        var snapshotPath =
-                outputDirProp == null ? null : Paths.get(outputDirProp).resolve("latency.hgrm");
-        var useSnapshot = !rawLatency && snapshotPath != null && Files.isRegularFile(snapshotPath);
-
-        Histogram histogram = useSnapshot ? readSnapshotHistogram(snapshotPath) : new Histogram(3);
-
-        // Track the first and last measurement timestamps to calculate total duration
-        long firstStartTime = Long.MAX_VALUE;
-        var lastStopTime = 0L;
-
-        // Track error counts
-        var totalRequests = 0L;
-        var errorRequests = 0L;
-
-        for (var event : eventReader) {
-            if (event instanceof SamplerResponse<?> response) {
-                totalRequests++;
-                if (!useSnapshot) {
-                    histogram.recordValue(response.latency());
-                }
-                firstStartTime = Math.min(firstStartTime, response.scheduledStartTime());
-                lastStopTime = Math.max(lastStopTime, response.stopTime());
-                if (response instanceof SamplerResponse.Error) {
-                    errorRequests++;
-                }
-            }
-        }
+        var model = outputDirProp == null
+                ? ReportModel.from(eventReader)
+                : ReportModel.from(eventReader, RunDirectory.of(Paths.get(outputDirProp)), rawLatency);
 
         try (var terminal = TerminalBuilder.builder().dumb(true).build()) {
-            var theme = ConsoleTheme.of(terminal);
-            var model = ReportModel.from(
-                    eventReader, histogram, firstStartTime, lastStopTime, totalRequests, errorRequests);
-            System.out.println(ReportRenderer.render(model, theme));
+            System.out.println(ReportRenderer.render(model, ConsoleTheme.of(terminal)));
         }
-    }
-
-    private static Histogram readSnapshotHistogram(Path snapshotPath) throws IOException {
-        var combined = new Histogram(1_000L, 3_600_000_000_000L, 3);
-        try (var reader = new HistogramLogReader(snapshotPath.toFile())) {
-            EncodableHistogram next;
-            while ((next = reader.nextIntervalHistogram()) != null) {
-                if (next instanceof Histogram h) {
-                    combined.add(h);
-                }
-            }
-        }
-        return combined;
     }
 }
