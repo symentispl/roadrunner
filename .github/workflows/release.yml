@@ -27,7 +27,7 @@ jobs:
       # Writes ~/.m2/settings.xml with <server id="github"> for GitHub Packages.
       # server-username/server-password are env var *names* resolved at Maven runtime.
       - name: Set up JDK 25
-        uses: actions/setup-java@v5.2.0
+        uses: actions/setup-java@v5.6.0
         with:
           java-version: '25'
           distribution: 'temurin'
