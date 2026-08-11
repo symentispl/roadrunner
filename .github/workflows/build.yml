@@ -39,5 +39,7 @@ jobs:
             token: ${{ secrets.CODECOV_TOKEN }}
 
       # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
+      # PR builds run with a read-only GITHUB_TOKEN (enforced by GitHub for pull_request events), so this always fails with 403 there
       - name: Update dependency graph
+        if: github.event_name == 'push'
         uses: advanced-security/maven-dependency-submission-action@v5.0.0
