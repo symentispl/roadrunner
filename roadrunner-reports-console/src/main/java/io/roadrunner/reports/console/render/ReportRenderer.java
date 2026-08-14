@@ -16,7 +16,7 @@
 package io.roadrunner.reports.console.render;
 
 import io.roadrunner.console.ConsoleTheme;
-import io.roadrunner.reports.console.ReportModel;
+import io.roadrunner.reports.ReportModel;
 import java.util.Locale;
 
 public final class ReportRenderer {

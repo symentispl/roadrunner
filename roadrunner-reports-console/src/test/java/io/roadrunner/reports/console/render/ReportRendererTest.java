@@ -18,7 +18,8 @@ package io.roadrunner.reports.console.render;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.roadrunner.console.ConsoleTheme;
-import io.roadrunner.reports.console.ReportModel;
+import io.roadrunner.reports.LatencyOverTime;
+import io.roadrunner.reports.ReportModel;
 import java.util.Map;
 import org.jline.terminal.TerminalBuilder;
 import org.junit.jupiter.api.Test;
@@ -47,7 +48,8 @@ class ReportRendererTest {
                 118,
                 new long[] {50, 30, 15, 5},
                 new long[] {8, 10, 12, 9},
-                Map.of("200", 95L, "500", 5L));
+                Map.of("200", 95L, "500", 5L),
+                new LatencyOverTime(new long[] {5, 6, 7, 8}, new long[] {15, 16, 17, 18}, new long[] {90, 91, 92, 93}));
     }
 
     @Test
