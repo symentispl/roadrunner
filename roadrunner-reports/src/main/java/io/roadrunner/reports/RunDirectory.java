@@ -53,6 +53,14 @@ public final class RunDirectory {
     }
 
     /**
+     * What the run was: sampler, load model, environment. {@link RunManifest#UNKNOWN} if this run
+     * directory has no manifest — an older run is not orphaned, its fields just render unknown.
+     */
+    public RunManifest manifest() throws IOException {
+        return RunManifest.readFrom(dir);
+    }
+
+    /**
      * The pause-corrected latencies recorded during the run, if the run recorded any. Package
      * private on purpose: which file the latencies come from is between this class and
      * {@link ReportModel}, and no renderer should have to know.

@@ -105,6 +105,27 @@ record PrefixedMap(String prefix, Map<String, String> parameters) {
         return new PrefixedMap(type, parameters);
     }
 
+    /** Inverse of {@link #parse(String)}: {@code prefix:key=value,key2=value2}, escaping as parse() unescapes. */
+    String toConfigString() {
+        var sb = new StringBuilder(prefix()).append(':');
+        var first = true;
+        for (var entry : parameters().entrySet()) {
+            if (!first) {
+                sb.append(',');
+            }
+            first = false;
+            sb.append(entry.getKey()).append('=').append(escape(entry.getValue()));
+        }
+        return sb.toString();
+    }
+
+    private static String escape(String value) {
+        return value.replace("\\", "\\\\")
+                .replace(",", "\\,")
+                .replace("=", "\\=")
+                .replace("\"", "\\\"");
+    }
+
     private enum State {
         key,
         value,

@@ -47,6 +47,10 @@ public class RoadrunnerAppIT {
                 .start();
         var exitCode = process.waitFor();
         assertThat(exitCode).isEqualTo(0);
-        assertThat(process.inputReader().lines()).containsExactly("Roadrunner, a simplistic load generator");
+        var lines = process.inputReader().lines().toList();
+        assertThat(lines).hasSize(1);
+        assertThat(lines.get(0))
+                .startsWith("Roadrunner, a load generator, version ")
+                .isNotEqualTo("Roadrunner, a load generator, version unknown");
     }
 }

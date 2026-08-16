@@ -23,11 +23,14 @@ module io.roadrunner.cli {
     requires io.roadrunner.core;
     requires io.roadrunner.latency.recording;
     requires io.roadrunner.console;
+    requires io.roadrunner.reports;
     requires org.slf4j;
     requires io.roadrunner.logging;
     requires org.apache.commons.io;
     requires org.apache.commons.lang3;
     requires info.picocli;
+    requires java.management;
+    requires jdk.management;
 
     uses SamplerPlugin;
     uses ReportGeneratorProvider;

@@ -20,15 +20,21 @@ import io.roadrunner.api.parameters.ParameterSource;
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.latency.recording.PauseDetectorKind;
+import io.roadrunner.reports.RunManifest;
+import java.lang.management.ManagementFactory;
 import io.roadrunner.logging.LoggingFacade;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 
 @Command(description = "Run a load test")
@@ -96,11 +102,13 @@ class RunCommand {
             converter = PrefixedMap.Converter.class)
     PrefixedMap parametersSource;
 
-    public void run(SamplerProvider samplerProvider) throws Exception {
+    public void run(CommandSpec samplerCommandSpec, SamplerProvider samplerProvider) throws Exception {
         if (!pauseDetectors.isEmpty() && loadModel.closedWorld != null) {
             throw new IllegalArgumentException(
                     "--pause-detectors is only supported with the open-world load model (--rate/--duration)");
         }
+
+        var startedAt = Instant.now();
 
         var bootstrap = new Bootstrap().withOutputDir(outputDir).withPauseDetectorKinds(pauseDetectors);
 
@@ -129,6 +137,8 @@ class RunCommand {
         }
 
         try (var roadrunner = bootstrap.build()) {
+            buildManifest(samplerCommandSpec, startedAt, Version.full()).writeTo(bootstrap.outputDir());
+
             LOG.debug("loading report generators");
             var chartGeneratorProviders = ChartGeneratorProviders.load();
             var reportGeneratorProvider = chartGeneratorProviders.get(report.prefix());
@@ -155,5 +165,79 @@ class RunCommand {
             }
             chartGenerator.generateChart(measurements.samplesReader());
         }
+    }
+
+    RunManifest buildManifest(CommandSpec samplerCommandSpec, Instant startedAt, String version) {
+        String loadModelName;
+        var concurrency = "";
+        var requests = "";
+        var rate = "";
+        var duration = "";
+        if (loadModel.closedWorld != null) {
+            loadModelName = "closed";
+            concurrency = String.valueOf(loadModel.closedWorld.concurrency);
+            requests = String.valueOf(loadModel.closedWorld.numberOfRequests);
+        } else {
+            loadModelName = "open";
+            rate = String.valueOf(loadModel.openWorld.rate);
+            duration = loadModel.openWorld.duration.toString();
+        }
+
+        var pauseDetectorsStr = pauseDetectors.stream().map(RunCommand::toToken).collect(Collectors.joining(","));
+        var parametersSourceStr = parametersSource == null ? "" : parametersSource.toConfigString();
+
+        var operatingSystem = ManagementFactory.getOperatingSystemMXBean();
+        var totalMemory = operatingSystem instanceof com.sun.management.OperatingSystemMXBean sunOperatingSystem
+                ? String.valueOf(sunOperatingSystem.getTotalMemorySize())
+                : "unknown";
+
+        return new RunManifest(
+                version,
+                startedAt.toString(),
+                samplerCommandSpec.name(),
+                samplerOptionsConfigString(samplerCommandSpec),
+                loadModelName,
+                concurrency,
+                requests,
+                rate,
+                duration,
+                pauseDetectorsStr,
+                parametersSourceStr,
+                Runtime.version().toString(),
+                String.join(" ", ManagementFactory.getRuntimeMXBean().getInputArguments()),
+                System.getProperty("os.name"),
+                System.getProperty("os.version"),
+                System.getProperty("os.arch"),
+                String.valueOf(Runtime.getRuntime().availableProcessors()),
+                totalMemory);
+    }
+
+    // Generic over any sampler's options: picocli already knows every @Option/@Parameters field and
+    // its current value, so no sampler module needs a custom serializer.
+    private static String samplerOptionsConfigString(CommandSpec samplerCommandSpec) {
+        var options = new LinkedHashMap<String, String>();
+        for (var option : samplerCommandSpec.options()) {
+            if (option.usageHelp() || option.versionHelp()) {
+                continue;
+            }
+            Object value = option.getValue();
+            if (value != null) {
+                options.put(option.longestName(), String.valueOf(value));
+            }
+        }
+        for (var positional : samplerCommandSpec.positionalParameters()) {
+            Object value = positional.getValue();
+            if (value != null) {
+                options.put(positional.paramLabel(), String.valueOf(value));
+            }
+        }
+        return new PrefixedMap(samplerCommandSpec.name(), options).toConfigString();
+    }
+
+    private static String toToken(PauseDetectorKind kind) {
+        return switch (kind) {
+            case VT_SCHEDULING -> "vt";
+            case JVM_PAUSE -> "jvm";
+        };
     }
 }

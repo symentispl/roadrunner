@@ -114,7 +114,7 @@ public class Main {
                     && samplerSubCmd != null
                     && samplerSubCmd.commandSpec().userObject() instanceof SamplerOptions samplerOptions) {
                 try (var samplerProvider = samplerOptions.samplerProvider()) {
-                    runCommand.run(samplerProvider);
+                    runCommand.run(samplerSubCmd.commandSpec(), samplerProvider);
                 } catch (SamplerExpressionException e) {
                     var samplerName = samplerSubCmd.commandSpec().name();
                     var extensionPoints = samplerProviders.extensionPoints(samplerName);
@@ -169,7 +169,7 @@ public class Main {
 
     private static CommandSpec createCommandSpec(SamplerPlugins samplerPlugins) {
         var commandSpec = CommandSpec.create();
-        commandSpec.versionProvider(() -> new String[] {"Roadrunner, a simplistic load generator"});
+        commandSpec.versionProvider(Version::humanReadable);
         // top level only, the ab sampler already uses -X for its proxy server
         commandSpec.addOption(OptionSpec.builder("-X")
                 .description("Log full exception stack traces instead of just the exception message")
