@@ -15,6 +15,7 @@
  */
 package io.roadrunner.reports;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,27 +52,6 @@ public record RunManifest(
     static final String FILE_NAME = "run.properties";
 
     private static final String UNKNOWN_VALUE = "unknown";
-
-    /** Returned when a run directory has no manifest: every field reads as "unknown". */
-    public static final RunManifest UNKNOWN = new RunManifest(
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE,
-            UNKNOWN_VALUE);
 
     private enum Key {
         ROADRUNNER_VERSION("roadrunner.version"),
@@ -129,7 +109,7 @@ public record RunManifest(
     public static RunManifest readFrom(Path dir) throws IOException {
         var file = dir.resolve(FILE_NAME);
         if (!Files.isRegularFile(file)) {
-            return UNKNOWN;
+            throw new FileNotFoundException("run manifest %s file not found".formatted(file));
         }
         var properties = new Properties();
         try (var in = Files.newInputStream(file)) {

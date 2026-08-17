@@ -16,7 +16,9 @@
 package io.roadrunner.reports;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
@@ -82,15 +84,8 @@ class RunManifestTest {
 
     @Test
     void rendersUnknownWhenTheRunDirectoryHasNoManifest(@TempDir Path dir) throws IOException {
-        var manifest = RunManifest.readFrom(dir);
-
-        assertThat(manifest).isEqualTo(RunManifest.UNKNOWN);
-        assertThat(manifest.roadrunnerVersion()).isEqualTo("unknown");
-        assertThat(manifest.loadModel()).isEqualTo("unknown");
-    }
-
-    @Test
-    void runDirectoryDelegatesToTheManifest(@TempDir Path dir) throws IOException {
-        assertThat(RunDirectory.of(dir).manifest()).isEqualTo(RunManifest.UNKNOWN);
+        assertThatThrownBy(() -> RunManifest.readFrom(dir))
+                .isInstanceOf(FileNotFoundException.class)
+                .hasMessage("run manifest %s/run.properties file not found", dir);
     }
 }
