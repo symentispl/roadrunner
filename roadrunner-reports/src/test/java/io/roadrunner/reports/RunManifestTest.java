@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -32,7 +33,7 @@ class RunManifestTest {
                 "0.3.1",
                 "2026-07-31T13:44:22Z",
                 "http",
-                "http:expression=GET(\"http://localhost/\")",
+                Map.of("expression", "GET(\"http://localhost/\")"),
                 "closed",
                 "10",
                 "2000",
@@ -60,7 +61,7 @@ class RunManifestTest {
                 "0.3.1",
                 "2026-07-31T13:44:22Z",
                 "http",
-                "http:expression=GET(\"http://localhost/\")",
+                Map.of("expression", "GET(\"http://localhost/\")"),
                 "open",
                 "",
                 "",
@@ -80,6 +81,67 @@ class RunManifestTest {
         var read = RunManifest.readFrom(dir);
 
         assertThat(read).isEqualTo(manifest);
+    }
+
+    @Test
+    void roundTripsASamplerWithNoOptions(@TempDir Path dir) throws IOException {
+        var manifest = new RunManifest(
+                "0.3.1",
+                "2026-07-31T13:44:22Z",
+                "zero",
+                Map.of(),
+                "closed",
+                "10",
+                "2000",
+                "",
+                "",
+                "",
+                "",
+                "25.0.3",
+                "-Xmx1g",
+                "Linux",
+                "6.17.0-41-generic",
+                "amd64",
+                "8",
+                "16000000000");
+
+        manifest.writeTo(dir);
+        var read = RunManifest.readFrom(dir);
+
+        assertThat(read.samplerOptions()).isEmpty();
+        assertThat(read).isEqualTo(manifest);
+    }
+
+    @Test
+    void roundTripsSamplerOptionsNeedingEscaping(@TempDir Path dir) throws IOException {
+        var manifest = new RunManifest(
+                "0.3.1",
+                "2026-07-31T13:44:22Z",
+                "http",
+                Map.of(
+                        "expression", "GET(\"http://localhost/\")",
+                        "--headers", "a=1,b=2"),
+                "closed",
+                "10",
+                "2000",
+                "",
+                "",
+                "",
+                "",
+                "25.0.3",
+                "-Xmx1g",
+                "Linux",
+                "6.17.0-41-generic",
+                "amd64",
+                "8",
+                "16000000000");
+
+        manifest.writeTo(dir);
+        var read = RunManifest.readFrom(dir);
+
+        assertThat(read.samplerOptions())
+                .containsEntry("expression", "GET(\"http://localhost/\")")
+                .containsEntry("--headers", "a=1,b=2");
     }
 
     @Test

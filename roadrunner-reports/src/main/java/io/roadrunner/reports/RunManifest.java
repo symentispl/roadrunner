@@ -19,21 +19,25 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
 
 /**
  * What a run was: sampler, load model, environment. Written by the CLI at the start of a run and
  * read back here so a report can label itself and a comparison can tell whether two runs are even
  * comparable.
  *
- * <p>Backed by plain {@link Properties} on purpose: ten-odd flat string fields don't need a JSON
- * dependency, and reading is free.
+ * <p>Backed by plain {@link Properties} on purpose: flat string fields don't need a JSON
+ * dependency, and reading is free. The sampler's own options are a dynamic set of keys, so they're
+ * flattened into individual {@code sampler.options.<name>} properties rather than encoded into one
+ * string — a future comparison reads them back as a map directly, no parsing required.
  */
 public record RunManifest(
         String roadrunnerVersion,
         String startedAt,
         String sampler,
-        String samplerOptions,
+        Map<String, String> samplerOptions,
         String loadModel,
         String loadConcurrency,
         String loadRequests,
@@ -53,11 +57,16 @@ public record RunManifest(
 
     private static final String UNKNOWN_VALUE = "unknown";
 
+    private static final String SAMPLER_OPTIONS_PREFIX = "sampler.options.";
+
+    public RunManifest {
+        samplerOptions = Map.copyOf(samplerOptions);
+    }
+
     private enum Key {
         ROADRUNNER_VERSION("roadrunner.version"),
         STARTED_AT("started.at"),
         SAMPLER("sampler"),
-        SAMPLER_OPTIONS("sampler.options"),
         LOAD_MODEL("load.model"),
         LOAD_CONCURRENCY("load.concurrency"),
         LOAD_REQUESTS("load.requests"),
@@ -86,7 +95,7 @@ public record RunManifest(
         properties.setProperty(Key.ROADRUNNER_VERSION.propertyName, roadrunnerVersion);
         properties.setProperty(Key.STARTED_AT.propertyName, startedAt);
         properties.setProperty(Key.SAMPLER.propertyName, sampler);
-        properties.setProperty(Key.SAMPLER_OPTIONS.propertyName, samplerOptions);
+        samplerOptions.forEach((key, value) -> properties.setProperty(SAMPLER_OPTIONS_PREFIX + key, value));
         properties.setProperty(Key.LOAD_MODEL.propertyName, loadModel);
         properties.setProperty(Key.LOAD_CONCURRENCY.propertyName, loadConcurrency);
         properties.setProperty(Key.LOAD_REQUESTS.propertyName, loadRequests);
@@ -115,11 +124,17 @@ public record RunManifest(
         try (var in = Files.newInputStream(file)) {
             properties.load(in);
         }
+        var samplerOptions = new TreeMap<String, String>();
+        for (var name : properties.stringPropertyNames()) {
+            if (name.startsWith(SAMPLER_OPTIONS_PREFIX)) {
+                samplerOptions.put(name.substring(SAMPLER_OPTIONS_PREFIX.length()), properties.getProperty(name));
+            }
+        }
         return new RunManifest(
                 properties.getProperty(Key.ROADRUNNER_VERSION.propertyName, UNKNOWN_VALUE),
                 properties.getProperty(Key.STARTED_AT.propertyName, UNKNOWN_VALUE),
                 properties.getProperty(Key.SAMPLER.propertyName, UNKNOWN_VALUE),
-                properties.getProperty(Key.SAMPLER_OPTIONS.propertyName, UNKNOWN_VALUE),
+                samplerOptions,
                 properties.getProperty(Key.LOAD_MODEL.propertyName, UNKNOWN_VALUE),
                 properties.getProperty(Key.LOAD_CONCURRENCY.propertyName, UNKNOWN_VALUE),
                 properties.getProperty(Key.LOAD_REQUESTS.propertyName, UNKNOWN_VALUE),

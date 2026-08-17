@@ -195,7 +195,7 @@ class RunCommand {
                 version,
                 startedAt.toString(),
                 samplerCommandSpec.name(),
-                samplerOptionsConfigString(samplerCommandSpec),
+                samplerOptionsMap(samplerCommandSpec),
                 loadModelName,
                 concurrency,
                 requests,
@@ -214,7 +214,7 @@ class RunCommand {
 
     // Generic over any sampler's options: picocli already knows every @Option/@Parameters field and
     // its current value, so no sampler module needs a custom serializer.
-    private static String samplerOptionsConfigString(CommandSpec samplerCommandSpec) {
+    private static Map<String, String> samplerOptionsMap(CommandSpec samplerCommandSpec) {
         var options = new LinkedHashMap<String, String>();
         for (var option : samplerCommandSpec.options()) {
             if (option.usageHelp() || option.versionHelp()) {
@@ -231,7 +231,7 @@ class RunCommand {
                 options.put(positional.paramLabel(), String.valueOf(value));
             }
         }
-        return new PrefixedMap(samplerCommandSpec.name(), options).toConfigString();
+        return Map.copyOf(options);
     }
 
     private static String toToken(PauseDetectorKind kind) {

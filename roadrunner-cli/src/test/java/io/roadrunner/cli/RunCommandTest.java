@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.EnumSet;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -40,8 +41,16 @@ class RunCommandTest {
         long timeout = 5000;
     }
 
+    @Command
+    static class DummySamplerOptionsWithNoFields {}
+
     private static CommandSpec samplerCommandSpec(String name) {
         return CommandSpec.forAnnotatedObject(new DummySamplerOptions()).name(name);
+    }
+
+    private static CommandSpec samplerCommandSpecWithNoOptions(String name) {
+        return CommandSpec.forAnnotatedObject(new DummySamplerOptionsWithNoFields())
+                .name(name);
     }
 
     @Test
@@ -104,7 +113,7 @@ class RunCommandTest {
     }
 
     @Test
-    void samplerOptionsAreSerializedGenericallyFromTheCommandSpec() throws IOException {
+    void samplerOptionsAreCollectedGenericallyFromTheCommandSpec() {
         var runCommand = new RunCommand();
         runCommand.loadModel = new RunCommand.LoadModelArgs();
         runCommand.loadModel.closedWorld = new RunCommand.ClosedWorldArgs();
@@ -113,11 +122,22 @@ class RunCommandTest {
 
         var manifest = runCommand.buildManifest(samplerCommandSpec("http"), STARTED_AT, "0.3.1-test");
 
-        var parsed = PrefixedMap.parse(manifest.samplerOptions());
-        assertThat(parsed.prefix()).isEqualTo("http");
-        assertThat(parsed.parameters())
+        assertThat(manifest.samplerOptions())
                 .containsEntry("expression", "GET(\"http://localhost/\")")
                 .containsEntry("--timeout", "5000");
+    }
+
+    @Test
+    void manifestHasNoSamplerOptionsWhenTheSamplerDeclaresNone() {
+        var runCommand = new RunCommand();
+        runCommand.loadModel = new RunCommand.LoadModelArgs();
+        runCommand.loadModel.closedWorld = new RunCommand.ClosedWorldArgs();
+        runCommand.loadModel.closedWorld.concurrency = 1;
+        runCommand.loadModel.closedWorld.numberOfRequests = 1;
+
+        var manifest = runCommand.buildManifest(samplerCommandSpecWithNoOptions("zero"), STARTED_AT, "0.3.1-test");
+
+        assertThat(manifest.samplerOptions()).isEmpty();
     }
 
     @Test

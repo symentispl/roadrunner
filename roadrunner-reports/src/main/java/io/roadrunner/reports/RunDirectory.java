@@ -53,8 +53,9 @@ public final class RunDirectory {
     }
 
     /**
-     * What the run was: sampler, load model, environment. {@link RunManifest#UNKNOWN} if this run
-     * directory has no manifest — an older run is not orphaned, its fields just render unknown.
+     * What the run was: sampler, load model, environment.
+     *
+     * @throws java.io.FileNotFoundException if this run directory has no manifest
      */
     public RunManifest manifest() throws IOException {
         return RunManifest.readFrom(dir);
