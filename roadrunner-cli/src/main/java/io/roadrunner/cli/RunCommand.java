@@ -112,32 +112,13 @@ class RunCommand {
 
         var bootstrap = new Bootstrap().withOutputDir(outputDir).withPauseDetectorKinds(pauseDetectors);
 
-        if (parametersSource != null) {
-            var paramProviders = ParameterSourceProviders.load();
-            var paramProvider = paramProviders.get(parametersSource.prefix());
-            if (paramProvider == null) {
-                throw new IllegalArgumentException("Unknown parameter source prefix '%s', supported types: %s"
-                        .formatted(parametersSource.prefix(), paramProviders.supportedSourceTypes()));
-            }
-            ParameterSource source = paramProvider.create(parametersSource.parameters());
-            bootstrap.withParameterSource(source);
-        }
+        buildParametersSource(bootstrap);
 
-        MeasurementProgress progress;
-        if (loadModel.closedWorld != null) {
-            progress = new ProgressBar(100, 0, loadModel.closedWorld.numberOfRequests);
-            bootstrap
-                    .withClosedWorldModel(loadModel.closedWorld.concurrency, loadModel.closedWorld.numberOfRequests)
-                    .withMeasurementProgress(progress);
-        } else {
-            progress = new TimeBasedProgressBar(loadModel.openWorld.duration);
-            bootstrap
-                    .withOpenWorldModel(loadModel.openWorld.rate, loadModel.openWorld.duration)
-                    .withMeasurementProgress(progress);
-        }
+        var progress = buildMeasurementProgress(bootstrap);
 
         try (var roadrunner = bootstrap.build()) {
-            buildManifest(samplerCommandSpec, startedAt, Version.full()).writeTo(bootstrap.outputDir());
+            var runManifest = buildManifest(samplerCommandSpec, startedAt, Version.full());
+            runManifest.writeTo(bootstrap.outputDir());
 
             LOG.debug("loading report generators");
             var chartGeneratorProviders = ChartGeneratorProviders.load();
@@ -152,7 +133,7 @@ class RunCommand {
             reportConfig.put("outputDir", bootstrap.outputDir().toString());
             reportConfig.put("rawLatency", Boolean.toString(rawLatency));
 
-            var chartGenerator = reportGeneratorProvider.create(reportConfig);
+            var reportGenerator = reportGeneratorProvider.create(reportConfig);
             var measurements = roadrunner.execute(samplerProvider);
             // Release the progress bar's terminal before the report renders, otherwise the
             // report can't open its own system terminal and falls back to a dumb (ASCII) one.
@@ -163,8 +144,37 @@ class RunCommand {
                     // best-effort
                 }
             }
-            chartGenerator.generateChart(measurements.samplesReader());
+            reportGenerator.generateChart(measurements.samplesReader());
         }
+    }
+
+    private void buildParametersSource(Bootstrap bootstrap) {
+        if (parametersSource != null) {
+            var paramProviders = ParameterSourceProviders.load();
+            var paramProvider = paramProviders.get(parametersSource.prefix());
+            if (paramProvider == null) {
+                throw new IllegalArgumentException("Unknown parameter source prefix '%s', supported types: %s"
+                        .formatted(parametersSource.prefix(), paramProviders.supportedSourceTypes()));
+            }
+            ParameterSource source = paramProvider.create(parametersSource.parameters());
+            bootstrap.withParameterSource(source);
+        }
+    }
+
+    private MeasurementProgress buildMeasurementProgress(Bootstrap bootstrap) {
+        MeasurementProgress progress;
+        if (loadModel.closedWorld != null) {
+            progress = new ProgressBar(100, 0, loadModel.closedWorld.numberOfRequests);
+            bootstrap
+                    .withClosedWorldModel(loadModel.closedWorld.concurrency, loadModel.closedWorld.numberOfRequests)
+                    .withMeasurementProgress(progress);
+        } else {
+            progress = new TimeBasedProgressBar(loadModel.openWorld.duration);
+            bootstrap
+                    .withOpenWorldModel(loadModel.openWorld.rate, loadModel.openWorld.duration)
+                    .withMeasurementProgress(progress);
+        }
+        return progress;
     }
 
     RunManifest buildManifest(CommandSpec samplerCommandSpec, Instant startedAt, String version) {
@@ -183,7 +193,8 @@ class RunCommand {
             duration = loadModel.openWorld.duration.toString();
         }
 
-        var pauseDetectorsStr = pauseDetectors.stream().map(RunCommand::toToken).collect(Collectors.joining(","));
+        var pauseDetectorsStr =
+                pauseDetectors.stream().map(PauseDetectorKind::kind).collect(Collectors.joining(","));
         var parametersSourceStr = parametersSource == null ? "" : parametersSource.toConfigString();
 
         var operatingSystem = ManagementFactory.getOperatingSystemMXBean();
@@ -232,12 +243,5 @@ class RunCommand {
             }
         }
         return Map.copyOf(options);
-    }
-
-    private static String toToken(PauseDetectorKind kind) {
-        return switch (kind) {
-            case VT_SCHEDULING -> "vt";
-            case JVM_PAUSE -> "jvm";
-        };
     }
 }

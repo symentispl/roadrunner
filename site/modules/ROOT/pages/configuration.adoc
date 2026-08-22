@@ -10,9 +10,9 @@ roadrunner [OPTIONS] <sampler> [SAMPLER_OPTIONS]
 [#sampler-expressions]
 == Sampler operation expressions
 
-Some samplers (currently `jdbc` and `neo4j`) take their positional argument as
-a *sampler operation expression* rather than bare query text — a method name
-followed by one or more double-quoted string literals:
+Some samplers (currently `http`, `jdbc`, and `neo4j`) take their positional
+argument as a *sampler operation expression* rather than bare query text — a
+method name followed by one or more double-quoted string literals:
 
 [source]
 ----
@@ -20,13 +20,23 @@ methodName("literal", "literal", ...)
 ----
 
 Each such sampler exposes one or more named operations; the expression
-selects which operation to invoke and supplies its literal arguments. Today
-both the JDBC and Neo4j samplers expose a single `query(...)` operation, so
-their positional argument always takes the form `query("...")` — see
-xref:samplers/jdbc.adoc[JDBC Sampler] and xref:samplers/neo4j.adoc[Neo4j Sampler]
-for details. This syntax is shared across every sampler that adopts it, so a
-future sampler exposing multiple operations (e.g. `read(...)`/`write(...)`)
-uses the same expression grammar.
+selects which operation to invoke and supplies its literal arguments. The
+JDBC and Neo4j samplers each expose a single `query(...)` operation, so their
+positional argument always takes the form `query("...")`; the HTTP sampler
+exposes `GET(...)`, `POST(...)`, `PUT(...)`, and `DELETE(...)` — see
+xref:samplers/http.adoc[HTTP Sampler], xref:samplers/jdbc.adoc[JDBC Sampler],
+and xref:samplers/neo4j.adoc[Neo4j Sampler] for details. This syntax is shared
+across every sampler that adopts it, so a future sampler exposing multiple
+operations (e.g. `read(...)`/`write(...)`) uses the same expression grammar.
+
+CAUTION: Always wrap the whole expression in *single* quotes on the shell
+command line, e.g. `'GET("http://localhost:8080/")'` — every example on this
+site does this. The double quotes belong to the expression syntax itself, not
+the shell. An unquoted or wrongly-quoted `name(...)` is not just a syntax
+error: in zsh, a word immediately followed by `(...)` is parsed as a glob
+qualifier, which typically fails with a confusing error like `zsh: unknown
+file attribute: h` or `zsh: bad pattern` — nothing to do with Roadrunner or
+Java argument parsing.
 
 == Load model
 

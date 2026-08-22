@@ -19,8 +19,22 @@ package io.roadrunner.latency.recording;
  * Kinds of pause detectors that can be attached to a {@link LatencyRecorders}-built recorder.
  */
 public enum PauseDetectorKind {
-    /** Detects virtual-thread carrier saturation (probe-based). */
-    VT_SCHEDULING,
-    /** Detects JVM-wide pauses (GC, safepoints) via consensus across detector threads. */
-    JVM_PAUSE
+    /**
+     * Detects virtual-thread carrier saturation (probe-based).
+     */
+    VT_SCHEDULING("vt"),
+    /**
+     * Detects JVM-wide pauses (GC, safepoints) via consensus across detector threads.
+     */
+    JVM_PAUSE("jvm");
+
+    private final String kind;
+
+    PauseDetectorKind(String kind) {
+        this.kind = kind;
+    }
+
+    public String kind() {
+        return kind;
+    }
 }
