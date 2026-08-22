@@ -20,6 +20,7 @@ import io.roadrunner.api.latency.LatencyRecorder;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.api.samplers.SamplerResponseBuilder;
+import io.roadrunner.logging.LoggingFacade;
 import io.roadrunner.samplers.spi.SamplerContext;
 import java.time.Duration;
 import java.util.concurrent.Executors;
@@ -27,11 +28,10 @@ import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class OpenWorldStrategy implements ExecutionStrategy {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OpenWorldStrategy.class);
+    private static final Logger LOG = LoggingFacade.getLogger(OpenWorldStrategy.class);
 
     private final int usersArrivalRate;
     private final Duration testDuration;

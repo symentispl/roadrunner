@@ -18,6 +18,7 @@ package io.roadrunner.cli;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
+import io.roadrunner.logging.LoggingFacade;
 import io.roadrunner.samplers.spi.SamplerPlugin;
 import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
@@ -34,11 +35,10 @@ import java.util.ServiceLoader;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class SamplerPlugins implements AutoCloseable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SamplerPlugins.class);
+    private static final Logger LOG = LoggingFacade.getLogger(SamplerPlugins.class);
     private final Map<String, SamplerPlugin> samplerPlugins;
 
     private SamplerPlugins(Map<String, SamplerPlugin> samplerPlugins) {
@@ -101,13 +101,13 @@ public final class SamplerPlugins implements AutoCloseable {
                                 .peek(plugin -> LOG.debug("Found sampler {} in directory {}", plugin.name(), subdir));
 
                     } catch (IOException e) {
-                        LOG.error("Failed to scan directory {}: {}", subdir, e.getMessage(), e);
+                        LOG.error("Failed to scan directory {}", subdir, e);
                         return Stream.empty();
                     }
                 });
             }
         } catch (IOException e) {
-            LOG.error("Failed to scan plugins directory: {}", e.getMessage(), e);
+            LOG.error("Failed to scan plugins directory", e);
         }
         return Stream.empty();
     }
@@ -134,7 +134,7 @@ public final class SamplerPlugins implements AutoCloseable {
                     .filter(path -> path.toString().endsWith(".jar"))
                     .flatMap(SamplerPlugins::loadSamplerProviderFromModule);
         } catch (IOException e) {
-            LOG.error("Failed to scan plugins directory: {}", e.getMessage(), e);
+            LOG.error("Failed to scan plugins directory", e);
         }
         return Stream.empty();
     }
@@ -171,7 +171,7 @@ public final class SamplerPlugins implements AutoCloseable {
                     .peek(plugin -> LOG.debug("found sampler {} from plugin module", plugin.name()));
 
         } catch (Exception e) {
-            LOG.error("Failed to load plugin from {}: {}", jarPath, e.getMessage(), e);
+            LOG.error("Failed to load plugin from {}", jarPath, e);
         }
         return Stream.empty();
     }

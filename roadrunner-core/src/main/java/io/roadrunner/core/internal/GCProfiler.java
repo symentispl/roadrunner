@@ -15,6 +15,7 @@
  */
 package io.roadrunner.core.internal;
 
+import io.roadrunner.logging.LoggingFacade;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,7 +24,6 @@ import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import jdk.jfr.consumer.RecordingStream;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Profiles GC activity during a benchmark run using JFR event streaming (JEP 349).
@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  */
 final class GCProfiler implements AutoCloseable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GCProfiler.class);
+    private static final Logger LOG = LoggingFacade.getLogger(GCProfiler.class);
 
     private record GcPause(String cause, Duration sumOfPauses) {}
 
