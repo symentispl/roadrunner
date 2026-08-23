@@ -82,10 +82,24 @@ class SamplerExtensionPointTest {
     }
 
     @Test
+    void emptyExpressionThrows() {
+        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), ""))
+                .isInstanceOf(SamplerExpressionException.class)
+                .hasMessageContaining("Expected method name");
+    }
+
+    @Test
+    void bareMethodNameThrows() {
+        assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), "query"))
+                .isInstanceOf(SamplerExpressionException.class)
+                .hasMessageContaining("Expected '(' at position 5 in 'query'");
+    }
+
+    @Test
     void malformedExpressionThrows() {
         assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), """
                 query("unterminated"""))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(SamplerExpressionException.class)
                 .hasMessageContaining("Unterminated string literal");
     }
 
@@ -93,7 +107,7 @@ class SamplerExtensionPointTest {
     void unknownMethodNameThrows() {
         assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), """
                 update("SELECT 1")"""))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(SamplerExpressionException.class)
                 .hasMessageContaining("update");
     }
 
@@ -101,7 +115,7 @@ class SamplerExtensionPointTest {
     void arityMismatchThrows() {
         assertThatThrownBy(() -> SamplerExtensionPoint.bind(new QueryFixture(), """
                 query("a", "b")"""))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(SamplerExpressionException.class)
                 .hasMessageContaining("query");
     }
 

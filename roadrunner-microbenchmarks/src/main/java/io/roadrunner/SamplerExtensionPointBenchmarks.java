@@ -67,7 +67,7 @@ public class SamplerExtensionPointBenchmarks {
 
     @Benchmark
     @Fork(value = 1)
-    public SamplerResponse<?> extensionPointDispatch(NoOpSamplerState state) throws Throwable {
+    public SamplerResponse<?> extensionPointDispatch(NoOpSamplerState state) {
         return state.extensionPointSampler.execute(SamplerParameters.NONE, state.responseBuilder);
     }
 }
