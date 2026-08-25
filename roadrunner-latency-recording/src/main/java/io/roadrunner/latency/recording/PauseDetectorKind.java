@@ -28,13 +28,13 @@ public enum PauseDetectorKind {
      */
     JVM_PAUSE("jvm");
 
-    private final String kind;
+    private final String label;
 
-    PauseDetectorKind(String kind) {
-        this.kind = kind;
+    PauseDetectorKind(String label) {
+        this.label = label;
     }
 
-    public String kind() {
-        return kind;
+    public String label() {
+        return label;
     }
 }

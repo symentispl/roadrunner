@@ -194,7 +194,7 @@ class RunCommand {
         }
 
         var pauseDetectorsStr =
-                pauseDetectors.stream().map(PauseDetectorKind::kind).collect(Collectors.joining(","));
+                pauseDetectors.stream().map(PauseDetectorKind::label).collect(Collectors.joining(","));
         var parametersSourceStr = parametersSource == null ? "" : parametersSource.toConfigString();
 
         var operatingSystem = ManagementFactory.getOperatingSystemMXBean();
