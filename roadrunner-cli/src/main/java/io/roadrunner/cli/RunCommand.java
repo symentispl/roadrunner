@@ -86,7 +86,7 @@ class RunCommand {
             names = "--pause-detectors",
             description =
                     "Correct latency measurements for pauses that would otherwise distort them: vt (virtual-thread pauses), jvm (JVM garbage-collection pauses), or vt,jvm for both. Leave unset to record raw latencies only.",
-            converter = PauseDetectorKindConverter.class)
+            converter = SetOfPauseDetectorKindConverter.class)
     EnumSet<PauseDetectorKind> pauseDetectors = EnumSet.noneOf(PauseDetectorKind.class);
 
     @Option(
