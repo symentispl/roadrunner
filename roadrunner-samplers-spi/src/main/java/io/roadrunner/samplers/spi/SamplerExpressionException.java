@@ -27,6 +27,8 @@ public class SamplerExpressionException extends IllegalArgumentException {
     }
 
     public SamplerExpressionException(Throwable cause) {
-        super(cause);
+        // not super(cause): that sets the message to cause.toString(), prefixing the exception
+        // class name onto otherwise-clean, user-facing text.
+        super(cause.getMessage(), cause);
     }
 }
