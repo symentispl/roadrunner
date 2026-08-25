@@ -19,6 +19,7 @@ import static picocli.CommandLine.Model.CommandSpec;
 import static picocli.CommandLine.Model.CommandSpec.forAnnotatedObject;
 
 import io.roadrunner.logging.LoggingFacade;
+import io.roadrunner.samplers.spi.SamplerExpressionException;
 import io.roadrunner.samplers.spi.SamplerOptions;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -35,23 +36,23 @@ public class Main {
         // -X after it belongs to the sampler (the ab sampler uses it for its proxy server).
         var subcommandAt = List.of(args).indexOf("run");
         var globalArgs = List.of(subcommandAt < 0 ? args : Arrays.copyOfRange(args, 0, subcommandAt));
-        var stackTraces = globalArgs.contains("-X");
-        if (stackTraces) {
-            LoggingFacade.disableOmitThrowables();
+        var retainThrowables = globalArgs.contains("-X");
+        if (retainThrowables) {
+            LoggingFacade.retainThrowables();
         }
-        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> report(throwable, stackTraces));
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> handleException(throwable, retainThrowables));
 
         try {
             execute(args);
         } catch (Exception e) {
-            report(e, stackTraces);
+            handleException(e, retainThrowables);
             System.exit(1);
         }
     }
 
     // without -X a failure is a single line, the stack trace of a bad option or a broken connection is noise
-    private static void report(Throwable throwable, boolean stackTraces) {
-        if (stackTraces) {
+    private static void handleException(Throwable throwable, boolean retainThrowables) {
+        if (retainThrowables) {
             throwable.printStackTrace();
             return;
         }
@@ -114,6 +115,10 @@ public class Main {
                     && samplerSubCmd.commandSpec().userObject() instanceof SamplerOptions samplerOptions) {
                 try (var samplerProvider = samplerOptions.samplerProvider()) {
                     runCommand.run(samplerProvider);
+                } catch (SamplerExpressionException e) {
+                    var samplerName = samplerSubCmd.commandSpec().name();
+                    var extensionPoints = samplerProviders.extensionPoints(samplerName);
+                    throw SamplerExtensionPointsUsage.wrapSamplerExpressionError(e, samplerName, extensionPoints);
                 }
             }
         }

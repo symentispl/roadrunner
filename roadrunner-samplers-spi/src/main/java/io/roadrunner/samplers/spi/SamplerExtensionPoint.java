@@ -15,8 +15,6 @@
  */
 package io.roadrunner.samplers.spi;
 
-import static java.util.stream.Collectors.joining;
-
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.samplers.spi.internal.SamplerExpression;
 import java.lang.invoke.MethodHandle;
@@ -41,7 +39,12 @@ public final class SamplerExtensionPoint {
     private SamplerExtensionPoint() {}
 
     public static Supplier<Sampler> bind(Object target, String expressionText) {
-        var expression = SamplerExpression.parse(expressionText);
+        SamplerExpression expression;
+        try {
+            expression = SamplerExpression.parse(expressionText);
+        } catch (IllegalArgumentException e) {
+            throw new SamplerExpressionException(e);
+        }
 
         var candidates = candidateMethods(target.getClass());
 
@@ -52,13 +55,11 @@ public final class SamplerExtensionPoint {
                 .toList();
 
         if (matching.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "No Sampler-returning method named '%s' with %d argument(s) on %s. Available: %s"
-                            .formatted(
-                                    expression.methodName(),
-                                    expression.arguments().size(),
-                                    target.getClass().getName(),
-                                    describe(candidates)));
+            throw new SamplerExpressionException("No Sampler-returning method named '%s' with %d argument(s) on %s"
+                    .formatted(
+                            expression.methodName(),
+                            expression.arguments().size(),
+                            target.getClass().getName()));
         }
 
         var method = matching.getFirst();
@@ -114,11 +115,5 @@ public final class SamplerExtensionPoint {
             withTarget[i + 1] = arguments.get(i);
         }
         return withTarget;
-    }
-
-    private static String describe(List<Method> candidates) {
-        return candidates.stream()
-                .map(m -> "%s(%d args)".formatted(m.getName(), m.getParameterCount()))
-                .collect(joining(", "));
     }
 }

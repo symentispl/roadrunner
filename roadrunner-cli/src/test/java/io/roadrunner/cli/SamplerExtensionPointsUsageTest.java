@@ -17,6 +17,7 @@ package io.roadrunner.cli;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.roadrunner.samplers.spi.SamplerExpressionException;
 import io.roadrunner.samplers.spi.SamplerExtensionPointDescriptor;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -61,5 +62,57 @@ class SamplerExtensionPointsUsageTest {
 
         assertThat(usage).contains("ping()");
         assertThat(usage).contains("Ping the server");
+    }
+
+    @Test
+    void errorHintOfAnEmptyListIsEmpty() {
+        assertThat(SamplerExtensionPointsUsage.errorHint("http", List.of())).isEmpty();
+    }
+
+    @Test
+    void errorHintListsAvailableOperationsAndAnExampleFromTheFirst() {
+        var descriptors = List.of(
+                new SamplerExtensionPointDescriptor("GET", List.of("url"), "Execute an HTTP GET request"),
+                new SamplerExtensionPointDescriptor("POST", List.of("url", "body"), "Execute an HTTP POST request"));
+
+        var hint = SamplerExtensionPointsUsage.errorHint("http", descriptors);
+
+        assertThat(hint).contains("available: GET(<url>), POST(<url>, <body>)");
+        assertThat(hint).contains("example:   roadrunner run -c 10 -n 100 http 'GET(\"url\")'");
+    }
+
+    @Test
+    void errorHintExampleUsesOnlyTheFirstOperationEvenWithMultipleParameters() {
+        var descriptors = List.of(new SamplerExtensionPointDescriptor("query", List.of("sql"), "Execute a SQL query"));
+
+        var hint = SamplerExtensionPointsUsage.errorHint("jdbc", descriptors);
+
+        assertThat(hint).contains("available: query(<sql>)");
+        assertThat(hint).contains("example:   roadrunner run -c 10 -n 100 jdbc 'query(\"sql\")'");
+    }
+
+    @Test
+    void enrichAppendsTheHintToTheOriginalMessage() {
+        var original = new SamplerExpressionException("Expected '(' at position 3 in 'GET'");
+        var extensionPoints = List.of(new SamplerExtensionPointDescriptor("GET", List.of("url"), "..."));
+
+        var enriched = SamplerExtensionPointsUsage.wrapSamplerExpressionError(original, "http", extensionPoints);
+
+        assertThat(enriched.getMessage())
+                .contains("Expected '(' at position 3 in 'GET'")
+                .contains("available: GET(<url>)")
+                .contains("example:   roadrunner run -c 10 -n 100 http 'GET(\"url\")'");
+        // no cause: the message already embeds the original's text, and Main.report() joins a
+        // cause chain's messages with ": ", so chaining here would print it twice.
+        assertThat(enriched.getCause()).isNull();
+    }
+
+    @Test
+    void enrichLeavesTheMessageUnchangedWhenThereAreNoExtensionPoints() {
+        var original = new SamplerExpressionException("Expected '(' at position 3 in 'GET'");
+
+        var enriched = SamplerExtensionPointsUsage.wrapSamplerExpressionError(original, "zero", List.of());
+
+        assertThat(enriched.getMessage()).isEqualTo("Expected '(' at position 3 in 'GET'");
     }
 }

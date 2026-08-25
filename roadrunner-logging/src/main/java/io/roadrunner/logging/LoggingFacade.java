@@ -25,7 +25,7 @@ import org.slf4j.helpers.MessageFormatter;
 
 /**
  * Loggers that, by default, log a throwable as a one line message instead of a stack trace.
- * Call {@link #disableOmitThrowables()} before any logger is created to get plain slf4j loggers back.
+ * Call {@link #retainThrowables()} before any logger is created to get plain slf4j loggers back.
  */
 public final class LoggingFacade {
 
@@ -33,7 +33,7 @@ public final class LoggingFacade {
 
     private LoggingFacade() {}
 
-    public static void disableOmitThrowables() {
+    public static void retainThrowables() {
         omitThrowables = false;
     }
 

@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 import io.roadrunner.logging.LoggingFacade;
+import io.roadrunner.samplers.spi.SamplerExtensionPointDescriptor;
 import io.roadrunner.samplers.spi.SamplerPlugin;
 import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
@@ -28,10 +29,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Objects;
-import java.util.ServiceLoader;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -178,6 +176,11 @@ public final class SamplerPlugins implements AutoCloseable {
 
     public Collection<SamplerPlugin> all() {
         return samplerPlugins.values();
+    }
+
+    public List<SamplerExtensionPointDescriptor> extensionPoints(String samplerName) {
+        var samplerPlugin = samplerPlugins.get(samplerName);
+        return samplerPlugin == null ? List.of() : samplerPlugin.extensionPoints();
     }
 
     @Override
