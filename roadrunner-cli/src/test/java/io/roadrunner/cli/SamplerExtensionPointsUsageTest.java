@@ -19,9 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.roadrunner.samplers.spi.SamplerExpressionException;
 import io.roadrunner.samplers.spi.SamplerExtensionPointDescriptor;
-
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
 class SamplerExtensionPointsUsageTest {
@@ -98,7 +96,7 @@ class SamplerExtensionPointsUsageTest {
         var original = new SamplerExpressionException("Expected '(' at position 3 in 'GET'");
         var extensionPoints = List.of(new SamplerExtensionPointDescriptor("GET", List.of("url"), "..."));
 
-        var enriched = SamplerExtensionPointsUsage.enrich(original, "http", extensionPoints);
+        var enriched = SamplerExtensionPointsUsage.wrapSamplerExpressionError(original, "http", extensionPoints);
 
         assertThat(enriched.getMessage())
                 .contains("Expected '(' at position 3 in 'GET'")
@@ -113,9 +111,8 @@ class SamplerExtensionPointsUsageTest {
     void enrichLeavesTheMessageUnchangedWhenThereAreNoExtensionPoints() {
         var original = new SamplerExpressionException("Expected '(' at position 3 in 'GET'");
 
-        var enriched = SamplerExtensionPointsUsage.enrich(original, "zero", List.of());
+        var enriched = SamplerExtensionPointsUsage.wrapSamplerExpressionError(original, "zero", List.of());
 
         assertThat(enriched.getMessage()).isEqualTo("Expected '(' at position 3 in 'GET'");
     }
-
 }

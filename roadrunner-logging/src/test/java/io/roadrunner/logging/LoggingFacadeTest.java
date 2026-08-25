@@ -49,7 +49,7 @@ class LoggingFacadeTest {
     void returnsPlainLoggerOnceThrowablesAreNotOmitted() {
         assertThat(LoggingFacade.getLogger(getClass())).isInstanceOf(LoggingFacade.MessageOnlyLogger.class);
 
-        LoggingFacade.disableOmitThrowables();
+        LoggingFacade.retainThrowables();
 
         assertThat(LoggingFacade.getLogger(getClass())).isNotInstanceOf(LoggingFacade.MessageOnlyLogger.class);
     }

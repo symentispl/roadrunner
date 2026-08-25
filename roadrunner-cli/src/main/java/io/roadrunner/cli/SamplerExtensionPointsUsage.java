@@ -93,7 +93,7 @@ final class SamplerExtensionPointsUsage {
     // extracted so the enrichment is testable without driving the whole CLI. No cause set: the new
     // message already embeds e's message verbatim, and Main.report() joins a cause chain's
     // messages with ": ", so chaining e here would print that text twice.
-    static SamplerExpressionException enrich(
+    static SamplerExpressionException wrapSamplerExpressionError(
             Throwable e, String samplerName, List<SamplerExtensionPointDescriptor> extensionPoints) {
         var hint = errorHint(samplerName, extensionPoints);
         return new SamplerExpressionException(e.getMessage() + hint);

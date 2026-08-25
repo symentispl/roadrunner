@@ -17,7 +17,6 @@ package io.roadrunner.samplers.spi;
 
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.samplers.spi.internal.SamplerExpression;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
@@ -37,8 +36,7 @@ import java.util.function.Supplier;
  */
 public final class SamplerExtensionPoint {
 
-    private SamplerExtensionPoint() {
-    }
+    private SamplerExtensionPoint() {}
 
     public static Supplier<Sampler> bind(Object target, String expressionText) {
         SamplerExpression expression;
@@ -57,12 +55,11 @@ public final class SamplerExtensionPoint {
                 .toList();
 
         if (matching.isEmpty()) {
-            throw new SamplerExpressionException(
-                    "No Sampler-returning method named '%s' with %d argument(s) on %s"
-                            .formatted(
-                                    expression.methodName(),
-                                    expression.arguments().size(),
-                                    target.getClass().getName()));
+            throw new SamplerExpressionException("No Sampler-returning method named '%s' with %d argument(s) on %s"
+                    .formatted(
+                            expression.methodName(),
+                            expression.arguments().size(),
+                            target.getClass().getName()));
         }
 
         var method = matching.getFirst();
@@ -119,5 +116,4 @@ public final class SamplerExtensionPoint {
         }
         return withTarget;
     }
-
 }

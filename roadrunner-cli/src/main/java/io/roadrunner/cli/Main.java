@@ -36,23 +36,23 @@ public class Main {
         // -X after it belongs to the sampler (the ab sampler uses it for its proxy server).
         var subcommandAt = List.of(args).indexOf("run");
         var globalArgs = List.of(subcommandAt < 0 ? args : Arrays.copyOfRange(args, 0, subcommandAt));
-        var disableOmitThrowables = globalArgs.contains("-X");
-        if (disableOmitThrowables) {
-            LoggingFacade.disableOmitThrowables();
+        var retainThrowables = globalArgs.contains("-X");
+        if (retainThrowables) {
+            LoggingFacade.retainThrowables();
         }
-        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> report(throwable, disableOmitThrowables));
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> handleException(throwable, retainThrowables));
 
         try {
             execute(args);
         } catch (Exception e) {
-            report(e, disableOmitThrowables);
+            handleException(e, retainThrowables);
             System.exit(1);
         }
     }
 
     // without -X a failure is a single line, the stack trace of a bad option or a broken connection is noise
-    private static void report(Throwable throwable, boolean disableOmitThrowables) {
-        if (disableOmitThrowables) {
+    private static void handleException(Throwable throwable, boolean retainThrowables) {
+        if (retainThrowables) {
             throwable.printStackTrace();
             return;
         }
@@ -118,7 +118,7 @@ public class Main {
                 } catch (SamplerExpressionException e) {
                     var samplerName = samplerSubCmd.commandSpec().name();
                     var extensionPoints = samplerProviders.extensionPoints(samplerName);
-                    throw SamplerExtensionPointsUsage.enrich(e, samplerName, extensionPoints);
+                    throw SamplerExtensionPointsUsage.wrapSamplerExpressionError(e, samplerName, extensionPoints);
                 }
             }
         }
