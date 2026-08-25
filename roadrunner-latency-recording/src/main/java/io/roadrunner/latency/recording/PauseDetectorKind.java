@@ -15,12 +15,37 @@
  */
 package io.roadrunner.latency.recording;
 
+import java.util.Arrays;
+
 /**
  * Kinds of pause detectors that can be attached to a {@link LatencyRecorders}-built recorder.
  */
 public enum PauseDetectorKind {
-    /** Detects virtual-thread carrier saturation (probe-based). */
-    VT_SCHEDULING,
-    /** Detects JVM-wide pauses (GC, safepoints) via consensus across detector threads. */
-    JVM_PAUSE
+    /**
+     * Detects virtual-thread carrier saturation (probe-based).
+     */
+    VT_SCHEDULING("vt"),
+    /**
+     * Detects JVM-wide pauses (GC, safepoints) via consensus across detector threads.
+     */
+    JVM_PAUSE("jvm");
+    public static final String VT_SCHEDULING_LABEL = "vt";
+
+    public final String label;
+
+    PauseDetectorKind(String label) {
+        this.label = label;
+    }
+
+    public String label() {
+        return label;
+    }
+
+    public static PauseDetectorKind fromLabel(String fromLabel) {
+        return Arrays.stream(PauseDetectorKind.values())
+                .filter(kind -> kind.label.equals(fromLabel))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "unknown pause detector '%s', expected one of: vt, jvm, none".formatted(fromLabel)));
+    }
 }

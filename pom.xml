@@ -107,6 +107,9 @@
                 <version>3.15.0</version>
                 <configuration>
                     <release>25</release>
+                    <compilerArgs>
+                        <arg>--module-version=${project.version}</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>

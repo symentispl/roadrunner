@@ -53,6 +53,15 @@ public final class RunDirectory {
     }
 
     /**
+     * What the run was: sampler, load model, environment.
+     *
+     * @throws java.io.FileNotFoundException if this run directory has no manifest
+     */
+    public RunManifest manifest() throws IOException {
+        return RunManifest.readFrom(dir);
+    }
+
+    /**
      * The pause-corrected latencies recorded during the run, if the run recorded any. Package
      * private on purpose: which file the latencies come from is between this class and
      * {@link ReportModel}, and no renderer should have to know.

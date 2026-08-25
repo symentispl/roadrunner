@@ -78,4 +78,33 @@ class PrefixedMapTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Unterminated key");
     }
+
+    @Test
+    void toConfigStringRoundTripsThroughParse() throws IOException {
+        var map = new PrefixedMap("csv", Map.of("file", "data.csv", "separator", ";"));
+
+        var roundTripped = PrefixedMap.parse(map.toConfigString());
+
+        assertThat(roundTripped.prefix()).isEqualTo(map.prefix());
+        assertThat(roundTripped.parameters()).containsExactlyInAnyOrderEntriesOf(map.parameters());
+    }
+
+    @Test
+    void toConfigStringEscapesSpecialCharactersInValues() throws IOException {
+        var map = new PrefixedMap("csv", Map.of("separator", ",", "path", "a=b\\c"));
+
+        var roundTripped = PrefixedMap.parse(map.toConfigString());
+
+        assertThat(roundTripped.parameters()).containsExactlyInAnyOrderEntriesOf(map.parameters());
+    }
+
+    @Test
+    void toConfigStringOfAnEmptyMapHasNoTrailingKeys() throws IOException {
+        var map = new PrefixedMap("zero", Map.of());
+
+        assertThat(map.toConfigString()).isEqualTo("zero:");
+        var roundTripped = PrefixedMap.parse(map.toConfigString());
+        assertThat(roundTripped.prefix()).isEqualTo("zero");
+        assertThat(roundTripped.parameters()).isEmpty();
+    }
 }

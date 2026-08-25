@@ -19,24 +19,19 @@ import io.roadrunner.latency.recording.PauseDetectorKind;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Locale;
+import java.util.stream.Collectors;
 import picocli.CommandLine;
 
-public class PauseDetectorKindConverter implements CommandLine.ITypeConverter<EnumSet<PauseDetectorKind>> {
+public class SetOfPauseDetectorKindConverter implements CommandLine.ITypeConverter<EnumSet<PauseDetectorKind>> {
     @Override
     public EnumSet<PauseDetectorKind> convert(String value) {
         if (value == null || value.isBlank() || "none".equalsIgnoreCase(value.trim())) {
             return EnumSet.noneOf(PauseDetectorKind.class);
         }
-        var kinds = EnumSet.noneOf(PauseDetectorKind.class);
-        for (String token : Arrays.stream(value.split(",")).map(String::trim).toList()) {
-            switch (token.toLowerCase(Locale.ROOT)) {
-                case "vt" -> kinds.add(PauseDetectorKind.VT_SCHEDULING);
-                case "jvm" -> kinds.add(PauseDetectorKind.JVM_PAUSE);
-                default ->
-                    throw new IllegalArgumentException(
-                            "unknown pause detector '%s', expected one of: vt, jvm, none".formatted(token));
-            }
-        }
-        return kinds;
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .map(token -> token.toLowerCase(Locale.ROOT))
+                .map(token -> PauseDetectorKind.fromLabel(token))
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(PauseDetectorKind.class)));
     }
 }

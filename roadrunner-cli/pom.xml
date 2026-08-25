@@ -33,6 +33,11 @@
             <artifactId>roadrunner-console</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-reports</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>commons-io</groupId>
