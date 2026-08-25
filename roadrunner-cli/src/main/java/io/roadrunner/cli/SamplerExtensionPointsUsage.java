@@ -54,7 +54,7 @@ final class SamplerExtensionPointsUsage {
             int padding = maxExpressionLength - expression.length() + 2;
             sb.append("  ")
                     .append(expression)
-                    .repeat(" ", padding)
+                    .append(" ".repeat(padding))
                     .append(ep.description())
                     .append("%n".formatted());
         }
