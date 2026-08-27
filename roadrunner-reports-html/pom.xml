@@ -30,12 +30,7 @@
     <dependencies>
         <dependency>
             <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.roadrunner</groupId>
-            <artifactId>roadrunner-hdrhistogram</artifactId>
+            <artifactId>roadrunner-reports</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

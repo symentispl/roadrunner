@@ -18,35 +18,35 @@ package io.roadrunner.cli;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
-import io.roadrunner.api.reports.ReportGeneratorProvider;
 import io.roadrunner.logging.LoggingFacade;
+import io.roadrunner.reports.ReportGeneratorProvider;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import org.slf4j.Logger;
 
-final class ChartGeneratorProviders {
+final class ReportGeneratorProviders {
 
-    private static final Logger LOG = LoggingFacade.getLogger(ChartGeneratorProviders.class);
-    private final Map<String, ReportGeneratorProvider> chartGeneratorProviders;
+    private static final Logger LOG = LoggingFacade.getLogger(ReportGeneratorProviders.class);
+    private final Map<String, ReportGeneratorProvider> reportGeneratorProviders;
 
-    ChartGeneratorProviders(Map<String, ReportGeneratorProvider> chartGeneratorProviders) {
-        this.chartGeneratorProviders = chartGeneratorProviders;
+    ReportGeneratorProviders(Map<String, ReportGeneratorProvider> reportGeneratorProviders) {
+        this.reportGeneratorProviders = reportGeneratorProviders;
     }
 
-    static ChartGeneratorProviders load() {
-        var chartGenerators = ServiceLoader.load(ReportGeneratorProvider.class).stream()
+    static ReportGeneratorProviders load() {
+        var reportGenerators = ServiceLoader.load(ReportGeneratorProvider.class).stream()
                 .map(ServiceLoader.Provider::get)
-                .peek(chartGenerator -> LOG.info("found chart generator {}", chartGenerator.name()))
+                .peek(reportGenerator -> LOG.info("found report generator {}", reportGenerator.name()))
                 .collect(toMap(ReportGeneratorProvider::name, identity()));
-        return new ChartGeneratorProviders(chartGenerators);
+        return new ReportGeneratorProviders(reportGenerators);
     }
 
-    public ReportGeneratorProvider get(String chartGeneratorName) {
-        return chartGeneratorProviders.get(chartGeneratorName);
+    public ReportGeneratorProvider get(String reportGeneratorName) {
+        return reportGeneratorProviders.get(reportGeneratorName);
     }
 
     public Set<String> supportedReportFormats() {
-        return chartGeneratorProviders.keySet();
+        return reportGeneratorProviders.keySet();
     }
 }

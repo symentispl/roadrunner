@@ -21,6 +21,8 @@ import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.latency.recording.PauseDetectorKind;
 import io.roadrunner.logging.LoggingFacade;
+import io.roadrunner.reports.ReportModel;
+import io.roadrunner.reports.RunDirectory;
 import io.roadrunner.reports.RunManifest;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Path;
@@ -121,17 +123,16 @@ class RunCommand {
             runManifest.writeTo(bootstrap.outputDir());
 
             LOG.debug("loading report generators");
-            var chartGeneratorProviders = ChartGeneratorProviders.load();
-            var reportGeneratorProvider = chartGeneratorProviders.get(report.prefix());
+            var reportGeneratorProviders = ReportGeneratorProviders.load();
+            var reportGeneratorProvider = reportGeneratorProviders.get(report.prefix());
             if (reportGeneratorProvider == null) {
                 throw new IllegalArgumentException("report generator %s unknown, supported report formats %s"
-                        .formatted(report.prefix(), chartGeneratorProviders.supportedReportFormats()));
+                        .formatted(report.prefix(), reportGeneratorProviders.supportedReportFormats()));
             }
 
             var reportConfiguration = report.parameters();
             var reportConfig = new HashMap<>(reportConfiguration);
             reportConfig.put("outputDir", bootstrap.outputDir().toString());
-            reportConfig.put("rawLatency", Boolean.toString(rawLatency));
 
             var reportGenerator = reportGeneratorProvider.create(reportConfig);
             var measurements = roadrunner.execute(samplerProvider);
@@ -144,7 +145,9 @@ class RunCommand {
                     // best-effort
                 }
             }
-            reportGenerator.generateChart(measurements.samplesReader());
+            var model =
+                    ReportModel.from(measurements.samplesReader(), RunDirectory.of(bootstrap.outputDir()), rawLatency);
+            reportGenerator.generate(model);
         }
     }
 

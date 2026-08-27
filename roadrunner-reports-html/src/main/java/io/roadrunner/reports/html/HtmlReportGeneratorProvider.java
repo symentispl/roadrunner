@@ -15,8 +15,8 @@
  */
 package io.roadrunner.reports.html;
 
-import io.roadrunner.api.reports.ReportGenerator;
-import io.roadrunner.api.reports.ReportGeneratorProvider;
+import io.roadrunner.reports.ReportGenerator;
+import io.roadrunner.reports.ReportGeneratorProvider;
 import java.util.Map;
 
 public class HtmlReportGeneratorProvider implements ReportGeneratorProvider {

@@ -15,35 +15,19 @@
  */
 package io.roadrunner.reports.console;
 
-import io.roadrunner.api.measurments.EventReader;
-import io.roadrunner.api.reports.ReportGenerator;
 import io.roadrunner.console.ConsoleTheme;
+import io.roadrunner.reports.ReportGenerator;
 import io.roadrunner.reports.ReportModel;
-import io.roadrunner.reports.RunDirectory;
 import io.roadrunner.reports.console.render.ReportRenderer;
 import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.Map;
 import org.jline.terminal.TerminalBuilder;
 
 final class ConsoleReportGenerator implements ReportGenerator {
 
-    private final Map<String, String> properties;
-
-    ConsoleReportGenerator(Map<String, String> properties) {
-        this.properties = properties;
-    }
-
     @Override
-    public void generateChart(EventReader eventReader) throws IOException {
+    public void generate(ReportModel model) throws IOException {
         // Ensure the progress bar line is terminated before the report starts
         System.out.println();
-
-        var rawLatency = Boolean.parseBoolean(properties.getOrDefault("rawLatency", "false"));
-        var outputDirProp = properties.get("outputDir");
-        var model = outputDirProp == null
-                ? ReportModel.from(eventReader)
-                : ReportModel.from(eventReader, RunDirectory.of(Paths.get(outputDirProp)), rawLatency);
 
         try (var terminal = TerminalBuilder.builder().dumb(true).build()) {
             System.out.println(ReportRenderer.render(model, ConsoleTheme.of(terminal)));
