@@ -6,13 +6,16 @@
 package io.roadrunner.latency;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.awaitility.Awaitility.await;
 
 import io.roadrunner.shaded.hdrhistogram.Histogram;
+import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -37,6 +40,8 @@ public class LatencyStatsTest {
                 .pauseDetector(pauseDetector)
                 .timeServices(time)
                 .build();
+        AtomicLong detectedPauseLength = new AtomicLong();
+        pauseDetector.addListener((pauseLength, pauseEndTime) -> detectedPauseLength.set(pauseLength));
 
         Histogram accumulatedHistogram = new Histogram(latencyStats.getIntervalHistogram());
 
@@ -93,7 +98,7 @@ public class LatencyStatsTest {
 
             System.out.println("Pausing detector threads for 5 seconds:");
             pauseDetector.stallDetectorThreads(0x7, 5000 * MSEC);
-            TimeUnit.NANOSECONDS.sleep(1 * MSEC); // Make sure things have some time to propagate
+            await().atMost(Duration.ofSeconds(10)).until(() -> detectedPauseLength.get() > 0);
 
             // @ 15 sec from start
 
