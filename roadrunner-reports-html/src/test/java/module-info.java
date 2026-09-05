@@ -15,8 +15,8 @@
  */
 open module io.roadrunner.reports.html.tests {
     requires io.roadrunner.reports.html;
+    requires io.roadrunner.reports;
     requires io.roadrunner.output.csv;
-    requires io.roadrunner.api;
     requires org.apache.commons.lang3;
     requires org.assertj.core;
     requires org.junit.jupiter.api;

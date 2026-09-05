@@ -17,14 +17,8 @@ package io.roadrunner.reports.html;
 
 import static java.util.Objects.requireNonNull;
 
-import io.roadrunner.api.events.Event;
-import io.roadrunner.api.events.SamplerResponse;
-import io.roadrunner.api.events.UserEvent;
-import io.roadrunner.api.measurments.EventReader;
-import io.roadrunner.api.reports.ReportGenerator;
-import io.roadrunner.shaded.hdrhistogram.EncodableHistogram;
-import io.roadrunner.shaded.hdrhistogram.Histogram;
-import io.roadrunner.shaded.hdrhistogram.HistogramLogReader;
+import io.roadrunner.reports.ReportGenerator;
+import io.roadrunner.reports.ReportModel;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -32,7 +26,7 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
+import java.util.Locale;
 import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.text.StringSubstitutor;
@@ -41,70 +35,37 @@ import org.apache.commons.text.lookup.StringLookupFactory;
 
 public class HtmlReportGenerator implements ReportGenerator {
 
-    private final Path outputPath;
-    private final Path snapshotPath;
-    private final boolean rawLatency;
+    private final Path outputDir;
 
     public HtmlReportGenerator(Map<String, String> configuration) {
-        outputPath = Paths.get(
-                requireNonNull(configuration.get("outputPath"), "missing required outputPath configuration property"));
-        var outputDirCfg = configuration.get("outputDir");
-        snapshotPath = outputDirCfg == null ? null : Paths.get(outputDirCfg).resolve("latency.hgrm");
-        rawLatency = Boolean.parseBoolean(configuration.getOrDefault("rawLatency", "false"));
+        outputDir = Paths.get(
+                requireNonNull(configuration.get("outputDir"), "missing required outputDir configuration property"));
     }
 
     @Override
-    public void generateChart(EventReader eventReader) throws IOException {
-        var indexHtml = outputPath.resolve("index.html");
-        var datapointsJs = outputPath.resolve("data.js");
-        var usersJs = outputPath.resolve("users.js");
+    public void generate(ReportModel model) throws IOException {
+        var indexHtml = outputDir.resolve("index.html");
+        var datapointsJs = outputDir.resolve("data.js");
+        var usersJs = outputDir.resolve("users.js");
 
-        Files.createDirectories(outputPath);
+        Files.createDirectories(outputDir);
 
-        var useSnapshot = !rawLatency && snapshotPath != null && Files.isRegularFile(snapshotPath);
-        Histogram histogram = useSnapshot ? loadSnapshot(snapshotPath) : new Histogram(3);
+        var latencyOverTime = model.latencyOverTime();
+        try (var datapoints = new PrintStream(datapointsJs.toFile())) {
+            datapoints.println("const datapoints = {");
+            writeSeries(datapoints, "p50", latencyOverTime.p50(), model.durationSeconds());
+            writeSeries(datapoints, "p90", latencyOverTime.p90(), model.durationSeconds());
+            writeSeries(datapoints, "p99", latencyOverTime.p99(), model.durationSeconds());
+            datapoints.println("};");
+        }
 
-        int u = 0;
-        try (PrintStream datapoints = new PrintStream(datapointsJs.toFile());
-                PrintStream users = new PrintStream(usersJs.toFile())) {
-            datapoints.println("const datapoints = [");
-            users.println(("const users = ["));
-            for (Event event : eventReader) {
-                switch (event) {
-                    case SamplerResponse<?> r: {
-                        if (!useSnapshot) {
-                            histogram.recordValue(r.latency());
-                        }
-                        datapoints.printf("\t{x : %d,y : %d},%n", r.timestamp(), r.latency());
-                        break;
-                    }
-                    case UserEvent.Enter e: {
-                        u++;
-                        users.printf("\t{x : %d,y : %d},%n", e.timestamp(), u);
-                        break;
-                    }
-                    case UserEvent.Exit e: {
-                        u--;
-                        users.printf("\t{x : %d,y : %d},%n", e.timestamp(), u);
-                        break;
-                    }
-                    default:
-                        throw new IllegalStateException("Unexpected value: " + event);
-                }
-            }
-            datapoints.println("];");
+        try (var users = new PrintStream(usersJs.toFile())) {
+            users.println("const users = [");
+            writePoints(users, model.usersOverTime(), model.durationSeconds());
             users.println("];");
         }
 
-        var map = Map.of(
-                "max",
-                Duration.ofNanos(histogram.getMaxValue()).toMillis(),
-                "min",
-                Duration.ofNanos(histogram.getMinValue()).toMillis(),
-                "mean",
-                Duration.ofNanos(Double.valueOf(histogram.getMean()).longValue())
-                        .toMillis());
-
+        var map = Map.of("max", model.maxMs(), "min", model.minMs(), "mean", model.meanMs());
         var stringSubstitutor = new StringSubstitutor(StringLookupFactory.INSTANCE.interpolatorStringLookup(map));
 
         try (var reader = new StringSubstitutorReader(
@@ -116,16 +77,16 @@ public class HtmlReportGenerator implements ReportGenerator {
         }
     }
 
-    private static Histogram loadSnapshot(Path path) throws IOException {
-        var combined = new Histogram(1_000L, 3_600_000_000_000L, 3);
-        try (var reader = new HistogramLogReader(path.toFile())) {
-            EncodableHistogram next;
-            while ((next = reader.nextIntervalHistogram()) != null) {
-                if (next instanceof Histogram h) {
-                    combined.add(h);
-                }
-            }
+    private static void writeSeries(PrintStream out, String name, long[] series, double durationSeconds) {
+        out.printf(Locale.ROOT, "\t%s : [%n", name);
+        writePoints(out, series, durationSeconds);
+        out.println("\t],");
+    }
+
+    private static void writePoints(PrintStream out, long[] series, double durationSeconds) {
+        for (var i = 0; i < series.length; i++) {
+            var elapsedSeconds = durationSeconds * i / series.length;
+            out.printf(Locale.ROOT, "\t{x : %.2f, y : %d},%n", elapsedSeconds, series[i]);
         }
-        return combined;
     }
 }

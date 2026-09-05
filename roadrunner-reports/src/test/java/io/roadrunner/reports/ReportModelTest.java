@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
 import java.util.Arrays;
@@ -117,6 +118,24 @@ class ReportModelTest {
         // Everything landed in slice 0, so every other slice is untouched rather than absent.
         assertThat(model.latencyOverTime().p50()[1]).isZero();
         assertThat(model.latencyOverTime().p99()[29]).isZero();
+    }
+
+    @Test
+    void usersOverTimeTracksConcurrencyAndCarriesForwardBetweenEvents() {
+        // A three second window: two users enter in slice 0, one leaves halfway (slice 15), and the
+        // last response anchors the window so every slice up to the end carries the last known count.
+        var model = ReportModel.from(readerOf(List.of(
+                new UserEvent.Enter(0L),
+                new UserEvent.Enter(0L),
+                response(0L, 3_000_000_000L, 10_000_000L),
+                new UserEvent.Exit(1_500_000_000L),
+                response(2_999_999_999L, 3_000_000_000L, 20_000_000L))));
+
+        assertThat(model.usersOverTime()).hasSize(30);
+        assertThat(model.usersOverTime()[0]).isEqualTo(2L);
+        assertThat(model.usersOverTime()[10]).isEqualTo(2L); // carried forward, no event in this slice
+        assertThat(model.usersOverTime()[15]).isEqualTo(1L);
+        assertThat(model.usersOverTime()[29]).isEqualTo(1L); // carried forward to the end of the run
     }
 
     private static Event response(long scheduledStart, long stopTime, long latency) {

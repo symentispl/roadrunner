@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.api.reports;
+package io.roadrunner.reports;
 
-import io.roadrunner.api.measurments.EventReader;
 import java.io.IOException;
 
 public interface ReportGenerator {
-    void generateChart(EventReader eventReader) throws IOException;
+    void generate(ReportModel model) throws IOException;
 }
