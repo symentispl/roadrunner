@@ -40,6 +40,10 @@ syntax. The HTTP sampler exposes four operations:
 | `10000`
 | Connection timeout, in milliseconds
 
+| `--request-timeout <ms>`
+| `10000`
+| Timeout for a full request/response exchange, independent of `--connect-timeout`
+
 | `--follow-redirects <policy>`
 | `NEVER`
 | Redirect policy: `NEVER`, `ALWAYS`, or `NORMAL` (follow same-protocol redirects only)

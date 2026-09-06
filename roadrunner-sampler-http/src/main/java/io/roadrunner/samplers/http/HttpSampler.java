@@ -29,6 +29,7 @@ import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -56,10 +57,12 @@ public class HttpSampler implements SamplerSinkRegistrar {
     private static final String BODY_PARAMETER_REFERENCE_PREFIX = "@";
 
     private final HttpClient httpClient;
+    private final Duration requestTimeout;
     private AttachmentKey statusKey;
 
-    public HttpSampler(HttpClient httpClient) {
+    public HttpSampler(HttpClient httpClient, Duration requestTimeout) {
         this.httpClient = httpClient;
+        this.requestTimeout = requestTimeout;
     }
 
     @Override
@@ -102,7 +105,8 @@ public class HttpSampler implements SamplerSinkRegistrar {
                         urlParameters.put(name, entry.getValue());
                     }
                 }
-                var requestBuilder = HttpRequest.newBuilder(URIBuilder.replace(uriTemplate, urlParameters));
+                var requestBuilder = HttpRequest.newBuilder(URIBuilder.replace(uriTemplate, urlParameters))
+                        .timeout(requestTimeout);
                 headers.forEach(requestBuilder::header);
                 var request = requestMapping.apply(requestBuilder, parameters).build();
 

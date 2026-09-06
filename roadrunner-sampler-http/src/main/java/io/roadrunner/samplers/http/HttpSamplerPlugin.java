@@ -38,7 +38,7 @@ public class HttpSamplerPlugin implements SamplerPlugin<HttpSamplerProvider, Htt
             builder.proxy(ProxySelector.of(options.proxyAddress));
         }
         var httpClient = builder.build();
-        return new HttpSamplerProvider(httpClient, options.expression);
+        return new HttpSamplerProvider(httpClient, Duration.ofMillis(options.requestTimeoutMillis), options.expression);
     }
 
     @Override

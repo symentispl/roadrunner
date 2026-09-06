@@ -80,6 +80,19 @@ class HttpSamplerProviderIT {
             exchange.close();
         });
 
+        server.createContext("/hang", exchange -> {
+            // Simulates a server that accepts the connection but never writes a response:
+            // connectTimeout doesn't cover this, only --request-timeout does. Bounded so this
+            // handler thread doesn't leak past the test.
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            exchange.sendResponseHeaders(200, -1);
+            exchange.close();
+        });
+
         server.start();
         baseUrl = "http://127.0.0.1:%d".formatted(server.getAddress().getPort());
     }
@@ -230,6 +243,26 @@ class HttpSamplerProviderIT {
         assertThat(response)
                 .asInstanceOf(type(SamplerResponse.Error.class))
                 .satisfies(r -> assertThat(r.message()).contains("500"));
+    }
+
+    @Test
+    void requestTimeoutExpiredReportedAsError() {
+        // The server accepts the connection (so --connect-timeout never applies) but never
+        // responds; only a request-level timeout can bound this.
+        try (var plugin = new HttpSamplerPlugin()) {
+            var options = plugin.options();
+            options.expression = "GET(\"%s/hang\")".formatted(baseUrl);
+            options.requestTimeoutMillis = 200;
+            try (var provider = plugin.newSamplerProvider(options);
+                    var sampler = provider.newSampler()) {
+                var response = sampler.execute(SamplerParameters.NONE, SamplerContext.of(provider).newResponseBuilder());
+                assertThat(response)
+                        .asInstanceOf(type(SamplerResponse.Error.class))
+                        .satisfies(r -> assertThat(r.message()).isNotBlank());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test

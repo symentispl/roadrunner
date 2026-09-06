@@ -34,6 +34,12 @@ public class HttpSamplerOptions implements SamplerOptions<HttpSamplerProvider> {
     public long connectTimeoutMillis = 10_000;
 
     @Option(
+            names = "--request-timeout",
+            description = "Timeout in milliseconds for a full request/response exchange, "
+                    + "independent of --connect-timeout (default: ${DEFAULT-VALUE})")
+    public long requestTimeoutMillis = 10_000;
+
+    @Option(
             names = "--follow-redirects",
             description =
                     "Specifies whether requests will automatically follow redirects issued by the server. (default: ${DEFAULT-VALUE})")
