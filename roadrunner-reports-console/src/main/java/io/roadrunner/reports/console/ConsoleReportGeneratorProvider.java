@@ -15,8 +15,8 @@
  */
 package io.roadrunner.reports.console;
 
-import io.roadrunner.api.reports.ReportGenerator;
-import io.roadrunner.api.reports.ReportGeneratorProvider;
+import io.roadrunner.reports.ReportGenerator;
+import io.roadrunner.reports.ReportGeneratorProvider;
 import java.util.Map;
 
 public class ConsoleReportGeneratorProvider implements ReportGeneratorProvider {
@@ -27,6 +27,6 @@ public class ConsoleReportGeneratorProvider implements ReportGeneratorProvider {
 
     @Override
     public ReportGenerator create(Map<String, String> properties) {
-        return new ConsoleReportGenerator(properties);
+        return new ConsoleReportGenerator();
     }
 }

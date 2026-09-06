@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.api.reports.ReportGeneratorProvider;
+import io.roadrunner.reports.ReportGeneratorProvider;
 import io.roadrunner.reports.html.HtmlReportGeneratorProvider;
 
 module io.roadrunner.reports.html {
-    requires io.roadrunner.api;
-    requires io.roadrunner.hdrhistogram;
+    requires io.roadrunner.reports;
     requires org.apache.commons.text;
     requires org.apache.commons.io;
 

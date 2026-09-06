@@ -48,6 +48,7 @@ class ReportRendererTest {
                 118,
                 new long[] {50, 30, 15, 5},
                 new long[] {8, 10, 12, 9},
+                new long[] {1, 2, 2, 1},
                 Map.of("200", 95L, "500", 5L),
                 new LatencyOverTime(new long[] {5, 6, 7, 8}, new long[] {15, 16, 17, 18}, new long[] {90, 91, 92, 93}));
     }

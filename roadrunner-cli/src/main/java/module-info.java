@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import io.roadrunner.api.parameters.ParameterSourceProvider;
-import io.roadrunner.api.reports.ReportGeneratorProvider;
+import io.roadrunner.reports.ReportGeneratorProvider;
 import io.roadrunner.samplers.spi.SamplerPlugin;
 
 module io.roadrunner.cli {

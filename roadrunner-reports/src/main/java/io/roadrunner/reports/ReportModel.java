@@ -16,6 +16,7 @@
 package io.roadrunner.reports;
 
 import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.shaded.hdrhistogram.Histogram;
 import java.io.IOException;
@@ -40,6 +41,7 @@ public record ReportModel(
         long p999,
         long[] latencyBuckets,
         long[] throughputSeries,
+        long[] usersOverTime,
         Map<String, Long> statusBreakdown,
         LatencyOverTime latencyOverTime) {
 
@@ -98,6 +100,9 @@ public record ReportModel(
 
         var series = new long[TIME_SLICES];
         var sliceHistograms = new Histogram[TIME_SLICES];
+        var users = new long[TIME_SLICES];
+        var userSliceTouched = new boolean[TIME_SLICES];
+        var concurrentUsers = 0L;
         var windowNanos = Math.max(1L, lastStop - firstStart);
         var status = new LinkedHashMap<String, Long>();
         var statusKey = reader.attachmentKeys().stream()
@@ -121,6 +126,22 @@ public record ReportModel(
                         status.merge(v, 1L, Long::sum);
                     }
                 }
+            } else if (event instanceof UserEvent userEvent) {
+                concurrentUsers += userEvent instanceof UserEvent.Enter ? 1 : -1;
+                var offset = userEvent.timestamp() - firstStart;
+                var slice = (int) Math.min(TIME_SLICES - 1, Math.max(0, offset * TIME_SLICES / windowNanos));
+                users[slice] = concurrentUsers;
+                userSliceTouched[slice] = true;
+            }
+        }
+        // Concurrency doesn't reset between enter/exit events, so slices with no user events carry
+        // forward the last known count rather than reading as zero.
+        var lastKnownUsers = 0L;
+        for (var slice = 0; slice < TIME_SLICES; slice++) {
+            if (userSliceTouched[slice]) {
+                lastKnownUsers = users[slice];
+            } else {
+                users[slice] = lastKnownUsers;
             }
         }
 
@@ -151,6 +172,7 @@ public record ReportModel(
                 toMillis(histogram.getValueAtPercentile(99.9)),
                 buckets,
                 series,
+                users,
                 status,
                 latencyOverTime(sliceHistograms));
     }
