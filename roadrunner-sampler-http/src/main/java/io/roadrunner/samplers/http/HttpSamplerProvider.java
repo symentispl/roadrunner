@@ -17,13 +17,14 @@ package io.roadrunner.samplers.http;
 
 import io.roadrunner.samplers.spi.SamplerExtension;
 import java.net.http.HttpClient;
+import java.time.Duration;
 
 public class HttpSamplerProvider extends SamplerExtension {
 
     private final HttpClient httpClient;
 
-    public HttpSamplerProvider(HttpClient httpClient, String expressionText) {
-        super(new HttpSampler(httpClient), expressionText);
+    public HttpSamplerProvider(HttpClient httpClient, Duration requestTimeout, String expressionText) {
+        super(new HttpSampler(httpClient, requestTimeout), expressionText);
         this.httpClient = httpClient;
     }
 
