@@ -42,4 +42,4 @@ jobs:
       # PR builds run with a read-only GITHUB_TOKEN (enforced by GitHub for pull_request events), so this always fails with 403 there
       - name: Update dependency graph
         if: github.event_name == 'push'
-        uses: advanced-security/maven-dependency-submission-action@v5.0.0
+        uses: advanced-security/maven-dependency-submission-action@v6.0.1
