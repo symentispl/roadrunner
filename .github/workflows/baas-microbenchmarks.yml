@@ -2,7 +2,7 @@ name: Microbenchmarks (BaaS)
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "enable-baas-microbenchmark-runs" ]  # TEMP: branch trigger for testing, remove before merge
   workflow_dispatch:
 
 concurrency:
