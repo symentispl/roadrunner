@@ -32,7 +32,9 @@ jobs:
 
       - name: Install BaaS
         run: |
-          curl -fsSL https://github.com/wsztajerowski/benchmark-as-a-service/releases/latest/download/install.sh | sh
+          curl -fsSLo "$RUNNER_TEMP/baas-install.sh" https://github.com/wsztajerowski/benchmark-as-a-service/releases/download/v5.0.0/install.sh
+          echo "7bb6276896aa7cf440a848f50ac8053d6d9619cebbf6bdd8420de50931a80f60  $RUNNER_TEMP/baas-install.sh" | sha256sum --check -
+          sh "$RUNNER_TEMP/baas-install.sh"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Configure AWS credentials
