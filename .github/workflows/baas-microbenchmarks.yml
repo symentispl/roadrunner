@@ -1,0 +1,54 @@
+name: Microbenchmarks (BaaS)
+
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+concurrency:
+  group: baas-microbenchmarks
+  cancel-in-progress: false
+
+permissions:
+  id-token: write   # OIDC -> AWS
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6.0.0
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build benchmarks jar
+        run: ./mvnw -B -q package -DskipTests -pl roadrunner-microbenchmarks -am
+
+      - name: Install BaaS
+        run: |
+          curl -fsSL https://github.com/wsztajerowski/benchmark-as-a-service/releases/latest/download/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.BAAS_OPERATOR_ROLE_ARN }}
+          aws-region: ${{ vars.BAAS_AWS_REGION }}
+          role-duration-seconds: 9000
+          role-session-name: GitHubActions
+
+      - name: Sync BaaS config
+        run: baas config sync --name "${{ vars.BAAS_CORE_STACK_NAME }}"
+
+      - name: Run microbenchmarks on EC2
+        run: |
+          baas run \
+            --benchmark-jar roadrunner-microbenchmarks/target/benchmarks.jar \
+            --project roadrunner \
+            jmh -- -f 1 -wi 3 -i 5
