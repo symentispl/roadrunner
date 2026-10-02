@@ -1,4 +1,4 @@
-9ff66422e3843f194454f7258ce84369cf310d1f17bf484f0b9ba80c3e14a23ename: Microbenchmarks (BaaS)
+name: Microbenchmarks (BaaS)
 
 on:
   push:
