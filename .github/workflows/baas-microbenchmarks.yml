@@ -33,7 +33,7 @@ jobs:
       - name: Install BaaS
         run: |
           curl -fsSLo "$RUNNER_TEMP/baas-install.sh" https://github.com/wsztajerowski/benchmark-as-a-service/releases/download/v6.2.0/install.sh
-          echo "  $RUNNER_TEMP/baas-install.sh" | sha256sum --check -
+          echo "9ff66422e3843f194454f7258ce84369cf310d1f17bf484f0b9ba80c3e14a23e  $RUNNER_TEMP/baas-install.sh" | sha256sum --check -
           sh "$RUNNER_TEMP/baas-install.sh"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
