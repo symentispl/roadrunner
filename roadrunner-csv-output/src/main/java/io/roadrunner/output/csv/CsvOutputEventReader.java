@@ -26,7 +26,6 @@ import io.roadrunner.api.measurments.Sample;
 import io.roadrunner.api.metrics.MetricKey;
 import io.roadrunner.api.metrics.MetricUnit;
 import java.io.IOException;
-import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -81,15 +80,9 @@ public class CsvOutputEventReader implements EventReader {
     }
 
     private static ParsedColumns parseColumnsFromHeader(Path csvOutputFile) {
-        try (var in = Files.newBufferedReader(csvOutputFile)) {
-            var headerLine = in.readLine();
-            if (headerLine == null) {
-                return new ParsedColumns(List.of(), List.of());
-            }
-            var columns = CSVFormat.DEFAULT
-                    .parse(new StringReader(headerLine))
-                    .getRecords()
-                    .get(0);
+        try (var in = Files.newBufferedReader(csvOutputFile);
+                var parser = CSVFormat.DEFAULT.builder().setHeader().build().parse(in)) {
+            var columns = parser.getHeaderNames();
             var metrics = new ArrayList<MetricKey>();
             var attachments = new ArrayList<AttachmentKey>();
             for (int i = FIRST_METRIC_COLUMN; i < columns.size(); i++) {

@@ -87,8 +87,9 @@ class CsvOutputRoundTripTest {
             assertThat(response.attachmentValueAt(noteKey)).isNull();
         });
 
-        assertThat(events.get(1)).isInstanceOfSatisfying(UserEvent.Enter.class, e -> assertThat(e.timestamp())
-                .isEqualTo(150L));
+        assertThat(events.get(1))
+                .isInstanceOfSatisfying(
+                        UserEvent.Enter.class, e -> assertThat(e.timestamp()).isEqualTo(150L));
 
         assertThat(events.get(2)).isInstanceOfSatisfying(SamplerResponse.Error.class, error -> {
             assertThat(error.timestamp()).isEqualTo(300L);
@@ -103,8 +104,9 @@ class CsvOutputRoundTripTest {
             assertThat(error.metricValueAt(bytesKey)).isEqualTo(0.0);
         });
 
-        assertThat(events.get(3)).isInstanceOfSatisfying(UserEvent.Exit.class, e -> assertThat(e.timestamp())
-                .isEqualTo(160L));
+        assertThat(events.get(3))
+                .isInstanceOfSatisfying(
+                        UserEvent.Exit.class, e -> assertThat(e.timestamp()).isEqualTo(160L));
     }
 
     @Test
@@ -138,6 +140,26 @@ class CsvOutputRoundTripTest {
         attachments.register("note \"quoted\", with comma");
 
         var listener = new CsvOutputEventListener(tempDir.resolve("header-delimiters.csv"), metrics, attachments);
+        var response = new SamplerResponse.Response(1L, 2L, metrics.size(), attachments.size());
+
+        listener.onStart();
+        listener.onEvent(List.of(response));
+        listener.onStop();
+
+        var reader = listener.samplesReader();
+        assertThat(reader.metricKeys()).containsExactlyElementsOf(metrics.registeredKeys());
+        assertThat(reader.attachmentKeys()).containsExactlyElementsOf(attachments.registeredKeys());
+    }
+
+    @Test
+    void reconstructsHeaderColumnsWhenNamesContainEmbeddedNewlines() {
+        var metrics = new MetricRegistry();
+        metrics.register("latency\nms", MetricUnit.NANOSECONDS);
+
+        var attachments = new AttachmentRegistry();
+        attachments.register("multi\nline\nnote");
+
+        var listener = new CsvOutputEventListener(tempDir.resolve("header-newlines.csv"), metrics, attachments);
         var response = new SamplerResponse.Response(1L, 2L, metrics.size(), attachments.size());
 
         listener.onStart();
