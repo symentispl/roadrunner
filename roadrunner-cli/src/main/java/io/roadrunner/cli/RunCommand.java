@@ -147,7 +147,10 @@ class RunCommand {
             }
             var model =
                     ReportModel.from(measurements.samplesReader(), RunDirectory.of(bootstrap.outputDir()), rawLatency);
-            reportGenerator.generate(model);
+            var out = samplerCommandSpec.commandLine().getOut();
+            reportGenerator.generate(model, out);
+            out.printf("Roadrunner results available at %s%n", bootstrap.outputDir());
+            out.flush();
         }
     }
 

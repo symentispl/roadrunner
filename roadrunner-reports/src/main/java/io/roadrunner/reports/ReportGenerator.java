@@ -16,7 +16,11 @@
 package io.roadrunner.reports;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 
 public interface ReportGenerator {
-    void generate(ReportModel model) throws IOException;
+    /**
+     * Generates the report; {@code out} receives format-specific details, e.g. where the report was written.
+     */
+    void generate(ReportModel model, PrintWriter out) throws IOException;
 }

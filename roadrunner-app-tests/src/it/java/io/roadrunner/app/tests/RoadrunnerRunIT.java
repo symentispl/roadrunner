@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -49,43 +50,71 @@ public class RoadrunnerRunIT {
     void closedWorldRunWithoutPauseDetectors(@TempDir Path outputDir) throws Exception {
         // Regression: passing no --pause-detectors used to NPE because the EnumSet field was null.
         var process = new ProcessBuilder(
-                        roadrunnerBin.toString(),
-                        "run",
-                        "-n",
-                        "10",
-                        "-c",
-                        "2",
-                        "-s",
-                        outputDir.toString(),
-                        "vm",
-                        "--sleep-time",
-                        "1")
+                roadrunnerBin.toString(),
+                "run",
+                "-n",
+                "10",
+                "-c",
+                "2",
+                "-s",
+                outputDir.toString(),
+                "vm",
+                "--sleep-time",
+                "1")
                 .redirectErrorStream(true)
                 .start();
         var stdout = new String(process.getInputStream().readAllBytes());
         var exitCode = process.waitFor();
         assertThat(exitCode).as("exit code; stdout was:%n%s", stdout).isEqualTo(0);
         assertThat(stdout).doesNotContain("NullPointerException");
+        assertThat(stdout).contains("Roadrunner results available at %s".formatted(outputDir))
+                .doesNotContain("Roadrunner HTML report at ");
         assertThat(outputDir.resolve("output.csv")).exists();
         assertThat(outputDir.resolve("latency.hgrm")).doesNotExist();
     }
 
     @Test
+    void htmlReportRunPrintsResultsAndReportLocation(@TempDir Path outputDir) throws Exception {
+        var process = new ProcessBuilder(
+                roadrunnerBin.toString(),
+                "run",
+                "-n",
+                "10",
+                "-c",
+                "2",
+                "-r",
+                "html",
+                "-s",
+                outputDir.toString(),
+                "vm",
+                "--sleep-time",
+                "1")
+                .redirectErrorStream(true)
+                .start();
+        var stdout = new String(process.getInputStream().readAllBytes());
+        var exitCode = process.waitFor();
+        assertThat(exitCode).as("exit code; stdout was:%n%s", stdout).isEqualTo(0);
+        assertThat(stdout).contains("Roadrunner results available at %s".formatted(outputDir),
+                "Roadrunner HTML report at %s".formatted(outputDir.resolve("index.html")));
+        assertThat(outputDir.resolve("index.html")).exists();
+    }
+
+    @Test
     void openWorldRunWithVtPauseDetector(@TempDir Path outputDir) throws Exception {
         var process = new ProcessBuilder(
-                        roadrunnerBin.toString(),
-                        "run",
-                        "--rate",
-                        "20",
-                        "--duration",
-                        "1s",
-                        "--pause-detectors",
-                        "vt",
-                        "-s",
-                        outputDir.toString(),
-                        "vm",
-                        "--sleep-time",
-                        "1")
+                roadrunnerBin.toString(),
+                "run",
+                "--rate",
+                "20",
+                "--duration",
+                "1s",
+                "--pause-detectors",
+                "vt",
+                "-s",
+                outputDir.toString(),
+                "vm",
+                "--sleep-time",
+                "1")
                 .redirectErrorStream(true)
                 .start();
         var stdout = new String(process.getInputStream().readAllBytes());
@@ -98,19 +127,19 @@ public class RoadrunnerRunIT {
     @Test
     void closedWorldRejectsPauseDetectors(@TempDir Path outputDir) throws Exception {
         var process = new ProcessBuilder(
-                        roadrunnerBin.toString(),
-                        "run",
-                        "-n",
-                        "10",
-                        "-c",
-                        "2",
-                        "--pause-detectors",
-                        "vt",
-                        "-s",
-                        outputDir.toString(),
-                        "vm",
-                        "--sleep-time",
-                        "1")
+                roadrunnerBin.toString(),
+                "run",
+                "-n",
+                "10",
+                "-c",
+                "2",
+                "--pause-detectors",
+                "vt",
+                "-s",
+                outputDir.toString(),
+                "vm",
+                "--sleep-time",
+                "1")
                 .redirectErrorStream(true)
                 .start();
         var stdout = new String(process.getInputStream().readAllBytes());

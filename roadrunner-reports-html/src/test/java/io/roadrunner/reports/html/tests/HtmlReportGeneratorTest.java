@@ -21,6 +21,8 @@ import io.roadrunner.output.csv.CsvOutputEventReader;
 import io.roadrunner.reports.ReportModel;
 import io.roadrunner.reports.html.HtmlReportGenerator;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,8 +45,10 @@ class HtmlReportGeneratorTest {
         var reportGenerator = new HtmlReportGenerator(properties);
         var model = modelFromFixture();
         // when
-        reportGenerator.generate(model);
+        var out = new StringWriter();
+        reportGenerator.generate(model, new PrintWriter(out));
         // then
+        assertThat(out.toString()).contains("Roadrunner HTML report at " + reportDir.resolve("index.html"));
         assertThat(reportDir.resolve("index.html")).isNotEmptyFile();
         assertThat(reportDir.resolve("data.js")).isNotEmptyFile();
         assertThat(reportDir.resolve("users.js")).isNotEmptyFile();
@@ -59,7 +63,7 @@ class HtmlReportGeneratorTest {
         var reportGenerator = new HtmlReportGenerator(properties);
         var model = modelFromFixture();
         // when
-        reportGenerator.generate(model);
+        reportGenerator.generate(model, new PrintWriter(new StringWriter()));
         // then
         assertThat(reportDir.resolve("index.html")).isNotEmptyFile();
 
