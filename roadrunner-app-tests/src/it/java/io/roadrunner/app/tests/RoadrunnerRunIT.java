@@ -49,6 +49,17 @@ public class RoadrunnerRunIT {
     }
 
     @Test
+    void helpListsZeroSampler() throws Exception {
+        var process = new ProcessBuilder(roadrunnerBin.toString(), "run", "-h")
+                .redirectErrorStream(true)
+                .start();
+        var stdout = new String(process.getInputStream().readAllBytes());
+        var exitCode = process.waitFor();
+        assertThat(exitCode).as("exit code; stdout was:%n%s", stdout).isEqualTo(0);
+        assertThat(stdout).contains("zero");
+    }
+
+    @Test
     void helpRejectsInvalidDocumentedCommands() throws Exception {
         for (var args : List.of(
                 List.of("-c", "50", "-n", "500", "vm", "--sleep-time", "10"),
