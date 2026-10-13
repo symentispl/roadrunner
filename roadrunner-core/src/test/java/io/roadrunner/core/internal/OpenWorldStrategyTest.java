@@ -56,11 +56,13 @@ class OpenWorldStrategyTest {
                     SamplerContext.of(provider));
         }
 
-        assertThat(listener.events).first(type(UserEvent.Enter.class)).satisfies(e -> assertThat(e.timestamp())
-                .isGreaterThan(0));
+        assertThat(listener.events)
+                .first(type(UserEvent.Enter.class))
+                .satisfies(e -> assertThat(e.timestamp()).isGreaterThan(0));
 
-        assertThat(listener.events).last(type(UserEvent.Exit.class)).satisfies(e -> assertThat(e.timestamp())
-                .isGreaterThan(0));
+        assertThat(listener.events)
+                .last(type(UserEvent.Exit.class))
+                .satisfies(e -> assertThat(e.timestamp()).isGreaterThan(0));
 
         // 5 rps * 2s = 10 expected requests; allow ±4 tolerance for scheduling jitter
         assertThat(listener.events)

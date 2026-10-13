@@ -57,11 +57,13 @@ class ClosedWorldStrategyTest {
                     SamplerContext.of(provider));
         }
 
-        assertThat(listener.events).first(type(UserEvent.Enter.class)).satisfies(e -> assertThat(e.timestamp())
-                .isGreaterThan(0));
+        assertThat(listener.events)
+                .first(type(UserEvent.Enter.class))
+                .satisfies(e -> assertThat(e.timestamp()).isGreaterThan(0));
 
-        assertThat(listener.events).last(type(UserEvent.Exit.class)).satisfies(e -> assertThat(e.timestamp())
-                .isGreaterThan(0));
+        assertThat(listener.events)
+                .last(type(UserEvent.Exit.class))
+                .satisfies(e -> assertThat(e.timestamp()).isGreaterThan(0));
 
         assertThat(listener.events)
                 .filteredOn(SamplerResponse.class::isInstance)

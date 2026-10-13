@@ -80,16 +80,13 @@ public class CsvOutputEventReader implements EventReader {
     }
 
     private static ParsedColumns parseColumnsFromHeader(Path csvOutputFile) {
-        try (var in = Files.newBufferedReader(csvOutputFile)) {
-            var headerLine = in.readLine();
-            if (headerLine == null) {
-                return new ParsedColumns(List.of(), List.of());
-            }
-            var columns = headerLine.split(",", -1);
+        try (var in = Files.newBufferedReader(csvOutputFile);
+                var parser = CSVFormat.DEFAULT.builder().setHeader().build().parse(in)) {
+            var columns = parser.getHeaderNames();
             var metrics = new ArrayList<MetricKey>();
             var attachments = new ArrayList<AttachmentKey>();
-            for (int i = FIRST_METRIC_COLUMN; i < columns.length; i++) {
-                var col = columns[i];
+            for (int i = FIRST_METRIC_COLUMN; i < columns.size(); i++) {
+                var col = columns.get(i);
                 if (col.startsWith("metric:")) {
                     var parts = col.substring("metric:".length()).split(":", 2);
                     var name = parts[0];
