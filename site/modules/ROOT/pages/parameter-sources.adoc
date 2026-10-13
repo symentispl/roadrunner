@@ -8,7 +8,7 @@ sending the exact same request every time.
 
 [source,bash]
 ----
-roadrunner --parameters-source <type>:<key>=<value>[,<key>=<value>...] <sampler> [SAMPLER_OPTIONS]
+roadrunner run [OPTIONS] <sampler> [SAMPLER_OPTIONS]
 ----
 
 `<type>` selects which parameter source implementation to use. Roadrunner ships one
@@ -33,7 +33,7 @@ The `csv` parameter source reads one row of parameters per request from a CSV fi
 
 [source,bash]
 ----
-roadrunner -c 10 -n 100 --parameters-source csv:file=queries.csv jdbc \
+roadrunner run -c 10 -n 100 --parameters-source csv:file=queries.csv jdbc \
   --url jdbc:postgresql://localhost/mydb \
   --username app --password secret \
   --driver /opt/drivers/postgresql.jar \

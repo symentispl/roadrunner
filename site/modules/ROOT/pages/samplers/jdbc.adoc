@@ -21,7 +21,7 @@ You also need the JDBC driver JAR for your database. Pass its path with `--drive
 
 [source,bash]
 ----
-roadrunner -c <concurrency> -n <requests> jdbc [OPTIONS] '<expression>'
+roadrunner run -c <concurrency> -n <requests> jdbc [OPTIONS] '<expression>'
 ----
 
 == Arguments
@@ -73,7 +73,7 @@ for the shared syntax. The JDBC sampler currently exposes a single
 
 [source,bash]
 ----
-roadrunner -c 20 -n 1000 jdbc \
+roadrunner run -c 20 -n 1000 jdbc \
   --url jdbc:postgresql://localhost/benchdb \
   --username app \
   --password secret \

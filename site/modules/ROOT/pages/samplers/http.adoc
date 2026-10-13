@@ -10,7 +10,7 @@ xref:parameter-sources.adoc[parameter source] so each request differs.
 
 [source,bash]
 ----
-roadrunner -c <concurrency> -n <requests> http [OPTIONS] '<expression>'
+roadrunner run -c <concurrency> -n <requests> http [OPTIONS] '<expression>'
 ----
 
 == Arguments
@@ -57,7 +57,7 @@ syntax. The HTTP sampler exposes four operations:
 
 [source,bash]
 ----
-roadrunner -c 20 -n 1000 http 'GET("http://localhost:8080/api/health")'
+roadrunner run -c 20 -n 1000 http 'GET("http://localhost:8080/api/health")'
 ----
 
 == Parameter sources
@@ -82,7 +82,7 @@ id
 
 [source,bash]
 ----
-roadrunner -c 10 -n 100 --parameters-source csv:file=ids.csv \
+roadrunner run -c 10 -n 100 --parameters-source csv:file=ids.csv \
   http 'GET("http://localhost:8080/api/orders/${id}")'
 ----
 
@@ -103,7 +103,7 @@ secret-def
 
 [source,bash]
 ----
-roadrunner -c 10 -n 100 --parameters-source csv:file=keys.csv \
+roadrunner run -c 10 -n 100 --parameters-source csv:file=keys.csv \
   http 'GET("http://localhost:8080/api/orders")'
 ----
 
@@ -121,7 +121,7 @@ payload
 
 [source,bash]
 ----
-roadrunner -c 10 -n 100 --parameters-source csv:file=payloads.csv \
+roadrunner run -c 10 -n 100 --parameters-source csv:file=payloads.csv \
   http 'POST("http://localhost:8080/api/orders", "@payload")'
 ----
 

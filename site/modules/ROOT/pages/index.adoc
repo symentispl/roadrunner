@@ -17,7 +17,7 @@ It is protocol-agnostic, low-overhead, and designed for continuous performance m
 [source,bash]
 ----
 ./mvnw verify
-roadrunner -c 50 -n 500 vm --sleep-time 10
+roadrunner run -c 50 -n 500 vm --sleep-time 10
 ----
 
 See xref:getting-started.adoc[Getting Started] for full instructions.

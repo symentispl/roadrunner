@@ -7,7 +7,7 @@ replacement for https://httpd.apache.org/docs/2.4/programs/ab.html[Apache HTTP s
 
 [source,bash]
 ----
-roadrunner -c <concurrency> -n <requests> ab [OPTIONS] <url>
+roadrunner run -c <concurrency> -n <requests> ab [OPTIONS] <url>
 ----
 
 == Arguments
@@ -65,12 +65,12 @@ Simple GET benchmark:
 
 [source,bash]
 ----
-roadrunner -c 50 -n 500 ab http://localhost:8080/api/health
+roadrunner run -c 50 -n 500 ab http://localhost:8080/api/health
 ----
 
 POST with a JSON body:
 
 [source,bash]
 ----
-roadrunner -c 20 -n 200 ab -m POST -p body.json -T application/json http://localhost:8080/api/orders
+roadrunner run -c 20 -n 200 ab -m POST -p body.json -T application/json http://localhost:8080/api/orders
 ----
