@@ -80,6 +80,13 @@ public class Main {
 
             var parseResult = commandLine.parseArgs(args);
 
+            // Help may omit required arguments, but must not hide invalid documented commands.
+            for (var error : collectErrors(parseResult)) {
+                if (!(error instanceof CommandLine.MissingParameterException)) {
+                    throw error;
+                }
+            }
+
             if (parseResult.isUsageHelpRequested()) {
                 commandLine.usage(System.out);
                 return;
@@ -162,6 +169,10 @@ public class Main {
         var errors = new ArrayList<Exception>();
         if (parseResult.hasSubcommand()) {
             errors.addAll(collectErrors(parseResult.subcommand()));
+        }
+        if (!parseResult.unmatched().isEmpty()) {
+            errors.add(new CommandLine.UnmatchedArgumentException(
+                    parseResult.commandSpec().commandLine(), parseResult.unmatched()));
         }
         errors.addAll(parseResult.errors());
         return errors;

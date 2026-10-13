@@ -186,6 +186,11 @@
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-sampler-zero</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.roadrunner</groupId>
             <artifactId>roadrunner-sampler-ab</artifactId>
             <version>${project.version}</version>
         </dependency>
