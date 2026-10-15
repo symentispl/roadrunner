@@ -23,6 +23,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,7 +44,7 @@ public class HtmlReportGenerator implements ReportGenerator {
     }
 
     @Override
-    public void generate(ReportModel model) throws IOException {
+    public void generate(ReportModel model, PrintWriter out) throws IOException {
         var indexHtml = outputDir.resolve("index.html");
         var datapointsJs = outputDir.resolve("data.js");
         var usersJs = outputDir.resolve("users.js");
@@ -75,6 +76,8 @@ public class HtmlReportGenerator implements ReportGenerator {
                 var writer = new FileWriter(indexHtml.toFile())) {
             IOUtils.copy(reader, writer);
         }
+        out.printf("Roadrunner HTML report at %s%n", indexHtml);
+        out.flush();
     }
 
     private static void writeSeries(PrintStream out, String name, long[] series, double durationSeconds) {

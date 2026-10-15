@@ -20,17 +20,18 @@ import io.roadrunner.reports.ReportGenerator;
 import io.roadrunner.reports.ReportModel;
 import io.roadrunner.reports.console.render.ReportRenderer;
 import java.io.IOException;
+import java.io.PrintWriter;
 import org.jline.terminal.TerminalBuilder;
 
 final class ConsoleReportGenerator implements ReportGenerator {
 
     @Override
-    public void generate(ReportModel model) throws IOException {
+    public void generate(ReportModel model, PrintWriter out) throws IOException {
         // Ensure the progress bar line is terminated before the report starts
-        System.out.println();
+        out.println();
 
         try (var terminal = TerminalBuilder.builder().dumb(true).build()) {
-            System.out.println(ReportRenderer.render(model, ConsoleTheme.of(terminal)));
+            out.println(ReportRenderer.render(model, ConsoleTheme.of(terminal)));
         }
     }
 }
