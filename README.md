@@ -2,90 +2,56 @@
 
 # Roadrunner
 
-**Roadrunner** is a high-performance Java load generator built on **Java Virtual Threads** (JDK 25). It provides fine-grained, low-overhead performance measurements and extensible protocol samplers (HTTP, JDBC, Neo4j, VM baseline, and custom protocols).
+Roadrunner is a command-line load generator for exercising services and measuring their performance. It uses Java virtual threads (JDK 25) to model concurrent users, and includes HTTP, JDBC, Neo4j, and VM samplers, with an extension API for additional samplers.
 
----
+## Why Roadrunner?
 
-## 🚀 Why Roadrunner? (vs. JMeter, Gatling, Locust, k6)
+Roadrunner is a good fit when you want a lightweight CLI, virtual-thread concurrency, and a Java API for extending the supported protocols. Compared with established tools such as JMeter, Gatling, Locust, and k6, Roadrunner focuses on straightforward load generation and extensibility rather than a broad ecosystem of scenario-authoring tools. If you depend on a particular tool's scenario language, integrations, or existing workflows, that tool may be a better fit.
 
-* **Protocol Agnostic:** Most load testing tools are designed exclusively around HTTP semantics. Roadrunner provides a lightweight SPI framework so adding custom protocol samplers (HTTP, SQL/JDBC, Graph/Neo4j, gRPC, custom TCP) is simple and fast.
-* **Low Overhead via Virtual Threads:** Uses Java 25 virtual threads to scale concurrency effortlessly with minimal CPU/memory footprint—eliminating OS thread pool bottlenecks.
-* **No Scenario Bloat:** Designed for rapid, straightforward load generation when you don't need complex script scenarios or heavy GUI bloat.
-* **Accurate Latency & Reporting:** Focuses on continuous performance management, open-world load models, and coordinated-omission-corrected latency reporting.
+## Install
 
----
+### Run with JBang
 
-## 💻 Installation
-
-### 1. JBang Launcher (Fastest)
-
-Run directly using [JBang](https://www.jbang.dev/) without manual installation:
+Install [JBang](https://www.jbang.dev/) and run Roadrunner directly:
 
 ```bash
-jbang roadrunner@symentispl -- run vm -n 500 -c 50 --sleep-time 10
+jbang roadrunner@symentispl/roadrunner -- run vm -n 100 -c 10 --sleep-time 10
 ```
 
-### 2. Pre-built Release Archive
+### Download a release archive
 
-Download pre-packaged releases from [GitHub Releases](https://github.com/symentispl/roadrunner/releases):
+Choose an archive from [GitHub Releases](https://github.com/symentispl/roadrunner/releases). The `roadrunner` jlink archive bundles its Java runtime; the `roadrunner-jars` archive requires JDK 25.
 
-1. Extract the downloaded release archive (`.zip`).
-2. Run the executable from `bin/roadrunner`:
-   ```bash
-   ./bin/roadrunner run vm -n 500 -c 50 --sleep-time 10
-   ```
+Extract the archive, change into the extracted directory, and run:
 
-### 3. Build from Source
+```bash
+./bin/roadrunner run vm -n 100 -c 10 --sleep-time 10
+```
 
-**Prerequisites:** [JDK 25](https://adoptium.net/temurin/releases/?version=25) and Maven Wrapper (included).
+### Build from source
+
+Install [JDK 25](https://adoptium.net/temurin/releases/?version=25), then build with the included Maven Wrapper:
 
 ```bash
 ./mvnw verify
 ```
 
-The runnable application is generated under:
-`roadrunner-app/target/jreleaser/assemble/roadrunner/jlink/roadrunner-app-<version>/bin/roadrunner`
+The release archives are assembled under `roadrunner-app/target/jreleaser/assemble/`.
 
----
+## First run
 
-## 🧪 Working First Run
-
-Roadrunner commands use the `run` subcommand followed by the sampler name and parameters:
-
-### Baseline Test (`vm` Sampler)
-Test internal overhead using a dummy sampler that sleeps fixed milliseconds per request:
+The `vm` sampler is a simple way to try Roadrunner without a target service. This command runs 100 requests at a concurrency of 10, sleeping 10 milliseconds per request:
 
 ```bash
-roadrunner run vm -n 500 -c 50 --sleep-time 10
+jbang roadrunner@symentispl/roadrunner -- run vm -n 100 -c 10 --sleep-time 10
 ```
-*(Executes 500 total requests across 50 concurrent virtual threads, sleeping 10ms per request).*
 
-### HTTP Test (`ab` Sampler)
-Run a high-throughput HTTP benchmark against a target endpoint:
+Roadrunner commands use `run` followed by a sampler name and its options. See the [documentation site](https://symentispl.github.io/roadrunner) for HTTP examples, configuration, sampler references, and reporting.
 
-```bash
-roadrunner run ab -n 500 -c 50 http://localhost:8080/
-```
-*(The `ab` sampler offers ApacheBench-compatible command-line semantics for benchmarking HTTP endpoints).*
+## Platform support
 
----
+Roadrunner targets JDK 25. JBang, the `roadrunner-jars` archive, and source builds use JDK 25; the jlink archive bundles its runtime. Linux is tested; other platforms have not been verified.
 
-## 📚 Documentation
+## Roadmap
 
-For detailed configuration guides, parameter sources, sampler references, and reporting options, visit our official documentation site:
-
-👉 **[https://symentispl.github.io/roadrunner](https://symentispl.github.io/roadrunner)**
-
----
-
-## ⚠️ Platform Support & Status
-
-* **JDK Requirement:** Requires **JDK 25** (utilizing Java Virtual Threads and modern JVM features).
-* **Platform Testing:** Roadrunner is primarily developed and tested on **Linux**.
-* **API Stability:** APIs are evolving as we move toward full release stability.
-
----
-
-## 🗺️ Roadmap & Contributing
-
-Looking to contribute or track progress? View our release milestones and upcoming tasks on the [Roadrunner GitHub Project Roadmap](https://github.com/orgs/symentispl/projects/1).
+See the [Roadrunner project roadmap](https://github.com/orgs/symentispl/projects/1) for planned work and progress.
