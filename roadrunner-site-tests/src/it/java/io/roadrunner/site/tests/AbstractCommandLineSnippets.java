@@ -64,8 +64,13 @@ public abstract class AbstractCommandLineSnippets {
         var env = processBuilder.environment();
         env.put("PATH", roadrunnerBin.toAbsolutePath().getParent() + File.pathSeparator + env.getOrDefault("PATH", ""));
         var r = processBuilder.directory(tmp.toFile()).inheritIO().start();
-        assertThat(r.waitFor(60, TimeUnit.SECONDS)).as("finished within timeout").isTrue();
-        assertThat(r.exitValue()).isZero();
+        try {
+            assertThat(r.waitFor(60, TimeUnit.SECONDS)).as("finished within timeout").isTrue();
+            assertThat(r.exitValue()).isZero();
+        } finally {
+            r.descendants().forEach(ProcessHandle::destroyForcibly);
+            r.destroyForcibly();
+        }
     }
 
     /**
