@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Parameter Sources :: Roadrunner</title>
+    <link rel="canonical" href="https://symentispl.github.io/roadrunner/roadrunner/parameter-sources.html">
+    <meta name="generator" content="Antora 3.1.14">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://symentispl.github.io/roadrunner">Roadrunner</a>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="#">Home</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Products</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="#">Product A</a>
+            <a class="navbar-item" href="#">Product B</a>
+            <a class="navbar-item" href="#">Product C</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Services</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="#">Service A</a>
+            <a class="navbar-item" href="#">Service B</a>
+            <a class="navbar-item" href="#">Service C</a>
+          </div>
+        </div>
+        <div class="navbar-item">
+          <span class="control">
+            <a class="button is-primary" href="#">Download</a>
+          </span>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="roadrunner" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">Roadrunner</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Home</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="getting-started.html">Getting Started</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="configuration.html">Configuration</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="parameter-sources.html">Parameter sources</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Samplers</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="samplers/index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="samplers/vm.html">VM</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="samplers/ab.html">ab (HTTP benchmark)</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="samplers/http.html">HTTP</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="samplers/zero.html">Zero</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="samplers/jdbc.html">JDBC</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="samplers/neo4j.html">Neo4j</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="samplers/writing-samplers.html">Writing your own sampler</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Roadrunner</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">Roadrunner</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Roadrunner</a></li>
+    <li><a href="parameter-sources.html">Parameter sources</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/symentispl/roadrunner/edit/HEAD/site/modules/ROOT/pages/parameter-sources.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Parameter Sources</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>A parameter source feeds a different set of values into each request — for example a
+different SQL query, a different Cypher query, or a different URL per user — instead of
+sending the exact same request every time.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage"><a class="anchor" href="#_usage"></a>Usage</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run &lt;options&gt; &lt;sampler&gt; &lt;sampler_options&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>&lt;type&gt;</code> selects which parameter source implementation to use. Roadrunner ships one
+built-in type: <code>csv</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_csv"><a class="anchor" href="#_csv"></a>CSV</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>csv</code> parameter source reads one row of parameters per request from a CSV file.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Key</th>
+<th class="tableblock halign-left valign-top">Required</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>file</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Path to the CSV file</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>separator</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Single-character column separator (default: <code>,</code>)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c 10 -n 100 --parameters-source csv:file=queries.csv jdbc \
+  --url &lt;jdbc_url&gt; \
+  --username &lt;username&gt; --password &lt;password&gt; \
+  --driver &lt;driver&gt; \
+  'query("SELECT * FROM users WHERE id = ?")'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The first row is the header and names the parameters; every row after it is one set of
+values. All rows are loaded into memory once before the test starts, then cycled
+through round-robin as requests are made — if there are more requests than rows, the
+file repeats from the first row. Given:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-csv hljs" data-lang="csv">id
+1
+2
+3</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>each request binds the next row&#8217;s <code>id</code> value to the query&#8217;s <code>?</code> placeholder.</p>
+</div>
+<div class="sect2">
+<h3 id="_how_columns_are_bound"><a class="anchor" href="#_how_columns_are_bound"></a>How columns are bound</h3>
+<div class="paragraph">
+<p><strong>Which</strong> column a sampler reads by depends on the sampler:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Samplers that bind parameters <strong>positionally</strong> (e.g. <a href="samplers/jdbc.html" class="xref page">JDBC</a>'s <code>?</code>
+placeholders) use column <strong>order</strong> — the first CSV column feeds the first placeholder,
+regardless of its header name.</p>
+</li>
+<li>
+<p>Samplers that bind parameters <strong>by name</strong> (e.g. <a href="samplers/neo4j.html" class="xref page">Neo4j</a>'s <code>$name</code>
+Cypher parameters) use the header name directly — a column must be named <code>id</code> for a
+query to reference it as <code>$id</code>.</p>
+</li>
+<li>
+<p>The <a href="samplers/http.html" class="xref page">HTTP sampler</a> uses column names in several ways: <code>${name}</code>
+in the URL is replaced with column <code>name&#8217;s value, a `header:&lt;name&gt;</code> column becomes an
+HTTP header, and a body argument written as <code>@&lt;name&gt;</code> in the expression resolves that
+column&#8217;s value as the request body.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Either way, every value read from the CSV file is a plain string unless the column
+declares a type (see below).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_typed_columns"><a class="anchor" href="#_typed_columns"></a>Typed columns</h3>
+<div class="paragraph">
+<p>By default every CSV value is passed to the sampler as a string, even if it looks
+numeric. Suffix a header with <code>:&lt;type&gt;</code> to convert it before it reaches the sampler:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-csv hljs" data-lang="csv">name,age:int
+alice,30
+bob,25</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Supported types:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Converts to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>int</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>java.lang.Integer</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>long</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>java.lang.Long</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>short</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>java.lang.Short</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>float</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>java.lang.Float</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>double</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>java.lang.Double</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>boolean</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>java.lang.Boolean</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>file</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>java.io.File</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>A column with no <code>:&lt;type&gt;</code> suffix is left as <code>java.lang.String</code>.</p>
+</div>
+<div class="paragraph">
+<p>This matters most for JDBC: an untyped column always binds as <code>VARCHAR</code>, so <code>age:int</code>
+is how a query like <code>'query("SELECT * FROM users WHERE age &gt; ?")'</code> gets a real <code>INTEGER</code>
+bound instead of a string the driver has to coerce.</p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+Whether a converted value can actually be <strong>used</strong> still depends on the sampler
+binding it. The JDBC sampler supports <code>int</code>, <code>long</code>, <code>short</code>, <code>float</code>, <code>double</code>, and
+<code>boolean</code>, but has no mapping for <code>java.io.File</code> yet — a <code>:file</code> column bound into a
+JDBC <code>?</code> placeholder fails at request time with
+<code>unsupported Java type for JDBC parameter binding: java.io.File</code>. The
+<a href="samplers/http.html" class="xref page">HTTP sampler</a>, on the other hand, uses <code>:file</code> specifically to
+stream a request body from disk instead of loading it into memory as a string — see its
+body section.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_blank_values"><a class="anchor" href="#_blank_values"></a>Blank values</h3>
+<div class="paragraph">
+<p>A blank cell is passed through as an empty string rather than converted — <code>age:int</code>
+with an empty cell yields <code>""</code>, not <code>0</code> or an error.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_errors"><a class="anchor" href="#_errors"></a>Errors</h3>
+<div class="paragraph">
+<p>Roadrunner validates the header when the file is first loaded (before any requests are
+sent), so a bad header fails the test immediately rather than mid-run:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>An unknown type (e.g. <code>age:number</code>) raises an error listing the supported types.</p>
+</li>
+<li>
+<p>A header with more than one <code>:</code> (e.g. <code>age:int:extra</code>) raises an error.</p>
+</li>
+<li>
+<p>Duplicate column names (after stripping the <code>:&lt;type&gt;</code> suffix) raise an error.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../_/js/site.js" data-ui-root-path="../_"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

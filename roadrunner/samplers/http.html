@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>HTTP Sampler :: Roadrunner</title>
+    <link rel="canonical" href="https://symentispl.github.io/roadrunner/roadrunner/samplers/http.html">
+    <meta name="generator" content="Antora 3.1.14">
+    <link rel="stylesheet" href="../../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://symentispl.github.io/roadrunner">Roadrunner</a>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="#">Home</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Products</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="#">Product A</a>
+            <a class="navbar-item" href="#">Product B</a>
+            <a class="navbar-item" href="#">Product C</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Services</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="#">Service A</a>
+            <a class="navbar-item" href="#">Service B</a>
+            <a class="navbar-item" href="#">Service C</a>
+          </div>
+        </div>
+        <div class="navbar-item">
+          <span class="control">
+            <a class="button is-primary" href="#">Download</a>
+          </span>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="roadrunner" data-version="">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="../index.html">Roadrunner</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Home</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../getting-started.html">Getting Started</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../configuration.html">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../parameter-sources.html">Parameter sources</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Samplers</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="vm.html">VM</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="ab.html">ab (HTTP benchmark)</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="http.html">HTTP</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="zero.html">Zero</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="jdbc.html">JDBC</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="neo4j.html">Neo4j</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="writing-samplers.html">Writing your own sampler</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Roadrunner</span>
+    <span class="version"></span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="../index.html">Roadrunner</a></div>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">Roadrunner</a></li>
+    <li>Samplers</li>
+    <li><a href="http.html">HTTP</a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="https://github.com/symentispl/roadrunner/edit/HEAD/site/modules/ROOT/pages/samplers/http.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">HTTP Sampler</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <code>http</code> sampler executes HTTP requests using the JDK&#8217;s built-in <code>java.net.http.HttpClient</code>.
+Unlike <a href="ab.html" class="xref page"><code>ab</code></a>, it exposes GET/POST/PUT/DELETE as
+<a href="../configuration.html#sampler-expressions" class="xref page">sampler operation expressions</a>, and every part of
+the request — URL, headers, and body — can be driven by a
+<a href="../parameter-sources.html" class="xref page">parameter source</a> so each request differs.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage"><a class="anchor" href="#_usage"></a>Usage</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c &lt;concurrency&gt; -n &lt;requests&gt; http &lt;options&gt; '&lt;expression&gt;'</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_arguments"><a class="anchor" href="#_arguments"></a>Arguments</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Argument</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>&lt;expression&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sampler operation expression (required, positional) — see
+<a href="../configuration.html#sampler-expressions" class="xref page">sampler operation expressions</a> for the shared
+syntax. The HTTP sampler exposes four operations:</p>
+<p class="tableblock"><code>GET("&lt;url&gt;")</code><br>
+<code>POST("&lt;url&gt;", "&lt;body&gt;")</code><br>
+<code>PUT("&lt;url&gt;", "&lt;body&gt;")</code><br>
+<code>DELETE("&lt;url&gt;")</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_options"><a class="anchor" href="#_options"></a>Options</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Option</th>
+<th class="tableblock halign-left valign-top">Default</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>--connect-timeout &lt;ms&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>10000</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Connection timeout, in milliseconds</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>--request-timeout &lt;ms&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>10000</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Timeout for a full request/response exchange, independent of <code>--connect-timeout</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>--follow-redirects &lt;policy&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>NEVER</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Redirect policy: <code>NEVER</code>, <code>ALWAYS</code>, or <code>NORMAL</code> (follow same-protocol redirects only)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>--proxy-address &lt;host:port&gt;</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Send requests through this proxy server</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c 20 -n 1000 http 'GET("http://localhost:8080/api/health")'</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_parameter_sources"><a class="anchor" href="#_parameter_sources"></a>Parameter sources</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Combine with <code>--parameters-source csv:file=&lt;path&gt;</code> to vary each request from a CSV file.
+See <a href="../parameter-sources.html" class="xref page">Parameter sources</a> for the general file format and typed
+columns. The HTTP sampler uses parameters in three ways: URL templating, headers, and body.</p>
+</div>
+<div class="sect2">
+<h3 id="_url_templates"><a class="anchor" href="#_url_templates"></a>URL templates</h3>
+<div class="paragraph">
+<p><code>${name}</code> inside the <code>&lt;url&gt;</code> argument is replaced with the parameter named <code>name</code>,
+percent-encoded per RFC 3986 as a single path/query segment — a value can never span a
+path segment or query boundary, so it&#8217;s safe to substitute directly into either part of
+the URL:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-csv hljs" data-lang="csv">id
+1
+2</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c 10 -n 100 --parameters-source csv:file=ids.csv \
+  http 'GET("http://localhost:8080/api/orders/${id}")'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Each request substitutes the next row&#8217;s <code>id</code> — no distinction is made between templating
+the path (<code>/orders/${id}</code>) or the query string (<code>?id=${id}</code>); <code>${name}</code> works the same in
+either position.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_headers"><a class="anchor" href="#_headers"></a>Headers</h3>
+<div class="paragraph">
+<p>Any parameter named <code>header:&lt;name&gt;</code> is sent as the HTTP header <code>&lt;name&gt;</code> on every request:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-csv hljs" data-lang="csv">header:X-Api-Key
+secret-abc
+secret-def</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c 10 -n 100 --parameters-source csv:file=keys.csv \
+  http 'GET("http://localhost:8080/api/orders")'</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_body"><a class="anchor" href="#_body"></a>Body</h3>
+<div class="paragraph">
+<p>By default, <code>POST</code>/<code>PUT&#8217;s second argument is sent as literal body text on every request.
+Prefix it with `@</code> to resolve the body from a named parameter instead, at request time:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-csv hljs" data-lang="csv">payload
+{"id":1}
+{"id":2}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c 10 -n 100 --parameters-source csv:file=payloads.csv \
+  http 'POST("http://localhost:8080/api/orders", "@payload")'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the <code>payload</code> parameter&#8217;s value is a <code>java.io.File</code> — i.e. a CSV column typed
+<code>payload:file</code> — the file is streamed as the request body instead of being read into
+memory as a string:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-csv hljs" data-lang="csv">payload:file
+order1.json
+order2.json</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the referenced parameter doesn&#8217;t exist for a given row, that request fails with a
+clear error (e.g. <code>No parameter named 'payload' for body reference '@payload'</code>) rather
+than sending an empty or literal <code>"@payload"</code> body.</p>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

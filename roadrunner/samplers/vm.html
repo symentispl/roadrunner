@@ -68,6 +68,9 @@
     <a class="nav-link" href="../configuration.html">Configuration</a>
   </li>
   <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../parameter-sources.html">Parameter sources</a>
+  </li>
+  <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
     <span class="nav-text">Samplers</span>
 <ul class="nav-list">
@@ -78,7 +81,10 @@
     <a class="nav-link" href="vm.html">VM</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="ab.html">HTTP (ab)</a>
+    <a class="nav-link" href="ab.html">ab (HTTP benchmark)</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="http.html">HTTP</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="zero.html">Zero</a>
@@ -146,7 +152,7 @@ to measure Roadrunner&#8217;s own scheduling and recording overhead without any 
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner -c &lt;concurrency&gt; -n &lt;requests&gt; vm --sleep-time &lt;ms&gt;</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c &lt;concurrency&gt; -n &lt;requests&gt; vm --sleep-time &lt;ms&gt;</code></pre>
 </div>
 </div>
 </div>
@@ -182,7 +188,7 @@ to measure Roadrunner&#8217;s own scheduling and recording overhead without any 
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner -c 50 -n 500 vm --sleep-time 10</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c 50 -n 500 vm --sleep-time 10</code></pre>
 </div>
 </div>
 <div class="paragraph">

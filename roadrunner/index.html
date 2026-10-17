@@ -68,6 +68,9 @@
     <a class="nav-link" href="configuration.html">Configuration</a>
   </li>
   <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="parameter-sources.html">Parameter sources</a>
+  </li>
+  <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
     <span class="nav-text">Samplers</span>
 <ul class="nav-list">
@@ -78,7 +81,10 @@
     <a class="nav-link" href="samplers/vm.html">VM</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="samplers/ab.html">HTTP (ab)</a>
+    <a class="nav-link" href="samplers/ab.html">ab (HTTP benchmark)</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="samplers/http.html">HTTP</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="samplers/zero.html">Zero</a>
@@ -168,8 +174,7 @@ It is protocol-agnostic, low-overhead, and designed for continuous performance m
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">./mvnw verify
-roadrunner -c 50 -n 500 vm --sleep-time 10</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c 50 -n 500 vm --sleep-time 10</code></pre>
 </div>
 </div>
 <div class="paragraph">

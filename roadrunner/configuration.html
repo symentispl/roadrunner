@@ -68,6 +68,9 @@
     <a class="nav-link" href="configuration.html">Configuration</a>
   </li>
   <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="parameter-sources.html">Parameter sources</a>
+  </li>
+  <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
     <span class="nav-text">Samplers</span>
 <ul class="nav-list">
@@ -78,7 +81,10 @@
     <a class="nav-link" href="samplers/vm.html">VM</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="samplers/ab.html">HTTP (ab)</a>
+    <a class="nav-link" href="samplers/ab.html">ab (HTTP benchmark)</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="samplers/http.html">HTTP</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="samplers/zero.html">Zero</a>
@@ -138,7 +144,7 @@
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-none hljs">roadrunner [OPTIONS] &lt;sampler&gt; [SAMPLER_OPTIONS]</code></pre>
+<pre class="highlightjs highlight"><code class="language-none hljs">roadrunner run &lt;options&gt; &lt;sampler&gt; &lt;sampler_options&gt;</code></pre>
 </div>
 </div>
 </div>
@@ -147,9 +153,9 @@
 <h2 id="sampler-expressions"><a class="anchor" href="#sampler-expressions"></a>Sampler operation expressions</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Some samplers (currently <code>jdbc</code> and <code>neo4j</code>) take their positional argument as
-a <strong>sampler operation expression</strong> rather than bare query text — a method name
-followed by one or more double-quoted string literals:</p>
+<p>Some samplers (currently <code>http</code>, <code>jdbc</code>, and <code>neo4j</code>) take their positional
+argument as a <strong>sampler operation expression</strong> rather than bare query text — a
+method name followed by one or more double-quoted string literals:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -158,13 +164,33 @@ followed by one or more double-quoted string literals:</p>
 </div>
 <div class="paragraph">
 <p>Each such sampler exposes one or more named operations; the expression
-selects which operation to invoke and supplies its literal arguments. Today
-both the JDBC and Neo4j samplers expose a single <code>query(&#8230;&#8203;)</code> operation, so
-their positional argument always takes the form <code>query("&#8230;&#8203;")</code> — see
-<a href="samplers/jdbc.html" class="xref page">JDBC Sampler</a> and <a href="samplers/neo4j.html" class="xref page">Neo4j Sampler</a>
-for details. This syntax is shared across every sampler that adopts it, so a
-future sampler exposing multiple operations (e.g. <code>read(&#8230;&#8203;)</code>/<code>write(&#8230;&#8203;)</code>)
-uses the same expression grammar.</p>
+selects which operation to invoke and supplies its literal arguments. The
+JDBC and Neo4j samplers each expose a single <code>query(&#8230;&#8203;)</code> operation, so their
+positional argument always takes the form <code>query("&#8230;&#8203;")</code>; the HTTP sampler
+exposes <code>GET(&#8230;&#8203;)</code>, <code>POST(&#8230;&#8203;)</code>, <code>PUT(&#8230;&#8203;)</code>, and <code>DELETE(&#8230;&#8203;)</code> — see
+<a href="samplers/http.html" class="xref page">HTTP Sampler</a>, <a href="samplers/jdbc.html" class="xref page">JDBC Sampler</a>,
+and <a href="samplers/neo4j.html" class="xref page">Neo4j Sampler</a> for details. This syntax is shared
+across every sampler that adopts it, so a future sampler exposing multiple
+operations (e.g. <code>read(&#8230;&#8203;)</code>/<code>write(&#8230;&#8203;)</code>) uses the same expression grammar.</p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+Always wrap the whole expression in <strong>single</strong> quotes on the shell
+command line, e.g. <code>'GET("http://localhost:8080/")'</code> — every example on this
+site does this. The double quotes belong to the expression syntax itself, not
+the shell. An unquoted or wrongly-quoted <code>name(&#8230;&#8203;)</code> is not just a syntax
+error: in zsh, a word immediately followed by <code>(&#8230;&#8203;)</code> is parsed as a glob
+qualifier, which typically fails with a confusing error like <code>zsh: unknown
+file attribute: h</code> or <code>zsh: bad pattern</code> — nothing to do with Roadrunner or
+Java argument parsing.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -206,7 +232,7 @@ uses the same expression grammar.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner -c 50 -n 1000 vm --sleep-time 5</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c 50 -n 1000 vm --sleep-time 5</code></pre>
 </div>
 </div>
 </div>
@@ -243,7 +269,7 @@ This models real-world arrival patterns and avoids coordinated omission.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner --rate 100 --duration 30s ab http://localhost:8080/</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run --rate 100 --duration 30s ab http://localhost:8080/</code></pre>
 </div>
 </div>
 </div>
@@ -283,7 +309,7 @@ This models real-world arrival patterns and avoids coordinated omission.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner -c 10 -n 200 -r html ab http://localhost:8080/</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c 10 -n 200 -r html ab http://localhost:8080/</code></pre>
 </div>
 </div>
 </div>
@@ -319,37 +345,10 @@ This models real-world arrival patterns and avoids coordinated omission.</p>
 <h2 id="parameter-sources"><a class="anchor" href="#parameter-sources"></a>Parameter sources</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Feed a dynamic set of parameters into each request (e.g. different SQL queries or URLs per user):</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 25%;">
-<col style="width: 75%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Option</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>--parameters-source &lt;type&gt;:&lt;key&gt;=&lt;value&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Parameter source in <code>type:key=value</code> format. Built-in type: <code>csv:file=&lt;path&gt;</code></p></td>
-</tr>
-</tbody>
-</table>
-<div class="paragraph">
-<p>Example — pass a different query per request from a CSV file:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner -c 10 -n 100 --parameters-source csv:file=queries.csv jdbc \
-  --url jdbc:postgresql://localhost/mydb \
-  --username app --password secret \
-  --driver /opt/drivers/postgresql.jar \
-  'query("SELECT 1")'</code></pre>
-</div>
+<p>Feed a dynamic set of parameters into each request (e.g. different SQL queries or URLs
+per user) with <code>--parameters-source &lt;type&gt;:&lt;key&gt;=&lt;value&gt;</code>. See
+<a href="parameter-sources.html" class="xref page">Parameter sources</a> for the full syntax and the built-in
+<code>csv</code> type, including typed columns.</p>
 </div>
 </div>
 </div>

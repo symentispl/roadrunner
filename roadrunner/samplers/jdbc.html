@@ -68,6 +68,9 @@
     <a class="nav-link" href="../configuration.html">Configuration</a>
   </li>
   <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../parameter-sources.html">Parameter sources</a>
+  </li>
+  <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
     <span class="nav-text">Samplers</span>
 <ul class="nav-list">
@@ -78,7 +81,10 @@
     <a class="nav-link" href="vm.html">VM</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="ab.html">HTTP (ab)</a>
+    <a class="nav-link" href="ab.html">ab (HTTP benchmark)</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="http.html">HTTP</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="zero.html">Zero</a>
@@ -164,7 +170,7 @@ cp roadrunner-sampler-jdbc-*.jar ~/.roadrunner/plugins/protocols/</code></pre>
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner -c &lt;concurrency&gt; -n &lt;requests&gt; jdbc [OPTIONS] '&lt;expression&gt;'</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c &lt;concurrency&gt; -n &lt;requests&gt; jdbc &lt;options&gt; '&lt;expression&gt;'</code></pre>
 </div>
 </div>
 </div>
@@ -252,11 +258,11 @@ for the shared syntax. The JDBC sampler currently exposes a single
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner -c 20 -n 1000 jdbc \
-  --url jdbc:postgresql://localhost/benchdb \
-  --username app \
-  --password secret \
-  --driver /opt/drivers/postgresql-42.7.3.jar \
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c 20 -n 1000 jdbc \
+  --url &lt;jdbc_url&gt; \
+  --username &lt;username&gt; \
+  --password &lt;password&gt; \
+  --driver &lt;driver&gt; \
   'query("SELECT id, name FROM users WHERE id = 1")'</code></pre>
 </div>
 </div>
@@ -267,8 +273,11 @@ for the shared syntax. The JDBC sampler currently exposes a single
 <div class="sectionbody">
 <div class="paragraph">
 <p>Combine with <code>--parameters-source csv:file=&lt;path&gt;</code> to execute a different query per
-request using values from a CSV file.
-See <a href="../configuration.html#parameter-sources" class="xref page">Parameter sources</a> for details.</p>
+request using values from a CSV file. The JDBC sampler binds CSV columns
+<strong>positionally</strong> to the query&#8217;s <code>?</code> placeholders — see
+<a href="../parameter-sources.html" class="xref page">Parameter sources</a> for the file format, positional vs.
+named binding, and typed columns (e.g. <code>age:int</code>) so numeric/file values reach the
+driver as real Java types instead of strings.</p>
 </div>
 </div>
 </div>

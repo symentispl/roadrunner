@@ -68,6 +68,9 @@
     <a class="nav-link" href="../configuration.html">Configuration</a>
   </li>
   <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../parameter-sources.html">Parameter sources</a>
+  </li>
+  <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
     <span class="nav-text">Samplers</span>
 <ul class="nav-list">
@@ -78,7 +81,10 @@
     <a class="nav-link" href="vm.html">VM</a>
   </li>
   <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="ab.html">HTTP (ab)</a>
+    <a class="nav-link" href="ab.html">ab (HTTP benchmark)</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="http.html">HTTP</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="zero.html">Zero</a>
@@ -121,7 +127,7 @@
   <ul>
     <li><a href="../index.html">Roadrunner</a></li>
     <li>Samplers</li>
-    <li><a href="ab.html">HTTP (ab)</a></li>
+    <li><a href="ab.html">ab (HTTP benchmark)</a></li>
   </ul>
 </nav>
 <div class="edit-this-page"><a href="https://github.com/symentispl/roadrunner/edit/HEAD/site/modules/ROOT/pages/samplers/ab.adoc">Edit this Page</a></div>
@@ -145,7 +151,7 @@ replacement for <a href="https://httpd.apache.org/docs/2.4/programs/ab.html">Apa
 <div class="sectionbody">
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner -c &lt;concurrency&gt; -n &lt;requests&gt; ab [OPTIONS] &lt;url&gt;</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c &lt;concurrency&gt; -n &lt;requests&gt; ab &lt;options&gt; &lt;url&gt;</code></pre>
 </div>
 </div>
 </div>
@@ -242,7 +248,7 @@ replacement for <a href="https://httpd.apache.org/docs/2.4/programs/ab.html">Apa
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner -c 50 -n 500 ab http://localhost:8080/api/health</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c 50 -n 500 ab http://localhost:8080/api/health</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -250,7 +256,7 @@ replacement for <a href="https://httpd.apache.org/docs/2.4/programs/ab.html">Apa
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner -c 20 -n 200 ab -m POST -p body.json -T application/json http://localhost:8080/api/orders</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roadrunner run -c 20 -n 200 ab -m POST -p body.json -T application/json http://localhost:8080/api/orders</code></pre>
 </div>
 </div>
 </div>
