@@ -58,6 +58,7 @@ class roadrunner {
         List<String> cmd = new ArrayList<>();
         cmd.add(javaExec.toString());
         cmd.add("-Djdk.tracePinnedThreads=full");
+        cmd.add("--enable-native-access=org.jline.nativ");
         cmd.add("-p");
         cmd.add(libDir.toString());
         cmd.add("-m");

@@ -21,7 +21,7 @@ You also need the JDBC driver JAR for your database. Pass its path with `--drive
 
 [source,bash]
 ----
-roadrunner -c <concurrency> -n <requests> jdbc [OPTIONS] '<expression>'
+include::example$jdbc/jdbc-1/snippet.sh[]
 ----
 
 == Arguments
@@ -73,12 +73,7 @@ for the shared syntax. The JDBC sampler currently exposes a single
 
 [source,bash]
 ----
-roadrunner -c 20 -n 1000 jdbc \
-  --url jdbc:postgresql://localhost/benchdb \
-  --username app \
-  --password secret \
-  --driver /opt/drivers/postgresql-42.7.3.jar \
-  'query("SELECT id, name FROM users WHERE id = 1")'
+include::example$jdbc/jdbc-2/snippet.sh[]
 ----
 
 == Parameter sources

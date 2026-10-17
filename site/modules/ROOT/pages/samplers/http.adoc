@@ -10,7 +10,7 @@ xref:parameter-sources.adoc[parameter source] so each request differs.
 
 [source,bash]
 ----
-roadrunner -c <concurrency> -n <requests> http [OPTIONS] '<expression>'
+include::example$generic/http-1/snippet.sh[]
 ----
 
 == Arguments
@@ -57,7 +57,7 @@ syntax. The HTTP sampler exposes four operations:
 
 [source,bash]
 ----
-roadrunner -c 20 -n 1000 http 'GET("http://localhost:8080/api/health")'
+include::example$generic/http-2/snippet.sh[]
 ----
 
 == Parameter sources
@@ -82,8 +82,7 @@ id
 
 [source,bash]
 ----
-roadrunner -c 10 -n 100 --parameters-source csv:file=ids.csv \
-  http 'GET("http://localhost:8080/api/orders/${id}")'
+include::example$generic/http-3/snippet.sh[]
 ----
 
 Each request substitutes the next row's `id` — no distinction is made between templating
@@ -103,8 +102,7 @@ secret-def
 
 [source,bash]
 ----
-roadrunner -c 10 -n 100 --parameters-source csv:file=keys.csv \
-  http 'GET("http://localhost:8080/api/orders")'
+include::example$generic/http-4/snippet.sh[]
 ----
 
 === Body
@@ -121,8 +119,7 @@ payload
 
 [source,bash]
 ----
-roadrunner -c 10 -n 100 --parameters-source csv:file=payloads.csv \
-  http 'POST("http://localhost:8080/api/orders", "@payload")'
+include::example$generic/http-5/snippet.sh[]
 ----
 
 If the `payload` parameter's value is a `java.io.File` — i.e. a CSV column typed

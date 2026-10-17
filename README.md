@@ -22,7 +22,7 @@
 Run directly using [JBang](https://www.jbang.dev/) without manual installation:
 
 ```bash
-jbang roadrunner@symentispl -- run vm -n 500 -c 50 --sleep-time 10
+jbang roadrunner@symentispl -- run -n 500 -c 50 vm --sleep-time 10
 ```
 
 ### 2. Pre-built Release Archive
@@ -32,7 +32,7 @@ Download pre-packaged releases from [GitHub Releases](https://github.com/symenti
 1. Extract the downloaded release archive (`.zip`).
 2. Run the executable from `bin/roadrunner`:
    ```bash
-   ./bin/roadrunner run vm -n 500 -c 50 --sleep-time 10
+   ./bin/roadrunner run -n 500 -c 50 vm --sleep-time 10
    ```
 
 ### 3. Build from Source
@@ -50,13 +50,13 @@ The runnable application is generated under:
 
 ## 🧪 Working First Run
 
-Roadrunner commands use the `run` subcommand followed by the sampler name and parameters:
+Roadrunner commands use the `run` subcommand, run options, then the sampler name and its parameters:
 
 ### Baseline Test (`vm` Sampler)
 Test internal overhead using a dummy sampler that sleeps fixed milliseconds per request:
 
 ```bash
-roadrunner run vm -n 500 -c 50 --sleep-time 10
+roadrunner run -n 500 -c 50 vm --sleep-time 10
 ```
 *(Executes 500 total requests across 50 concurrent virtual threads, sleeping 10ms per request).*
 
@@ -64,7 +64,7 @@ roadrunner run vm -n 500 -c 50 --sleep-time 10
 Run a high-throughput HTTP benchmark against a target endpoint:
 
 ```bash
-roadrunner run ab -n 500 -c 50 http://localhost:8080/
+roadrunner run -n 500 -c 50 ab http://localhost:8080/
 ```
 *(The `ab` sampler offers ApacheBench-compatible command-line semantics for benchmarking HTTP endpoints).*
 

@@ -8,7 +8,7 @@ to measure Roadrunner's own scheduling and recording overhead without any real I
 
 [source,bash]
 ----
-roadrunner -c <concurrency> -n <requests> vm --sleep-time <ms>
+include::example$generic/vm-1/snippet.sh[]
 ----
 
 == Options
@@ -26,7 +26,7 @@ roadrunner -c <concurrency> -n <requests> vm --sleep-time <ms>
 
 [source,bash]
 ----
-roadrunner -c 50 -n 500 vm --sleep-time 10
+include::example$generic/vm-2/snippet.sh[]
 ----
 
 500 requests, 50 concurrent users, each sleeping 10 ms per request.

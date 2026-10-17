@@ -20,6 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +46,46 @@ public class RoadrunnerRunIT {
                     .orElseThrow(() -> new IllegalStateException("roadrunner binary not found under " + appDir));
         }
         Files.setPosixFilePermissions(roadrunnerBin, PosixFilePermissions.fromString("rwxr-xr-x"));
+    }
+
+    @Test
+    void helpRejectsInvalidDocumentedCommands() throws Exception {
+        for (var args : List.of(
+                List.of("-c", "50", "-n", "500", "vm", "--sleep-time", "10"),
+                List.of("run", "-c", "50", "-n", "500", "renamed-sampler"),
+                List.of("run", "-c", "50", "-n", "500", "vm", "--unknown-option"),
+                List.of("run", "--unknown-option", "vm"))) {
+            var command = new ArrayList<String>();
+            command.add(roadrunnerBin.toString());
+            command.addAll(args);
+            command.add("--help");
+            var process = new ProcessBuilder(command).redirectErrorStream(true).start();
+            var stdout = new String(process.getInputStream().readAllBytes());
+            assertThat(process.waitFor())
+                    .as("exit code for %s; stdout was:%n%s", args, stdout)
+                    .isNotEqualTo(0);
+            assertThat(stdout).contains("error:");
+        }
+    }
+
+    @Test
+    void helpAllowsMissingRequiredArguments() throws Exception {
+        for (var args : List.of(
+                List.of("--help"),
+                List.of("run", "--help"),
+                List.of("run", "vm", "--help"),
+                List.of("run", "jdbc", "--help"),
+                List.of("run", "zero", "--help"))) {
+            var command = new ArrayList<String>();
+            command.add(roadrunnerBin.toString());
+            command.addAll(args);
+            var process = new ProcessBuilder(command).redirectErrorStream(true).start();
+            var stdout = new String(process.getInputStream().readAllBytes());
+            assertThat(process.waitFor())
+                    .as("exit code for %s; stdout was:%n%s", args, stdout)
+                    .isEqualTo(0);
+            assertThat(stdout).contains("Usage:");
+        }
     }
 
     @Test

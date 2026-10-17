@@ -141,6 +141,7 @@
                         <exclude>*.yaml</exclude>
                         <exclude>*.md</exclude>
                         <exclude>*.tmpl</exclude>
+                        <exclude>site/modules/ROOT/examples/**</exclude>
                         <!-- LatencyUtils sources carry CC0 (public domain) headers — preserve as-is -->
                         <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/LatencyStats.java</exclude>
                         <exclude>roadrunner-latency-utils/src/main/java/io/roadrunner/latency/PauseDetector.java</exclude>
@@ -392,6 +393,7 @@
         <module>roadrunner-parameter-source-csv</module>
         <module>roadrunner-reports</module>
         <module>roadrunner-logging</module>
+        <module>roadrunner-site-tests</module>
     </modules>
     <profiles>
         <profile>
