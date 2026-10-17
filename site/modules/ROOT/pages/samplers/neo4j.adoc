@@ -19,7 +19,7 @@ cp roadrunner-sampler-neo4j-*.jar ~/.roadrunner/plugins/protocols/
 
 [source,bash]
 ----
-roadrunner run -c <concurrency> -n <requests> neo4j [OPTIONS] '<cypher>'
+include::example$neo4j/neo4j-1/snippet.sh[]
 ----
 
 == Arguments
@@ -59,11 +59,7 @@ for the shared syntax. The Neo4j sampler currently exposes a single
 
 [source,bash]
 ----
-roadrunner run -c 20 -n 1000 neo4j \
-  --uri bolt://localhost:7687 \
-  --username neo4j \
-  --password secret \
-  'query("MATCH (n:Person) RETURN n.name LIMIT 1")'
+include::example$neo4j/neo4j-2/snippet.sh[]
 ----
 
 == Parameter sources

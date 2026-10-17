@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -85,46 +86,6 @@ public class RoadrunnerRunIT {
                     .isEqualTo(0);
             assertThat(stdout).contains("Usage:");
         }
-    }
-
-    @Test
-    void documentationCheckerHandlesSynopsesLaunchersAndContinuations(@TempDir Path docsDir) throws Exception {
-        var source = Files.writeString(
-                docsDir.resolve("examples.adoc"),
-                """
-                roadrunner run [OPTIONS] <sampler> [SAMPLER_OPTIONS]
-                $ roadrunner run -c 10 -n 100 --parameters-source csv:file=missing.csv \\
-                  http 'GET("http://localhost:8080/orders/${id}")'
-                ./bin/roadrunner run -c 1 -n 1 vm --sleep-time 1
-                jbang roadrunner@symentispl -- run -c 1 -n 1 vm
-                """);
-        var process = new ProcessBuilder(
-                        "../etc/check-docs-commands.sh", roadrunnerBin.toAbsolutePath().toString(), source.toString())
-                .redirectErrorStream(true)
-                .start();
-        var stdout = new String(process.getInputStream().readAllBytes());
-        assertThat(process.waitFor()).as("stdout was:%n%s", stdout).isEqualTo(0);
-        assertThat(stdout).contains("Checked 4 documented commands; 0 failed.");
-    }
-
-    @Test
-    void documentationCheckerFailsOnInvalidCommands(@TempDir Path docsDir) throws Exception {
-        var source = Files.writeString(
-                docsDir.resolve("README.md"),
-                """
-                roadrunner -c 50 -n 500 vm --sleep-time 10
-                roadrunner run -c 1 -n 1 vm --unknown-option
-                roadrunner run -c 1 -n 1 renamed-sampler
-                roadrunner run -c 1 -n 1 vm
-                """);
-        var process = new ProcessBuilder(
-                        "../etc/check-docs-commands.sh", roadrunnerBin.toAbsolutePath().toString(), source.toString())
-                .redirectErrorStream(true)
-                .start();
-        var stdout = new String(process.getInputStream().readAllBytes());
-        assertThat(process.waitFor()).as("stdout was:%n%s", stdout).isNotEqualTo(0);
-        assertThat(stdout).contains("Checked 4 documented commands; 3 failed.");
-        assertThat(stdout).contains(source + ":1", source + ":2", source + ":3");
     }
 
     @Test

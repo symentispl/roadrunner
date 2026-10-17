@@ -8,7 +8,7 @@ engine can sustain — the ceiling beyond which no sampler optimisation can go.
 
 [source,bash]
 ----
-roadrunner run -c <concurrency> -n <requests> zero
+include::example$generic/zero-1/snippet.sh[]
 ----
 
 == Options
@@ -19,7 +19,7 @@ The `zero` sampler has no sampler-specific options.
 
 [source,bash]
 ----
-roadrunner run -c 100 -n 1000000 zero
+include::example$generic/zero-2/snippet.sh[]
 ----
 
 Runs one million requests across 100 concurrent users with zero work per request.

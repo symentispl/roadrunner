@@ -36,7 +36,7 @@ It is useful for verifying Roadrunner overhead and as a baseline.
 
 [source,bash]
 ----
-roadrunner run -c 50 -n 500 vm --sleep-time 10
+include::example$generic/getting-started-1/snippet.sh[]
 ----
 
 This sends 500 requests using 50 concurrent users, each sleeping 10 ms.
@@ -48,7 +48,7 @@ https://httpd.apache.org/docs/2.4/programs/ab.html[Apache HTTP server benchmarki
 
 [source,bash]
 ----
-roadrunner run -c 50 -n 500 ab http://localhost:8080/api/health
+include::example$generic/getting-started-2/snippet.sh[]
 ----
 
 == Reading the output

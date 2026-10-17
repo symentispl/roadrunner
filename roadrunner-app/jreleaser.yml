@@ -47,6 +47,7 @@ assemble:
         jvmOptions:
           universal:
             - '-Djdk.tracePinnedThreads=full'
+            - '--enable-native-access=org.jline.nativ'
       jars:
         - pattern: 'glob:{{basedir}}/roadrunner-app/target/modules/*.jar'
       jdeps:
@@ -81,5 +82,6 @@ assemble:
         jvmOptions:
           universal:
             - '-Djdk.tracePinnedThreads=full'
+            - '--enable-native-access=org.jline.nativ'
       formats:
         - ZIP
