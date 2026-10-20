@@ -32,7 +32,7 @@ jobs:
 
       - name: Install BaaS
         run: |
-          curl -fsSLo "$RUNNER_TEMP/baas-install.sh" https://github.com/wsztajerowski/benchmark-as-a-service/releases/download/v6.2.0/install.sh
+          curl -fsSLo "$RUNNER_TEMP/baas-install.sh" https://github.com/wsztajerowski/benchmark-as-a-service/releases/download/v7.2.1/install.sh
           sh "$RUNNER_TEMP/baas-install.sh"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
@@ -44,12 +44,9 @@ jobs:
           role-duration-seconds: 9000
           role-session-name: GitHubActions
 
-      - name: Sync BaaS config
-        run: baas config sync --name "${{ vars.BAAS_CORE_STACK_NAME }}"
-
       - name: Run microbenchmarks on EC2
         run: |
-          baas run \
+          baas run jmh-with-async \
             --benchmark-jar roadrunner-microbenchmarks/target/benchmarks.jar \
             --project roadrunner \
-            jmh -- -f 1 -wi 3 -i 5
+            --detached -- -f 1 -wi 1 -i 1
