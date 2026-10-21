@@ -1,9 +1,9 @@
 [tools]
-java = "temurin-25"
-maven = "4.0.0-rc-5"
+java = "temurin-27"
+maven = "4.0.0-rc-7"
 mvnd = "2.0.0-rc-3"
-node = "22"
-"npm:antora" = "3.1.14"
+node = "26"
+"npm:antora" = "3.2.1"
 shellcheck = "latest"
 
 [tasks.default]
