@@ -137,5 +137,5 @@ However you build the provider, expose it with CLI options and register it for d
 * Register the implementation via `META-INF/services/io.roadrunner.api.samplers.SamplerProvider`
 or a `module-info.java` `provides io.roadrunner.api.samplers.SamplerProvider with ...` directive.
 
-Bundle plugin samplers as a JAR and drop it under `~/.roadrunner/plugins/protocols/`, as
+Bundle plugin samplers as a JAR and drop it under `~/.roadrunner/plugins/samplers/`, as
 described for the xref:samplers/jdbc.adoc[JDBC] and xref:samplers/neo4j.adoc[Neo4j] samplers.
