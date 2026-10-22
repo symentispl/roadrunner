@@ -109,6 +109,57 @@ class MetricComparisonTest {
     }
 
     @Test
+    void toleratesFloatingPointRoundingAtUpperAndLowerBoundaries() {
+        // Errors metric: 0.9 - 0.7 = 0.20000000000000007 in double arithmetic
+        var errorDelta = 0.9 - 0.7;
+        assertThat(errorDelta).isGreaterThan(0.2);
+
+        var errorAtBoundary = MetricComparison.of(ComparisonMetric.ERRORS, 0.7, 0.9, Tolerance.upper(0.2));
+        assertThat(errorAtBoundary.verdict()).isEqualTo(Verdict.PASSED);
+        assertThat(errorAtBoundary.isPassed()).isTrue();
+
+        var errorViolation = MetricComparison.of(ComparisonMetric.ERRORS, 0.7, 0.901, Tolerance.upper(0.2));
+        assertThat(errorViolation.verdict()).isEqualTo(Verdict.FAILED);
+        assertThat(errorViolation.isFailed()).isTrue();
+
+        // Errors lower bound: 0.7 - 0.9 = -0.20000000000000007 in double arithmetic
+        var lowerErrorDelta = 0.7 - 0.9;
+        assertThat(lowerErrorDelta).isLessThan(-0.2);
+
+        var lowerErrorAtBoundary = MetricComparison.of(ComparisonMetric.ERRORS, 0.9, 0.7, Tolerance.lower(-0.2));
+        assertThat(lowerErrorAtBoundary.verdict()).isEqualTo(Verdict.PASSED);
+        assertThat(lowerErrorAtBoundary.isPassed()).isTrue();
+
+        var lowerErrorViolation = MetricComparison.of(ComparisonMetric.ERRORS, 0.9, 0.699, Tolerance.lower(-0.2));
+        assertThat(lowerErrorViolation.verdict()).isEqualTo(Verdict.FAILED);
+        assertThat(lowerErrorViolation.isFailed()).isTrue();
+
+        // Relative delta: ((70.7 - 70.0) / 70.0) * 100.0 = 1.000000000000004 in double arithmetic
+        var relativeDelta = ((70.7 - 70.0) / 70.0) * 100.0;
+        assertThat(relativeDelta).isGreaterThan(1.0);
+
+        var relativeAtBoundary = MetricComparison.of(ComparisonMetric.P99, 70.0, 70.7, Tolerance.upper(1.0));
+        assertThat(relativeAtBoundary.verdict()).isEqualTo(Verdict.PASSED);
+        assertThat(relativeAtBoundary.isPassed()).isTrue();
+
+        var relativeViolation = MetricComparison.of(ComparisonMetric.P99, 70.0, 70.71, Tolerance.upper(1.0));
+        assertThat(relativeViolation.verdict()).isEqualTo(Verdict.FAILED);
+        assertThat(relativeViolation.isFailed()).isTrue();
+
+        // Throughput lower bound relative delta: ((69.3 - 70.0) / 70.0) * 100.0 = -1.000000000000004
+        var tpRelativeDelta = ((69.3 - 70.0) / 70.0) * 100.0;
+        assertThat(tpRelativeDelta).isLessThan(-1.0);
+
+        var tpAtBoundary = MetricComparison.of(ComparisonMetric.THROUGHPUT, 70.0, 69.3, Tolerance.lower(-1.0));
+        assertThat(tpAtBoundary.verdict()).isEqualTo(Verdict.PASSED);
+        assertThat(tpAtBoundary.isPassed()).isTrue();
+
+        var tpViolation = MetricComparison.of(ComparisonMetric.THROUGHPUT, 70.0, 69.29, Tolerance.lower(-1.0));
+        assertThat(tpViolation.verdict()).isEqualTo(Verdict.FAILED);
+        assertThat(tpViolation.isFailed()).isTrue();
+    }
+
+    @Test
     void evaluatesLatencyUpperBoundTolerance() {
         var tolerance = Tolerance.upper(5.0);
 

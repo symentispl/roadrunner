@@ -78,6 +78,25 @@ class TolerancesTest {
     }
 
     @Test
+    void toleratesFloatingPointRoundingAtBoundariesWithoutHidingViolations() {
+        var upper = Tolerance.upper(0.2);
+        // 0.9 - 0.7 = 0.20000000000000007 in double arithmetic
+        assertThat(upper.isSatisfied(0.9 - 0.7)).isTrue();
+        assertThat(upper.verdict(0.9 - 0.7)).isEqualTo(Verdict.PASSED);
+        // Genuine violation
+        assertThat(upper.isSatisfied(0.2001)).isFalse();
+        assertThat(upper.verdict(0.2001)).isEqualTo(Verdict.FAILED);
+
+        var lower = Tolerance.lower(-0.2);
+        // 0.7 - 0.9 = -0.20000000000000007 in double arithmetic
+        assertThat(lower.isSatisfied(0.7 - 0.9)).isTrue();
+        assertThat(lower.verdict(0.7 - 0.9)).isEqualTo(Verdict.PASSED);
+        // Genuine violation
+        assertThat(lower.isSatisfied(-0.2001)).isFalse();
+        assertThat(lower.verdict(-0.2001)).isEqualTo(Verdict.FAILED);
+    }
+
+    @Test
     void allowsSurroundingWhitespace() {
         var tolerances = Tolerances.parse("  p99  :  +10%  ,  throughput  :  -5%  ,  errors  :  +0.5%  ");
 

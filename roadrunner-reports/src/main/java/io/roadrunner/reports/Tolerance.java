@@ -54,6 +54,12 @@ public record Tolerance(double limit, Direction direction) {
     }
 
     /**
+     * Tolerance comparison epsilon used to prevent false rejections at inclusive boundaries
+     * due to floating-point rounding errors.
+     */
+    public static final double EPSILON = 1e-9;
+
+    /**
      * Checks whether the measured delta satisfies this tolerance limit.
      *
      * @param delta the measured change
@@ -61,8 +67,8 @@ public record Tolerance(double limit, Direction direction) {
      */
     public boolean isSatisfied(double delta) {
         return switch (direction) {
-            case UPPER -> delta <= limit;
-            case LOWER -> delta >= limit;
+            case UPPER -> delta <= limit + EPSILON;
+            case LOWER -> delta >= limit - EPSILON;
         };
     }
 
