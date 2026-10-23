@@ -18,16 +18,11 @@ package io.roadrunner.core;
 import io.roadrunner.api.Roadrunner;
 import io.roadrunner.api.measurments.MeasurementProgress;
 import io.roadrunner.api.parameters.ParameterSource;
-import io.roadrunner.core.internal.ClosedWorldStrategy;
-import io.roadrunner.core.internal.DefaultRoadrunner;
-import io.roadrunner.core.internal.ExecutionStrategy;
-import io.roadrunner.core.internal.OpenWorldStrategy;
+import io.roadrunner.core.internal.*;
 import io.roadrunner.latency.recording.PauseDetectorKind;
 import io.roadrunner.logging.LoggingFacade;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.EnumSet;
 import java.util.Objects;
@@ -42,6 +37,7 @@ public class Bootstrap {
     private Path outputDir;
     private ParameterSource parameterSource = ParameterSource.onlyEmptyParameters();
     private EnumSet<PauseDetectorKind> pauseDetectors = EnumSet.noneOf(PauseDetectorKind.class);
+    private OutputDirectoryNamingStrategy outputDirectoryNamingStrategy = new YearlyOutputDirectoryNamingStrategy();
 
     /**
      * Configure the closed-world load model: N concurrent users each loop until the total
@@ -85,10 +81,15 @@ public class Bootstrap {
         return outputDir;
     }
 
+    public Bootstrap withOutputNamingStrategy(OutputDirectoryNamingStrategy outputDirectoryNamingStrategy) {
+        this.outputDirectoryNamingStrategy = outputDirectoryNamingStrategy;
+        return this;
+    }
+
     public Roadrunner build() throws IOException {
         if (outputDir == null) {
-            outputDir = Files.createTempDirectory(Paths.get("."), "roadrunner-");
-            LOG.warn("setting output directory to {}", outputDir);
+            outputDir = OutputDirectoryCreator.create(Path.of(outputDirectoryNamingStrategy.getName()));
+            LOG.info("setting output directory to {}", outputDir);
         }
         if (strategy == null) {
             throw new IllegalStateException("Load strategy must be configured");
