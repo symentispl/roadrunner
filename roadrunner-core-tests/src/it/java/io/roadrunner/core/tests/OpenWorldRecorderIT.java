@@ -17,7 +17,6 @@ package io.roadrunner.core.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.latency.recording.PauseDetectorKind;
