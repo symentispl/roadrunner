@@ -22,6 +22,8 @@ import java.util.Objects;
 
 public final class OutputDirectoryCreator {
 
+    private OutputDirectoryCreator() {}
+
     public static Path create(Path basePath) throws IOException {
         Objects.requireNonNull(basePath, "basePath cannot be null");
 

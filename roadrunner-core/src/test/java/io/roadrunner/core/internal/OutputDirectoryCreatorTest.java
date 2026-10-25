@@ -16,10 +16,13 @@
 package io.roadrunner.core.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -28,6 +31,29 @@ class OutputDirectoryCreatorTest {
 
     @TempDir
     Path tempDir;
+
+    @Test
+    void rejectsNullBasePath() {
+        assertThatNullPointerException()
+                .isThrownBy(() -> OutputDirectoryCreator.create(null))
+                .withMessage("basePath cannot be null");
+    }
+
+    @Test
+    void rejectsRootPathWithoutDirectoryName() {
+        var root = tempDir.toAbsolutePath().getRoot();
+
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> OutputDirectoryCreator.create(root))
+                .withMessage("basePath must contain a directory name");
+    }
+
+    @Test
+    void rejectsEmptyDirectoryName() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> OutputDirectoryCreator.create(Path.of("")))
+                .withMessage("basePath must contain a directory name");
+    }
 
     @ParameterizedTest
     @ValueSource(ints = {2, 3, 9, 99})
