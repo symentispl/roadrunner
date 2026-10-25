@@ -37,7 +37,7 @@ public class Bootstrap {
     private Path outputDir;
     private ParameterSource parameterSource = ParameterSource.onlyEmptyParameters();
     private EnumSet<PauseDetectorKind> pauseDetectors = EnumSet.noneOf(PauseDetectorKind.class);
-    private OutputDirectoryNamingStrategy outputDirectoryNamingStrategy = new YearlyOutputDirectoryNamingStrategy();
+    private OutputDirectoryNamingStrategy outputDirectoryNamingStrategy = new TimestampOutputDirectoryNamingStrategy();
 
     /**
      * Configure the closed-world load model: N concurrent users each loop until the total

@@ -20,15 +20,15 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
-public class YearlyOutputDirectoryNamingStrategy implements OutputDirectoryNamingStrategy {
+public class TimestampOutputDirectoryNamingStrategy implements OutputDirectoryNamingStrategy {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
     private final Clock clock;
 
-    public YearlyOutputDirectoryNamingStrategy() {
+    public TimestampOutputDirectoryNamingStrategy() {
         this(Clock.systemDefaultZone());
     }
 
-    YearlyOutputDirectoryNamingStrategy(Clock clock) {
+    TimestampOutputDirectoryNamingStrategy(Clock clock) {
         this.clock = Objects.requireNonNull(clock, "clock cannot be null");
     }
 

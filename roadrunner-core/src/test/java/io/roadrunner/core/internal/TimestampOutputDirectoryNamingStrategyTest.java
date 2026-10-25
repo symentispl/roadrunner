@@ -23,7 +23,7 @@ import java.time.ZoneId;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-class YearlyOutputDirectoryNamingStrategyTest {
+class TimestampOutputDirectoryNamingStrategyTest {
 
     @ParameterizedTest(name = "{0} in {1} produces {2}")
     @CsvSource({
@@ -38,7 +38,7 @@ class YearlyOutputDirectoryNamingStrategyTest {
     })
     void includesDateAndTimeFromClockInName(String instant, String zone, String expectedName) {
         var clock = Clock.fixed(Instant.parse(instant), ZoneId.of(zone));
-        var strategy = new YearlyOutputDirectoryNamingStrategy(clock);
+        var strategy = new TimestampOutputDirectoryNamingStrategy(clock);
 
         var name = strategy.getName();
 
