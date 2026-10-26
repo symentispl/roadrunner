@@ -32,7 +32,7 @@ jobs:
 
       - name: Install BaaS
         run: |
-          curl -fsSLo "$RUNNER_TEMP/baas-install.sh" https://github.com/wsztajerowski/benchmark-as-a-service/releases/download/v7.2.1/install.sh
+          curl -fsSLo "$RUNNER_TEMP/baas-install.sh" https://github.com/wsztajerowski/benchmark-as-a-service/releases/download/v8.0.0/install.sh
           sh "$RUNNER_TEMP/baas-install.sh"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
