@@ -16,7 +16,6 @@
 package io.roadrunner.core.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 import io.roadrunner.api.events.Event;
 import io.roadrunner.api.events.EventListener;
@@ -33,6 +32,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 class QueueingSamplerResponsesJournalTest {
@@ -56,7 +57,7 @@ class QueueingSamplerResponsesJournalTest {
         }
 
         // Wait for responses to be processed before closing
-        await().atMost(Duration.ofSeconds(5)).until(() -> listener.responses.size() >= 5);
+        Awaitility.await().atMost(Duration.ofSeconds(5)).until(() -> listener.responses.size() >= 5);
 
         // Verify all responses were processed correctly
         assertThat(listener.responses).containsExactly(response1, response2, response3, response4, response5);
@@ -117,7 +118,7 @@ class QueueingSamplerResponsesJournalTest {
             }
 
             var closer = Thread.ofPlatform().start(journal::close);
-            await().atMost(Duration.ofSeconds(5)).until(() -> closer.getState() == Thread.State.TIMED_WAITING);
+            Awaitility.await().atMost(Duration.ofSeconds(5)).until(() -> closer.getState() == Thread.State.TIMED_WAITING);
             allowFirstBatch.countDown();
             closer.join(TimeUnit.SECONDS.toMillis(5));
 

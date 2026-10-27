@@ -211,6 +211,7 @@
                             <include>src/test/java/**/*.java</include>
                         </includes>
                         <palantirJavaFormat>
+                            <version>2.102.0</version>
                             <style>PALANTIR</style>
                             <formatJavadoc>false</formatJavadoc>
                         </palantirJavaFormat>
