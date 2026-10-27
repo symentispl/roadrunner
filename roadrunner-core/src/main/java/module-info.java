@@ -23,7 +23,6 @@ module io.roadrunner.core {
     requires io.roadrunner.logging;
     requires jdk.jfr;
     requires org.jctools.core;
-    requires jdk.unsupported; // sun.misc.Unsafe, used by jctools
 
     exports io.roadrunner.core;
 }
