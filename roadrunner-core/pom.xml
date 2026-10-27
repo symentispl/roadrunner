@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.roadrunner</groupId>
         <artifactId>roadrunner</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>roadrunner-core</artifactId>
@@ -76,7 +76,7 @@
         <dependency>
             <groupId>io.roadrunner</groupId>
             <artifactId>roadrunner-latency-recording</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
 
