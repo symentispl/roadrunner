@@ -2,7 +2,7 @@
 
 == Prerequisites
 
-* https://adoptium.net/temurin/releases/?version=25[JDK 25 (Temurin)] or later
+* https://adoptium.net/temurin/releases/?version=27[JDK 27 (Temurin)] or later
 * Git
 
 NOTE: Roadrunner is currently tested and supported on Linux only.
