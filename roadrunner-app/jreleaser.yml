@@ -52,12 +52,12 @@ assemble:
         - pattern: 'glob:{{basedir}}/roadrunner-app/target/modules/*.jar'
       jdeps:
         multiRelease: '27'
-        ignoreMissingDeps: true  # jctools references sun.misc.Unsafe (jdk.unsupported, added below)
+        ignoreMissingDeps: false
       args:
         - --no-header-files
         - --no-man-pages
         - --add-modules
-        - jdk.unsupported,org.slf4j.simple,io.roadrunner.samplers.ab,io.roadrunner.samplers.vm,io.roadrunner.samplers.zero,io.roadrunner.samplers.neo4j,io.roadrunner.samplers.jdbc,io.roadrunner.samplers.http,io.roadrunner.samplers.zero,io.roadrunner.reports.console,io.roadrunner.reports.html,io.roadrunner.parameters.csv
+        - org.slf4j.simple,io.roadrunner.samplers.ab,io.roadrunner.samplers.vm,io.roadrunner.samplers.zero,io.roadrunner.samplers.neo4j,io.roadrunner.samplers.jdbc,io.roadrunner.samplers.http,io.roadrunner.samplers.zero,io.roadrunner.reports.console,io.roadrunner.reports.html,io.roadrunner.parameters.csv
       formats:
         - ZIP
       imageName: 'roadrunner-app-{{projectVersion}}'
