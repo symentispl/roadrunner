@@ -1,8 +1,6 @@
 name: Microbenchmarks (BaaS)
 
 on:
-  push:
-    branches: [ "master", "enable-baas-microbenchmark-runs" ]  # TEMP: branch trigger for testing, remove before merge
   workflow_dispatch:
 
 concurrency:
@@ -49,4 +47,5 @@ jobs:
           baas run jmh-with-async \
             --benchmark-jar roadrunner-microbenchmarks/target/benchmarks.jar \
             --project roadrunner \
+            --tag branch=${{ github.ref_name }} \
             --detach -- --async-interval 1000000 --async-event=cpu roadrunner
