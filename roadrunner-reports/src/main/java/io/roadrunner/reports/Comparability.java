@@ -36,6 +36,19 @@ public record Comparability(boolean isComparable, List<String> mismatches) {
 
     private static final Comparability COMPATIBLE = new Comparability(true, List.of());
 
+    private static final PropertyComparison<String> SAMPLER = PropertyComparison.quoted("Sampler");
+    private static final PropertyComparison<java.util.Map<String, String>> SAMPLER_OPTIONS =
+            PropertyComparison.of("Sampler options");
+    private static final PropertyComparison<String> LOAD_MODEL = PropertyComparison.quoted("Load model");
+    private static final PropertyComparison<String> LOAD_CONCURRENCY = PropertyComparison.quoted("Load concurrency");
+    private static final PropertyComparison<String> LOAD_REQUESTS = PropertyComparison.quoted("Load requests");
+    private static final PropertyComparison<String> LOAD_RATE = PropertyComparison.quoted("Load rate");
+    private static final PropertyComparison<String> LOAD_DURATION = PropertyComparison.quoted("Load duration");
+    private static final PropertyComparison<String> PAUSE_DETECTORS = PropertyComparison.of(
+            "Pause detectors",
+            Comparability::formatPauseDetectors,
+            (b, c) -> Objects.equals(normalizePauseDetectors(b), normalizePauseDetectors(c)));
+
     public Comparability {
         requireNonNull(mismatches, "mismatches cannot be null");
         mismatches = List.copyOf(mismatches);
@@ -72,59 +85,43 @@ public record Comparability(boolean isComparable, List<String> mismatches) {
 
         var mismatches = new ArrayList<String>();
 
-        // 1. Sampler
-        if (!Objects.equals(baseline.sampler(), current.sampler())) {
-            mismatches.add("Sampler mismatch: baseline used '%s', but current used '%s'"
-                    .formatted(baseline.sampler(), current.sampler()));
+        SAMPLER.compare(baseline.sampler(), current.sampler()).ifPresent(mismatches::add);
+        SAMPLER_OPTIONS
+                .compare(baseline.samplerOptions(), current.samplerOptions())
+                .ifPresent(mismatches::add);
+
+        var loadModelMismatch = LOAD_MODEL.compare(baseline.loadModel(), current.loadModel());
+        if (loadModelMismatch.isPresent()) {
+            mismatches.add(loadModelMismatch.get());
+        } else if ("closed".equalsIgnoreCase(baseline.loadModel())) {
+            LOAD_CONCURRENCY
+                    .compare(baseline.loadConcurrency(), current.loadConcurrency())
+                    .ifPresent(mismatches::add);
+            LOAD_REQUESTS
+                    .compare(baseline.loadRequests(), current.loadRequests())
+                    .ifPresent(mismatches::add);
+        } else if ("open".equalsIgnoreCase(baseline.loadModel())) {
+            LOAD_RATE.compare(baseline.loadRate(), current.loadRate()).ifPresent(mismatches::add);
+            LOAD_DURATION
+                    .compare(baseline.loadDuration(), current.loadDuration())
+                    .ifPresent(mismatches::add);
         }
 
-        // 2. Sampler options
-        if (!Objects.equals(baseline.samplerOptions(), current.samplerOptions())) {
-            mismatches.add("Sampler options mismatch: baseline used %s, but current used %s"
-                    .formatted(baseline.samplerOptions(), current.samplerOptions()));
-        }
-
-        // 3. Load model & relevant parameters
-        if (!Objects.equals(baseline.loadModel(), current.loadModel())) {
-            mismatches.add("Load model mismatch: baseline used '%s', but current used '%s'"
-                    .formatted(baseline.loadModel(), current.loadModel()));
-        } else {
-            if ("closed".equalsIgnoreCase(baseline.loadModel())) {
-                if (!Objects.equals(baseline.loadConcurrency(), current.loadConcurrency())) {
-                    mismatches.add("Load concurrency mismatch: baseline used '%s', but current used '%s'"
-                            .formatted(baseline.loadConcurrency(), current.loadConcurrency()));
-                }
-                if (!Objects.equals(baseline.loadRequests(), current.loadRequests())) {
-                    mismatches.add("Load requests mismatch: baseline used '%s', but current used '%s'"
-                            .formatted(baseline.loadRequests(), current.loadRequests()));
-                }
-            } else if ("open".equalsIgnoreCase(baseline.loadModel())) {
-                if (!Objects.equals(baseline.loadRate(), current.loadRate())) {
-                    mismatches.add("Load rate mismatch: baseline used '%s', but current used '%s'"
-                            .formatted(baseline.loadRate(), current.loadRate()));
-                }
-                if (!Objects.equals(baseline.loadDuration(), current.loadDuration())) {
-                    mismatches.add("Load duration mismatch: baseline used '%s', but current used '%s'"
-                            .formatted(baseline.loadDuration(), current.loadDuration()));
-                }
-            }
-        }
-
-        // 4. Pause detectors
-        if (!Objects.equals(baseline.pauseDetectors(), current.pauseDetectors())) {
-            var b = baseline.pauseDetectors() == null
-                            || baseline.pauseDetectors().isEmpty()
-                    ? "none"
-                    : baseline.pauseDetectors();
-            var c = current.pauseDetectors() == null || current.pauseDetectors().isEmpty()
-                    ? "none"
-                    : current.pauseDetectors();
-            mismatches.add("Pause detectors mismatch: baseline used '%s', but current used '%s'".formatted(b, c));
-        }
+        PAUSE_DETECTORS
+                .compare(baseline.pauseDetectors(), current.pauseDetectors())
+                .ifPresent(mismatches::add);
 
         if (mismatches.isEmpty()) {
             return compatible();
         }
         return incompatible(mismatches);
+    }
+
+    private static String formatPauseDetectors(String value) {
+        return "'" + normalizePauseDetectors(value) + "'";
+    }
+
+    private static String normalizePauseDetectors(String value) {
+        return value == null || value.isEmpty() ? "none" : value;
     }
 }
