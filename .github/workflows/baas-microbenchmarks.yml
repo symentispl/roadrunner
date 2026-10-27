@@ -47,5 +47,6 @@ jobs:
           baas run jmh-with-async \
             --benchmark-jar roadrunner-microbenchmarks/target/benchmarks.jar \
             --project roadrunner \
+            --tag "commit=$GITHUB_SHA" \
             --tag "branch=$GITHUB_REF_NAME" \
             --detach -- --async-interval 1000000 --async-event=cpu roadrunner
