@@ -49,4 +49,4 @@ jobs:
           baas run jmh-with-async \
             --benchmark-jar roadrunner-microbenchmarks/target/benchmarks.jar \
             --project roadrunner \
-            --detach -- -f 1 -wi 1 -i 1
+            --detach -- --async-interval 1000000 --async-event=cpu roadrunner

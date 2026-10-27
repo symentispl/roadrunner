@@ -15,15 +15,19 @@
  */
 package io.roadrunner.core.internal;
 
-import io.roadrunner.api.events.*;
+import io.roadrunner.api.events.Event;
+import io.roadrunner.api.events.EventListener;
+import io.roadrunner.api.events.MeasurementError;
+import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.logging.LoggingFacade;
 import java.util.ArrayList;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
+import org.jctools.queues.MpscUnboundedArrayQueue;
 import org.slf4j.Logger;
 
 final class QueueingSamplerResponsesJournal implements ResponsesJournal {
@@ -31,8 +35,11 @@ final class QueueingSamplerResponsesJournal implements ResponsesJournal {
     private static final Logger LOG = LoggingFacade.getLogger(QueueingSamplerResponsesJournal.class);
 
     private static final int BATCH_SIZE = 1000;
+    private static final int CHUNK_SIZE = 1024;
+    private static final long IDLE_PARK_NANOS = TimeUnit.MILLISECONDS.toNanos(1);
 
-    private final BlockingQueue<Event> responses = new LinkedBlockingQueue<>();
+    // many sampler threads produce, the single journal thread consumes
+    private final MpscUnboundedArrayQueue<Event> responses = new MpscUnboundedArrayQueue<>(CHUNK_SIZE);
     private final EventListener listener;
     private final ExecutorService executorService;
     private volatile boolean isRunning;
@@ -51,23 +58,18 @@ final class QueueingSamplerResponsesJournal implements ResponsesJournal {
             listener.onStart();
             var batch = new ArrayList<Event>(BATCH_SIZE + 1);
             while (isRunning) {
-                try {
-                    var response = responses.poll(1, TimeUnit.MILLISECONDS);
-                    if (response != null) {
-                        batch.add(response);
-                        responses.drainTo(batch, BATCH_SIZE);
-                        try {
-                            listener.onEvent(batch);
-                        } finally {
-                            batch.clear();
-                        }
+                if (responses.drain(batch::add, BATCH_SIZE) > 0) {
+                    try {
+                        listener.onEvent(batch);
+                    } finally {
+                        batch.clear();
                     }
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                } else {
+                    LockSupport.parkNanos(IDLE_PARK_NANOS);
                 }
             }
             // Drain any events that arrived after the last poll before stopping
-            responses.drainTo(batch);
+            responses.drain(batch::add);
             if (!batch.isEmpty()) {
                 listener.onEvent(batch);
                 batch.clear();

@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Symentis.pl
+ * Copyright 2024 RuntimeExceptionSymentis.pl
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,15 @@ import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.measurments.EventReader;
 import io.roadrunner.api.metrics.MetricRegistry;
 import io.roadrunner.logging.LoggingFacade;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
+
 import org.slf4j.Logger;
 
 public class CsvOutputEventListener implements EventListener {
@@ -58,7 +61,7 @@ public class CsvOutputEventListener implements EventListener {
             writeHeader();
         } catch (IOException e) {
             LOG.error("cannot open csv output", e);
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -85,10 +88,8 @@ public class CsvOutputEventListener implements EventListener {
             switch (response) {
                 case SamplerResponse.Error e -> appendResponseRow(e, "KO");
                 case SamplerResponse.Response e -> appendResponseRow(e, "OK");
-                case UserEvent.Enter e ->
-                    rowBuilder.append("USER,").append(e.timestamp()).append(",ENTER");
-                case UserEvent.Exit e ->
-                    rowBuilder.append("USER,").append(e.timestamp()).append(",EXIT");
+                case UserEvent.Enter e -> rowBuilder.append("USER,").append(e.timestamp()).append(",ENTER");
+                case UserEvent.Exit e -> rowBuilder.append("USER,").append(e.timestamp()).append(",EXIT");
                 default -> throw new IllegalStateException("Unexpected value: " + response);
             }
             try {

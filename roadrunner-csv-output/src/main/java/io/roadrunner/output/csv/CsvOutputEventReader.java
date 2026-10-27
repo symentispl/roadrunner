@@ -143,17 +143,16 @@ public class CsvOutputEventReader implements EventReader {
         var stopTime = parseLong(record.get(3));
         var latency = parseLong(record.get(4));
         var status = Sample.Status.valueOf(record.get(5));
-        SamplerResponse<?> response =
-                switch (status) {
-                    case Sample.Status.OK ->
-                        new SamplerResponse.Response(timestamp, stopTime, metricCount, attachmentCount)
-                                .withLatency(latency)
-                                .withScheduledStartTime(scheduledStartTime);
-                    case Sample.Status.KO ->
-                        new SamplerResponse.Error(timestamp, stopTime, metricCount, attachmentCount)
-                                .withLatency(latency)
-                                .withScheduledStartTime(scheduledStartTime);
-                };
+        SamplerResponse<?> response = switch (status) {
+            case Sample.Status.OK ->
+                new SamplerResponse.Response(timestamp, stopTime, metricCount, attachmentCount)
+                        .withLatency(latency)
+                        .withScheduledStartTime(scheduledStartTime);
+            case Sample.Status.KO ->
+                new SamplerResponse.Error(timestamp, stopTime, metricCount, attachmentCount)
+                        .withLatency(latency)
+                        .withScheduledStartTime(scheduledStartTime);
+        };
         for (int i = 0; i < metricCount; i++) {
             var col = FIRST_METRIC_COLUMN + i;
             if (col < record.size()) {

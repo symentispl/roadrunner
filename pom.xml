@@ -307,6 +307,11 @@
                 <version>1.15.0</version>
             </dependency>
             <dependency>
+                <groupId>org.jctools</groupId>
+                <artifactId>jctools-core</artifactId>
+                <version>4.0.5</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-csv</artifactId>
                 <version>1.14.1</version>

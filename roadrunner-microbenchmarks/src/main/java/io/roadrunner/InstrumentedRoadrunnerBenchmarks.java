@@ -15,6 +15,8 @@
  */
 package io.roadrunner;
 
+import static io.roadrunner.BenchmarkSupport.bootstrap;
+
 import io.roadrunner.api.Roadrunner;
 import io.roadrunner.api.attachments.AttachmentKey;
 import io.roadrunner.api.attachments.AttachmentRegistry;
@@ -23,10 +25,7 @@ import io.roadrunner.api.metrics.MetricRegistry;
 import io.roadrunner.api.metrics.MetricUnit;
 import io.roadrunner.api.samplers.Sampler;
 import io.roadrunner.api.samplers.SamplerProvider;
-import io.roadrunner.core.Bootstrap;
-import io.roadrunner.samplers.vm.VmSamplerProvider;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -40,17 +39,28 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 
-public class RoadrunnerBenchmarks {
+@Fork(value = 1, warmups = 1, jvmArgsAppend = "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn")
+public class InstrumentedRoadrunnerBenchmarks {
 
     @State(Scope.Benchmark)
-    public static class ClosedWorldBenchmark {
+    public static class ClosedWorld {
         Roadrunner roadrunner;
-        VmSamplerProvider samplerProvider;
+        SamplerProvider samplerProvider;
+
+        @Param({"100"})
+        public long sleepMillis;
+
+        @Param({"100"})
+        public int concurrentUsers;
+
+        @Param({"100"})
+        public int requests;
 
         @Setup(Level.Trial)
         public void setUp() throws IOException {
-            roadrunner = bootstrap().withClosedWorldModel(1, 10).build();
-            samplerProvider = VmSamplerProvider.from(Duration.ofMillis(100));
+            roadrunner =
+                    bootstrap().withClosedWorldModel(concurrentUsers, requests).build();
+            samplerProvider = new InstrumentedSamplerProvider(Duration.ofMillis(sleepMillis));
         }
 
         @TearDown(Level.Trial)
@@ -61,29 +71,14 @@ public class RoadrunnerBenchmarks {
     }
 
     @State(Scope.Benchmark)
-    public static class ClosedWorldInstrumentedBenchmark {
+    public static class OpenWorld {
         Roadrunner roadrunner;
-        InstrumentedVmSamplerProvider samplerProvider;
+        SamplerProvider samplerProvider;
 
-        @Setup(Level.Trial)
-        public void setUp() throws IOException {
-            roadrunner = bootstrap().withClosedWorldModel(1, 10).build();
-            samplerProvider = new InstrumentedVmSamplerProvider(Duration.ofMillis(100));
-        }
+        @Param({"100"})
+        public long sleepMillis;
 
-        @TearDown(Level.Trial)
-        public void tearDown() throws Exception {
-            roadrunner.close();
-            samplerProvider.close();
-        }
-    }
-
-    @State(Scope.Benchmark)
-    public static class OpenWorldBenchmark {
-        Roadrunner roadrunner;
-        VmSamplerProvider samplerProvider;
-
-        @Param({"1", "10", "100", "1000", "10000"})
+        @Param({"100"})
         public int arrivalRate;
 
         @Setup(Level.Trial)
@@ -91,30 +86,7 @@ public class RoadrunnerBenchmarks {
             roadrunner = bootstrap()
                     .withOpenWorldModel(arrivalRate, Duration.ofSeconds(10))
                     .build();
-            samplerProvider = VmSamplerProvider.from(Duration.ofMillis(100));
-        }
-
-        @TearDown(Level.Trial)
-        public void tearDown() throws Exception {
-            roadrunner.close();
-            samplerProvider.close();
-        }
-    }
-
-    @State(Scope.Benchmark)
-    public static class OpenWorldInstrumentedBenchmark {
-        Roadrunner roadrunner;
-        InstrumentedVmSamplerProvider samplerProvider;
-
-        @Param({"1", "10", "100", "1000", "10000"})
-        public int arrivalRate;
-
-        @Setup(Level.Trial)
-        public void setUp() throws IOException {
-            roadrunner = bootstrap()
-                    .withOpenWorldModel(arrivalRate, Duration.ofSeconds(10))
-                    .build();
-            samplerProvider = new InstrumentedVmSamplerProvider(Duration.ofMillis(100));
+            samplerProvider = new InstrumentedSamplerProvider(Duration.ofMillis(sleepMillis));
         }
 
         @TearDown(Level.Trial)
@@ -125,36 +97,22 @@ public class RoadrunnerBenchmarks {
     }
 
     @Benchmark
-    @Fork(value = 1, warmups = 1, jvmArgsAppend = "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn")
-    public void closedWorldBenchmark(ClosedWorldBenchmark benchmark) {
-        benchmark.roadrunner.execute(benchmark.samplerProvider);
+    public void closedWorld(ClosedWorld state) {
+        state.roadrunner.execute(state.samplerProvider);
     }
 
     @Benchmark
-    @Fork(value = 1, warmups = 1, jvmArgsAppend = "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn")
-    public void closedWorldBenchmarkWithMetrics(ClosedWorldInstrumentedBenchmark benchmark) {
-        benchmark.roadrunner.execute(benchmark.samplerProvider);
+    public void openWorld(OpenWorld state) {
+        state.roadrunner.execute(state.samplerProvider);
     }
 
-    @Benchmark
-    @Fork(value = 1, warmups = 1, jvmArgsAppend = "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn")
-    public void openWorldBenchmark(OpenWorldBenchmark benchmark) {
-        benchmark.roadrunner.execute(benchmark.samplerProvider);
-    }
-
-    @Benchmark
-    @Fork(value = 1, warmups = 1, jvmArgsAppend = "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn")
-    public void openWorldBenchmarkWithMetrics(OpenWorldInstrumentedBenchmark benchmark) {
-        benchmark.roadrunner.execute(benchmark.samplerProvider);
-    }
-
-    static final class InstrumentedVmSamplerProvider implements SamplerProvider {
+    static final class InstrumentedSamplerProvider implements SamplerProvider {
         private final ExecutorService executorService = Executors.newCachedThreadPool();
         private final long sleepMillis;
         private MetricKey latencyKey;
         private AttachmentKey threadNameKey;
 
-        InstrumentedVmSamplerProvider(Duration sleepTime) {
+        InstrumentedSamplerProvider(Duration sleepTime) {
             this.sleepMillis = sleepTime.toMillis();
         }
 
@@ -174,7 +132,7 @@ public class RoadrunnerBenchmarks {
                             () -> {
                                 var startTime = System.nanoTime();
                                 try {
-                                    Thread.sleep(sleepMillis);
+                                    if (sleepMillis > 0) Thread.sleep(sleepMillis);
                                 } catch (InterruptedException e) {
                                     throw new RuntimeException(e);
                                 }
@@ -194,9 +152,5 @@ public class RoadrunnerBenchmarks {
         public void close() {
             executorService.close();
         }
-    }
-
-    static Bootstrap bootstrap() throws IOException {
-        return new Bootstrap().withOutputDir(Files.createTempDirectory("roadrunner-benchmarks-"));
     }
 }
