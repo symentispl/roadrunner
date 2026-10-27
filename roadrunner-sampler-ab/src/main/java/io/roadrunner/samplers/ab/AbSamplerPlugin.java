@@ -57,24 +57,22 @@ public class AbSamplerPlugin implements SamplerPlugin<AbSamplerProvider, AbSampl
             effectiveMethod = "HEAD";
         }
 
-        Supplier<HttpRequest> requestSupplier =
-                switch (effectiveMethod) {
-                    case "GET" -> () -> newBuilder(options).GET().build();
-                    case "POST" ->
-                        () -> newBuilder(options)
-                                .POST(ofFilePublisher(options.fileContent.postFile))
-                                .header("Content-Type", options.contentType)
-                                .build();
-                    case "PUT" ->
-                        () -> newBuilder(options)
-                                .PUT(ofFilePublisher(options.fileContent.putFile))
-                                .header("Content-Type", options.contentType)
-                                .build();
-                    case "HEAD" -> () -> newBuilder(options).HEAD().build();
-                    case "DELETE" -> () -> newBuilder(options).DELETE().build();
-                    default ->
-                        throw new IllegalArgumentException("Unsupported HTTP method: %s".formatted(effectiveMethod));
-                };
+        Supplier<HttpRequest> requestSupplier = switch (effectiveMethod) {
+            case "GET" -> () -> newBuilder(options).GET().build();
+            case "POST" ->
+                () -> newBuilder(options)
+                        .POST(ofFilePublisher(options.fileContent.postFile))
+                        .header("Content-Type", options.contentType)
+                        .build();
+            case "PUT" ->
+                () -> newBuilder(options)
+                        .PUT(ofFilePublisher(options.fileContent.putFile))
+                        .header("Content-Type", options.contentType)
+                        .build();
+            case "HEAD" -> () -> newBuilder(options).HEAD().build();
+            case "DELETE" -> () -> newBuilder(options).DELETE().build();
+            default -> throw new IllegalArgumentException("Unsupported HTTP method: %s".formatted(effectiveMethod));
+        };
 
         return new AbSamplerProvider(httpClient, requestSupplier);
     }
