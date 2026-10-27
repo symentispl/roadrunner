@@ -37,7 +37,7 @@ Download pre-packaged releases from [GitHub Releases](https://github.com/symenti
 
 ### 3. Build from Source
 
-**Prerequisites:** [JDK 25](https://adoptium.net/temurin/releases/?version=25) and Maven Wrapper (included).
+**Prerequisites:** [JDK 27](https://adoptium.net/temurin/releases/?version=27) and Maven Wrapper (included).
 
 ```bash
 ./mvnw verify
@@ -80,7 +80,7 @@ For detailed configuration guides, parameter sources, sampler references, and re
 
 ## ⚠️ Platform Support & Status
 
-* **JDK Requirement:** Requires **JDK 25** (utilizing Java Virtual Threads and modern JVM features).
+* **JDK Requirement:** Requires **JDK 27** (utilizing Java Virtual Threads and modern JVM features).
 * **Platform Testing:** Roadrunner is primarily developed and tested on **Linux**.
 * **API Stability:** APIs are evolving as we move toward full release stability.
 
