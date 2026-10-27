@@ -69,8 +69,7 @@ final class QueueingSamplerResponsesJournal implements ResponsesJournal {
                 }
             }
             // Drain any events that arrived after the last poll before stopping
-            responses.drain(batch::add);
-            if (!batch.isEmpty()) {
+            while (responses.drain(batch::add) > 0) {
                 listener.onEvent(batch);
                 batch.clear();
             }

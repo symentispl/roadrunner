@@ -23,9 +23,16 @@ import io.roadrunner.api.events.EventListener;
 import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.measurments.EventReader;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 class QueueingSamplerResponsesJournalTest {
@@ -55,10 +62,91 @@ class QueueingSamplerResponsesJournalTest {
         assertThat(listener.responses).containsExactly(response1, response2, response3, response4, response5);
     }
 
+    @Test
+    void drainsEntireShutdownBacklogBeforeStopping() throws Exception {
+        int producerCount = 4;
+        int responsesPerProducer = 1500;
+        var firstBatchStarted = new CountDownLatch(1);
+        var allowFirstBatch = new CountDownLatch(1);
+        var stopCalled = new CountDownLatch(1);
+        var pauseFirstBatch = new AtomicBoolean(true);
+        var responseCountAtStop = new AtomicInteger(-1);
+        var listener = new CollectionEventListener() {
+            @Override
+            public void onEvent(Collection<? extends Event> batch) {
+                if (pauseFirstBatch.compareAndSet(true, false)) {
+                    firstBatchStarted.countDown();
+                    await(allowFirstBatch);
+                }
+                super.onEvent(batch);
+            }
+
+            @Override
+            public void onStop() {
+                responseCountAtStop.set(responses.size());
+                stopCalled.countDown();
+            }
+        };
+        var journal = new QueueingSamplerResponsesJournal(listener);
+        var initialResponse = new SamplerResponse.Response(0, 1);
+        Collection<Event> expectedResponses = new ConcurrentLinkedQueue<>();
+        expectedResponses.add(initialResponse);
+        var producers = Executors.newFixedThreadPool(producerCount);
+        var startProducers = new CountDownLatch(1);
+        try {
+            journal.response(initialResponse);
+            journal.start();
+            assertThat(firstBatchStarted.await(5, TimeUnit.SECONDS)).isTrue();
+            List<Future<?>> producerTasks = new ArrayList<>();
+            for (int producer = 0; producer < producerCount; producer++) {
+                int producerId = producer;
+                producerTasks.add(producers.submit(() -> {
+                    await(startProducers);
+                    for (int i = 0; i < responsesPerProducer; i++) {
+                        var response = new SamplerResponse.Response(producerId * responsesPerProducer + i + 1, 1);
+                        expectedResponses.add(response);
+                        journal.response(response);
+                    }
+                }));
+            }
+            startProducers.countDown();
+            producers.shutdown();
+            assertThat(producers.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+            for (Future<?> task : producerTasks) {
+                task.get();
+            }
+
+            var closer = Thread.ofPlatform().start(journal::close);
+            await().atMost(Duration.ofSeconds(5)).until(() -> closer.getState() == Thread.State.TIMED_WAITING);
+            allowFirstBatch.countDown();
+            closer.join(TimeUnit.SECONDS.toMillis(5));
+
+            assertThat(closer.isAlive()).isFalse();
+            assertThat(stopCalled.getCount()).isZero();
+            assertThat(responseCountAtStop).hasValue(1 + producerCount * responsesPerProducer);
+            assertThat(listener.responses).hasSize(1 + producerCount * responsesPerProducer);
+            assertThat(listener.responses).containsExactlyInAnyOrderElementsOf(expectedResponses);
+        } finally {
+            allowFirstBatch.countDown();
+            startProducers.countDown();
+            producers.shutdownNow();
+            journal.close();
+        }
+    }
+
+    private static void await(CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
     private static class CollectionEventListener implements EventListener {
 
         // Using thread-safe collection since events might be added from different threads
-        List<Event> responses = new CopyOnWriteArrayList<>();
+        Collection<Event> responses = new ConcurrentLinkedQueue<>();
 
         @Override
         public void onStart() {}
