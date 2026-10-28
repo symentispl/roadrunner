@@ -17,9 +17,9 @@ package io.roadrunner.reports;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiPredicate;
 
 /**
  * Result of comparing baseline and current {@link RunManifest} instances to determine whether two
@@ -36,18 +36,26 @@ public record Comparability(boolean isComparable, List<String> mismatches) {
 
     private static final Comparability COMPATIBLE = new Comparability(true, List.of());
 
-    private static final PropertyComparison<String> SAMPLER = PropertyComparison.quoted("Sampler");
-    private static final PropertyComparison<java.util.Map<String, String>> SAMPLER_OPTIONS =
-            PropertyComparison.of("Sampler options");
-    private static final PropertyComparison<String> LOAD_MODEL = PropertyComparison.quoted("Load model");
-    private static final PropertyComparison<String> LOAD_CONCURRENCY = PropertyComparison.quoted("Load concurrency");
-    private static final PropertyComparison<String> LOAD_REQUESTS = PropertyComparison.quoted("Load requests");
-    private static final PropertyComparison<String> LOAD_RATE = PropertyComparison.quoted("Load rate");
-    private static final PropertyComparison<String> LOAD_DURATION = PropertyComparison.quoted("Load duration");
-    private static final PropertyComparison<String> PAUSE_DETECTORS = PropertyComparison.of(
-            "Pause detectors",
-            Comparability::formatPauseDetectors,
-            (b, c) -> Objects.equals(normalizePauseDetectors(b), normalizePauseDetectors(c)));
+    private static final BiPredicate<RunManifest, RunManifest> SAME_CLOSED_MODEL =
+            (b, c) -> Objects.equals(b.loadModel(), c.loadModel()) && "closed".equalsIgnoreCase(b.loadModel());
+    private static final BiPredicate<RunManifest, RunManifest> SAME_OPEN_MODEL =
+            (b, c) -> Objects.equals(b.loadModel(), c.loadModel()) && "open".equalsIgnoreCase(b.loadModel());
+
+    private static final List<RunManifestComparison> COMPARISONS = List.of(
+            RunManifestComparison.quoted("Sampler", RunManifest::sampler),
+            RunManifestComparison.of("Sampler options", RunManifest::samplerOptions),
+            RunManifestComparison.quoted("Load model", RunManifest::loadModel),
+            RunManifestComparison.quoted("Load concurrency", RunManifest::loadConcurrency)
+                    .onlyIf(SAME_CLOSED_MODEL),
+            RunManifestComparison.quoted("Load requests", RunManifest::loadRequests).onlyIf(SAME_CLOSED_MODEL),
+            RunManifestComparison.quoted("Load rate", RunManifest::loadRate).onlyIf(SAME_OPEN_MODEL),
+            RunManifestComparison.quoted("Load duration", RunManifest::loadDuration)
+                    .onlyIf(SAME_OPEN_MODEL),
+            RunManifestComparison.of(
+                    "Pause detectors",
+                    RunManifest::pauseDetectors,
+                    Comparability::formatPauseDetectors,
+                    (b, c) -> Objects.equals(normalizePauseDetectors(b), normalizePauseDetectors(c))));
 
     public Comparability {
         requireNonNull(mismatches, "mismatches cannot be null");
@@ -83,33 +91,9 @@ public record Comparability(boolean isComparable, List<String> mismatches) {
             return incompatible(List.of("Current run manifest is missing"));
         }
 
-        var mismatches = new ArrayList<String>();
-
-        SAMPLER.compare(baseline.sampler(), current.sampler()).ifPresent(mismatches::add);
-        SAMPLER_OPTIONS
-                .compare(baseline.samplerOptions(), current.samplerOptions())
-                .ifPresent(mismatches::add);
-
-        var loadModelMismatch = LOAD_MODEL.compare(baseline.loadModel(), current.loadModel());
-        if (loadModelMismatch.isPresent()) {
-            mismatches.add(loadModelMismatch.get());
-        } else if ("closed".equalsIgnoreCase(baseline.loadModel())) {
-            LOAD_CONCURRENCY
-                    .compare(baseline.loadConcurrency(), current.loadConcurrency())
-                    .ifPresent(mismatches::add);
-            LOAD_REQUESTS
-                    .compare(baseline.loadRequests(), current.loadRequests())
-                    .ifPresent(mismatches::add);
-        } else if ("open".equalsIgnoreCase(baseline.loadModel())) {
-            LOAD_RATE.compare(baseline.loadRate(), current.loadRate()).ifPresent(mismatches::add);
-            LOAD_DURATION
-                    .compare(baseline.loadDuration(), current.loadDuration())
-                    .ifPresent(mismatches::add);
-        }
-
-        PAUSE_DETECTORS
-                .compare(baseline.pauseDetectors(), current.pauseDetectors())
-                .ifPresent(mismatches::add);
+        var mismatches = COMPARISONS.stream()
+                .flatMap(comparison -> comparison.compare(baseline, current).stream())
+                .toList();
 
         if (mismatches.isEmpty()) {
             return compatible();
