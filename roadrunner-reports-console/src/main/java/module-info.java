@@ -19,6 +19,7 @@ import io.roadrunner.reports.console.ConsoleReportGeneratorProvider;
 module io.roadrunner.reports.console {
     requires io.roadrunner.reports;
     requires io.roadrunner.console;
+    requires org.apache.commons.text;
 
     exports io.roadrunner.reports.console;
 

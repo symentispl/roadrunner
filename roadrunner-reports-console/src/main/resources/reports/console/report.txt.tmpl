@@ -1,0 +1,25 @@
+==============================================================================
+  Roadrunner report
+  sampler ${sampler} | started ${startedAt} | roadrunner ${version}
+==============================================================================
+${configuration}  requests    ${requests}
+  error rate  ${errorRate}
+  throughput  ${throughput}
+  p50         ${p50}
+  p99         ${p99}
+  duration    ${duration}
+
+  Latency by percentile
+${percentileRows}
+
+  Latency over time (ms; bar is p99)
+  seconds     p50     p90     p99
+${latencyRows}
+
+  Throughput over time (requests/s)
+  seconds requests/s
+${throughputRows}
+
+  Status
+${statusRows}
+==============================================================================
