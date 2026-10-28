@@ -17,4 +17,5 @@ module io.roadrunner.samplers.spi {
     requires io.roadrunner.api;
 
     exports io.roadrunner.samplers.spi;
+    exports io.roadrunner.samplers.spi.cli;
 }

@@ -16,35 +16,33 @@
 package io.roadrunner.samplers.jdbc;
 
 import io.roadrunner.samplers.spi.SamplerOptions;
+import io.roadrunner.samplers.spi.cli.SamplerOption;
+import io.roadrunner.samplers.spi.cli.SamplerParameter;
 import java.nio.file.Path;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 
-@Command(description = "JDBC protocol, executes a SQL query against a database", mixinStandardHelpOptions = true)
 public class JDBCSamplerOptions implements SamplerOptions<JDBCSamplerProvider> {
 
-    @Parameters(
+    @SamplerParameter(
             paramLabel = "expression",
             description = "The operation to run on each request, e.g. query(\"SELECT 1\")")
     public String expression;
 
-    @Option(names = "--url", description = "JDBC URL (e.g. jdbc:postgresql://localhost/mydb)", required = true)
+    @SamplerOption(names = "--url", description = "JDBC URL (e.g. jdbc:postgresql://localhost/mydb)", required = true)
     public String url;
 
-    @Option(names = "--username", description = "Database username", required = true)
+    @SamplerOption(names = "--username", description = "Database username", required = true)
     public String username;
 
-    @Option(names = "--password", description = "Database password", required = true)
+    @SamplerOption(names = "--password", description = "Database password", required = true)
     public String password;
 
-    @Option(names = "--driver", description = "Path to JDBC driver JAR file", required = true)
+    @SamplerOption(names = "--driver", description = "Path to JDBC driver JAR file", required = true)
     public Path driverPath;
 
-    @Option(names = "--driver-class", description = "Fully-qualified JDBC driver class name (auto-detected if omitted)")
+    @SamplerOption(names = "--driver-class", description = "Fully-qualified JDBC driver class name (auto-detected if omitted)")
     public String driverClass;
 
-    @Option(names = "--pool-size", description = "Maximum connection pool size (default: ${DEFAULT-VALUE})")
+    @SamplerOption(names = "--pool-size", description = "Maximum connection pool size (default: ${DEFAULT-VALUE})")
     public int poolSize = 10;
 
     private final JDBCSamplerPlugin samplerPlugin;
@@ -56,5 +54,10 @@ public class JDBCSamplerOptions implements SamplerOptions<JDBCSamplerProvider> {
     @Override
     public JDBCSamplerProvider samplerProvider() {
         return samplerPlugin.newSamplerProvider(this);
+    }
+
+    @Override
+    public String commandDescription() {
+        return "JDBC protocol, executes a SQL query against a database";
     }
 }

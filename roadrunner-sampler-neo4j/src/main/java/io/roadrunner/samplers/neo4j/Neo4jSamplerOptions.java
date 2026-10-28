@@ -16,25 +16,23 @@
 package io.roadrunner.samplers.neo4j;
 
 import io.roadrunner.samplers.spi.SamplerOptions;
+import io.roadrunner.samplers.spi.cli.SamplerOption;
+import io.roadrunner.samplers.spi.cli.SamplerParameter;
 import java.net.URI;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 
-@Command(description = "Neo4j sampler")
 public class Neo4jSamplerOptions implements SamplerOptions<Neo4jSamplerProvider> {
-    @Parameters(
+    @SamplerParameter(
             paramLabel = "expression",
             description = "The operation to run on each request, e.g. query(\"RETURN 1\")")
     public String expression;
 
-    @Option(names = "--uri", description = "Neo4j connection URI (e.g. neo4j://localhost:7687)", required = true)
+    @SamplerOption(names = "--uri", description = "Neo4j connection URI (e.g. neo4j://localhost:7687)", required = true)
     public URI uri;
 
-    @Option(names = "--username", description = "Neo4j database username", required = true)
+    @SamplerOption(names = "--username", description = "Neo4j database username", required = true)
     public String username;
 
-    @Option(names = "--password", description = "Neo4j database password", required = true)
+    @SamplerOption(names = "--password", description = "Neo4j database password", required = true)
     public String password;
 
     private final Neo4jSamplerPlugin neo4jSamplerPlugin;
@@ -46,5 +44,10 @@ public class Neo4jSamplerOptions implements SamplerOptions<Neo4jSamplerProvider>
     @Override
     public Neo4jSamplerProvider samplerProvider() {
         return neo4jSamplerPlugin.newSamplerProvider(this);
+    }
+
+    @Override
+    public String commandDescription() {
+        return "Neo4j sampler";
     }
 }

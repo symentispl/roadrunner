@@ -19,7 +19,6 @@ import io.roadrunner.samplers.spi.SamplerPlugin;
 module io.roadrunner.samplers.http {
     requires io.roadrunner.api;
     requires io.roadrunner.samplers.spi;
-    requires info.picocli;
     requires java.net.http;
     requires org.apache.commons.text;
 
@@ -29,5 +28,5 @@ module io.roadrunner.samplers.http {
             HttpSamplerPlugin;
 
     opens io.roadrunner.samplers.http to
-            info.picocli;
+            io.roadrunner.cli;
 }

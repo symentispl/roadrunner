@@ -15,10 +15,10 @@
  */
 package io.roadrunner.samplers.http;
 
+import io.roadrunner.samplers.spi.cli.OptionConverter;
 import java.net.InetSocketAddress;
-import picocli.CommandLine;
 
-public class InetSocketAddressConverter implements CommandLine.ITypeConverter<InetSocketAddress> {
+public class InetSocketAddressConverter implements OptionConverter<InetSocketAddress> {
     @Override
     public InetSocketAddress convert(String value) throws Exception {
         int indexOf = value.lastIndexOf(":");

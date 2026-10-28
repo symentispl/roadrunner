@@ -16,54 +16,52 @@
 package io.roadrunner.samplers.ab;
 
 import io.roadrunner.samplers.spi.SamplerOptions;
+import io.roadrunner.samplers.spi.cli.OptionConverter;
+import io.roadrunner.samplers.spi.cli.SamplerOption;
+import io.roadrunner.samplers.spi.cli.SamplerOptionGroup;
+import io.roadrunner.samplers.spi.cli.SamplerParameter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.file.Path;
-import picocli.CommandLine;
-import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 
-@Command(description = "Apache HTTP server benchmarking tool implementation")
 public class AbSamplerOptions implements SamplerOptions<AbSamplerProvider> {
-    @Parameters(paramLabel = "url", description = "HTTP server URL")
+    @SamplerParameter(paramLabel = "url", description = "HTTP server URL")
     public URI uri;
 
-    @Option(names = "-m", description = "HTTP method (default: GET)", defaultValue = "GET")
+    @SamplerOption(names = "-m", description = "HTTP method (default: GET)", defaultValue = "GET")
     public String method = "GET";
 
-    @ArgGroup
+    @SamplerOptionGroup
     public FileContent fileContent;
 
     public static class FileContent {
-        @Option(names = "-p", description = "File containing data to POST")
+        @SamplerOption(names = "-p", description = "File containing data to POST")
         public Path postFile;
 
-        @Option(names = "-u", description = "File containing data to PUT")
+        @SamplerOption(names = "-u", description = "File containing data to PUT")
         public Path putFile;
     }
 
-    @Option(names = "-T", description = "Content-type header for POST/PUT data", defaultValue = "text/plain")
+    @SamplerOption(names = "-T", description = "Content-type header for POST/PUT data", defaultValue = "text/plain")
     public String contentType = "text/plain";
 
-    @Option(names = "-s", description = "Maximum seconds to wait for each response (default: 30)", defaultValue = "30")
+    @SamplerOption(names = "-s", description = "Maximum seconds to wait for each response (default: 30)", defaultValue = "30")
     public int timeout = 30;
 
-    @Option(names = "-i", description = "Use HEAD instead of GET", defaultValue = "false")
+    @SamplerOption(names = "-i", description = "Use HEAD instead of GET", defaultValue = "false")
     public boolean useHEAD = false;
 
-    @Option(names = "-H", description = "Add a custom HTTP header, e.g. 'Accept-Encoding: gzip' (can be repeated)")
+    @SamplerOption(names = "-H", description = "Add a custom HTTP header, e.g. 'Accept-Encoding: gzip' (can be repeated)")
     public String[] headers;
 
-    @Option(
+    @SamplerOption(
             names = "-X",
             description = "Send requests through this proxy server, in host:port format",
             converter = InetSocketAddressConverter.class)
     public InetSocketAddress proxyServer;
 
-    @Option(
+    @SamplerOption(
             names = "-B",
             description = "Local network address to send requests from (rarely needed)",
             converter = InetAddressConverter.class)
@@ -80,7 +78,12 @@ public class AbSamplerOptions implements SamplerOptions<AbSamplerProvider> {
         return abSamplerPlugin.newSamplerProvider(this);
     }
 
-    public static class InetSocketAddressConverter implements CommandLine.ITypeConverter<InetSocketAddress> {
+    @Override
+    public String commandDescription() {
+        return "Apache HTTP server benchmarking tool implementation";
+    }
+
+    public static class InetSocketAddressConverter implements OptionConverter<InetSocketAddress> {
         @Override
         public InetSocketAddress convert(String s) {
             var strings = s.split(":");
@@ -93,7 +96,7 @@ public class AbSamplerOptions implements SamplerOptions<AbSamplerProvider> {
         }
     }
 
-    public static class InetAddressConverter implements CommandLine.ITypeConverter<InetAddress> {
+    public static class InetAddressConverter implements OptionConverter<InetAddress> {
         @Override
         public InetAddress convert(String s) throws Exception {
             return InetAddress.getByName(s);

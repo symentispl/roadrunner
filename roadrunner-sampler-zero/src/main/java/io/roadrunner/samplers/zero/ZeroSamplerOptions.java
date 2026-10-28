@@ -16,9 +16,7 @@
 package io.roadrunner.samplers.zero;
 
 import io.roadrunner.samplers.spi.SamplerOptions;
-import picocli.CommandLine.Command;
 
-@Command(description = "Zero sampler")
 public class ZeroSamplerOptions implements SamplerOptions<ZeroSamplerProvider> {
     private final ZeroSamplerPlugin zeroSamplerPlugin;
 
@@ -29,5 +27,10 @@ public class ZeroSamplerOptions implements SamplerOptions<ZeroSamplerProvider> {
     @Override
     public ZeroSamplerProvider samplerProvider() {
         return zeroSamplerPlugin.newSamplerProvider(this);
+    }
+
+    @Override
+    public String commandDescription() {
+        return "Zero sampler";
     }
 }
