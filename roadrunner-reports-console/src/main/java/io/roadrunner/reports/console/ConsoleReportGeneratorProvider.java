@@ -27,6 +27,6 @@ public class ConsoleReportGeneratorProvider implements ReportGeneratorProvider {
 
     @Override
     public ReportGenerator create(Map<String, String> properties) {
-        return new ConsoleReportGenerator();
+        return new ConsoleReportGenerator(properties);
     }
 }
