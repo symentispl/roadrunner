@@ -59,11 +59,14 @@ public class HtmlReportGenerator implements ReportGenerator {
         var indexHtml = outputDir.resolve("index.html");
         Files.createDirectories(outputDir);
 
-        var html = new StringSubstitutor(values(model, manifest()))
-                .replace(resource(TEMPLATE))
-                // String.replace is literal, unlike the substitutor: the library may contain "${".
-                .replace("/*CHARTJS*/", resource(CHARTJS).replace("</script", "<\\/script"))
-                .replace("/*DATA*/", data(model));
+        var values = values(model, manifest());
+        values.put("chartjs", resource(CHARTJS).replace("</script", "<\\/script"));
+        values.put("data", data(model));
+        // One pass, and no substitution inside values: run data (status codes, sampler options) and the
+        // Chart.js source may legitimately contain "${...}", which must come out literally.
+        var substitutor = new StringSubstitutor(values);
+        substitutor.setDisableSubstitutionInValues(true);
+        var html = substitutor.replace(resource(TEMPLATE));
         Files.writeString(indexHtml, html);
 
         out.printf("Roadrunner HTML report at %s%n", indexHtml);
@@ -137,7 +140,8 @@ public class HtmlReportGenerator implements ReportGenerator {
             return "<tr><td colspan=\"2\">no status recorded</td></tr>";
         }
         return model.statusBreakdown().entrySet().stream()
-                .map(e -> "<tr><td>%s</td><td class=\"num\">%,d</td></tr>".formatted(escape(e.getKey()), e.getValue()))
+                .map(e -> String.format(
+                        Locale.ROOT, "<tr><td>%s</td><td class=\"num\">%,d</td></tr>", escape(e.getKey()), e.getValue()))
                 .collect(Collectors.joining());
     }
 
@@ -161,8 +165,13 @@ public class HtmlReportGenerator implements ReportGenerator {
                 array(latency.p99()),
                 array(rate),
                 // x is 1/(1-p): 50% -> 2, 90% -> 10, 99% -> 100, 99.9% -> 1000.
-                "[{\"x\":2,\"y\":%d},{\"x\":10,\"y\":%d},{\"x\":100,\"y\":%d},{\"x\":1000,\"y\":%d}]"
-                        .formatted(model.p50(), model.p90(), model.p99(), model.p999()));
+String.format(
+                        Locale.ROOT,
+                        "[{\"x\":2,\"y\":%d},{\"x\":10,\"y\":%d},{\"x\":100,\"y\":%d},{\"x\":1000,\"y\":%d}]",
+                        model.p50(),
+                        model.p90(),
+                        model.p99(),
+                        model.p999()));
     }
 
     private static String array(double[] values) {

@@ -125,6 +125,50 @@ class HtmlReportGeneratorTest {
     }
 
     @Test
+    void literalPlaceholderTextInRunDataIsRenderedVerbatim(@TempDir Path tempDir) throws Exception {
+        manifest("${statusRows}", Map.of("request", "${sampler} /*DATA*/"), "open").writeTo(tempDir);
+
+        var html = generate(tempDir, synthetic(10, Map.of("${statusRows}", 3L, "/*DATA*/", 7L)));
+
+        assertThat(html)
+                .contains("<td>${statusRows}</td>", "<td>/*DATA*/</td>")
+                .contains("<dd>${sampler} /*DATA*/</dd>");
+    }
+
+    @Test
+    void numbersAreLocaleIndependent(@TempDir Path tempDir) throws Exception {
+        var previous = java.util.Locale.getDefault();
+        java.util.Locale.setDefault(java.util.Locale.forLanguageTag("ar-EG"));
+        try {
+            var html = generate(tempDir, synthetic(1_234, Map.of("200", 1_234L)));
+
+            assertThat(html).contains("{\"x\":2,\"y\":5}", "<td class=\"num\">1,234</td>");
+            assertThat(html.chars().filter(c -> Character.isDigit(c) && c > '9').count())
+                    .isZero();
+        } finally {
+            java.util.Locale.setDefault(previous);
+        }
+    }
+
+    @Test
+    void openWorldManifestShowsRateAndDuration(@TempDir Path tempDir) throws Exception {
+        manifest("http", Map.of(), "open").writeTo(tempDir);
+
+        var html = generate(tempDir, modelFromFixture());
+
+        assertThat(html).contains("<dt>model</dt><dd>open</dd>", "<dt>rate</dt><dd>50</dd>", "<dt>duration</dt><dd>PT1M</dd>")
+                .doesNotContain("<dt>concurrency</dt>");
+    }
+
+    @Test
+    void withoutManifestTheHeaderIsUnknownAndThereIsNoConfiguration(@TempDir Path tempDir) throws Exception {
+        var html = generate(tempDir, synthetic(10, Map.of()));
+
+        assertThat(html).contains("sampler <b>unknown</b>").doesNotContain("class=\"config\"");
+        assertThat(html).contains("no status recorded");
+    }
+
+    @Test
     void sizeDoesNotDependOnTheNumberOfRequests(@TempDir Path tempDir) throws Exception {
         var small = generate(tempDir.resolve("small"), synthetic(2_000));
         var huge = generate(tempDir.resolve("huge"), synthetic(1_000_000));
@@ -138,13 +182,24 @@ class HtmlReportGeneratorTest {
         return Files.readString(dir.resolve("index.html"));
     }
 
+    private static RunManifest manifest(String sampler, Map<String, String> options, String loadModel) {
+        var open = "open".equals(loadModel);
+        return new RunManifest(
+                "1.2.3", "2026-10-28T10:00:00Z", sampler, options, loadModel, open ? "" : "5", open ? "" : "100",
+                open ? "50" : "", open ? "PT1M" : "", "", "", "27", "", "Linux", "6.17", "amd64", "8", "1024");
+    }
+
     private static ReportModel synthetic(long total) {
+        return synthetic(total, Map.of("200", total));
+    }
+
+    private static ReportModel synthetic(long total, Map<String, Long> status) {
         var slices = 30;
         var flat = new long[slices];
         java.util.Arrays.fill(flat, total / slices);
         return new ReportModel(
                 total, total, 0, 60, total / 60.0, 0, 1, 5, 900, 5, 20, 80, 400,
-                new long[20], flat, flat, Map.of("200", total), new LatencyOverTime(flat, flat, flat));
+                new long[20], flat, flat, status, new LatencyOverTime(flat, flat, flat));
     }
 
     private static ReportModel modelFromFixture() {
