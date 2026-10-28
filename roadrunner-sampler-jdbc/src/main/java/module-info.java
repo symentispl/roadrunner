@@ -20,7 +20,6 @@ module io.roadrunner.samplers.jdbc {
     requires java.sql;
     requires io.roadrunner.api;
     requires io.roadrunner.samplers.spi;
-    requires info.picocli;
     requires com.zaxxer.hikari;
     requires org.slf4j;
     requires io.roadrunner.logging;
@@ -33,5 +32,5 @@ module io.roadrunner.samplers.jdbc {
             JDBCSamplerPlugin;
 
     opens io.roadrunner.samplers.jdbc to
-            info.picocli;
+            io.roadrunner.cli;
 }

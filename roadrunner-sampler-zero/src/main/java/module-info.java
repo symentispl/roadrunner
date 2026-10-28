@@ -19,7 +19,6 @@ import io.roadrunner.samplers.zero.ZeroSamplerPlugin;
 module io.roadrunner.samplers.zero {
     requires io.roadrunner.api;
     requires io.roadrunner.samplers.spi;
-    requires info.picocli;
 
     exports io.roadrunner.samplers.zero;
 
@@ -27,5 +26,5 @@ module io.roadrunner.samplers.zero {
             ZeroSamplerPlugin;
 
     opens io.roadrunner.samplers.zero to
-            info.picocli;
+            io.roadrunner.cli;
 }

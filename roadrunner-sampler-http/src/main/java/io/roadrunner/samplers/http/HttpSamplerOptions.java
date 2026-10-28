@@ -16,36 +16,34 @@
 package io.roadrunner.samplers.http;
 
 import io.roadrunner.samplers.spi.SamplerOptions;
+import io.roadrunner.samplers.spi.cli.SamplerOption;
+import io.roadrunner.samplers.spi.cli.SamplerParameter;
 import java.net.InetSocketAddress;
 import java.net.http.HttpClient;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 
-@Command(description = "HTTP protocol, executes a HTTP request", mixinStandardHelpOptions = true)
 public class HttpSamplerOptions implements SamplerOptions<HttpSamplerProvider> {
 
-    @Parameters(
+    @SamplerParameter(
             paramLabel = "expression",
             description = "The operation to run on each request, e.g. GET(\"http://localhost:8080/\")")
     public String expression;
 
-    @Option(names = "--connect-timeout", description = "Connection timeout in milliseconds (default: ${DEFAULT-VALUE})")
+    @SamplerOption(names = "--connect-timeout", description = "Connection timeout in milliseconds (default: ${DEFAULT-VALUE})")
     public long connectTimeoutMillis = 10_000;
 
-    @Option(
+    @SamplerOption(
             names = "--request-timeout",
             description = "Timeout in milliseconds for a full request/response exchange, "
                     + "independent of --connect-timeout (default: ${DEFAULT-VALUE})")
     public long requestTimeoutMillis = 10_000;
 
-    @Option(
+    @SamplerOption(
             names = "--follow-redirects",
             description =
                     "Specifies whether requests will automatically follow redirects issued by the server. (default: ${DEFAULT-VALUE})")
     public HttpClient.Redirect followRedirects = HttpClient.Redirect.NEVER;
 
-    @Option(
+    @SamplerOption(
             names = "--proxy-address",
             description = "Specifies whether requests will user given proxy address",
             converter = InetSocketAddressConverter.class)
@@ -60,5 +58,10 @@ public class HttpSamplerOptions implements SamplerOptions<HttpSamplerProvider> {
     @Override
     public HttpSamplerProvider samplerProvider() {
         return samplerPlugin.newSamplerProvider(this);
+    }
+
+    @Override
+    public String commandDescription() {
+        return "HTTP protocol, executes a HTTP request";
     }
 }

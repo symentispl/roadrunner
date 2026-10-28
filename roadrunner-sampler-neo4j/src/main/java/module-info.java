@@ -19,7 +19,6 @@ import io.roadrunner.samplers.spi.SamplerPlugin;
 module io.roadrunner.samplers.neo4j {
     requires io.roadrunner.api;
     requires io.roadrunner.samplers.spi;
-    requires info.picocli;
     requires org.neo4j.driver;
 
     exports io.roadrunner.samplers.neo4j;
@@ -28,5 +27,5 @@ module io.roadrunner.samplers.neo4j {
             Neo4jSamplerPlugin;
 
     opens io.roadrunner.samplers.neo4j to
-            info.picocli;
+            io.roadrunner.cli;
 }

@@ -133,7 +133,10 @@ for the shared expression syntax.
 
 However you build the provider, expose it with CLI options and register it for discovery:
 
-* Annotate it (or its plugin entry point) with `@Command` (picocli) to declare CLI options.
+* Declare CLI options on the fields of your `SamplerOptions` class with `@SamplerOption`, `@SamplerParameter`
+and `@SamplerOptionGroup` (from `io.roadrunner.samplers.spi.cli`), and describe the sampler by overriding
+`commandDescription()`. A field's initial value is the option's default. Use `OptionConverter` for custom
+value types. The package holding the options class has to be opened to `io.roadrunner.cli` in `module-info.java`.
 * Register the implementation via `META-INF/services/io.roadrunner.api.samplers.SamplerProvider`
 or a `module-info.java` `provides io.roadrunner.api.samplers.SamplerProvider with ...` directive.
 

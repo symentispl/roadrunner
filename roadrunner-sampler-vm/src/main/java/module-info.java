@@ -19,11 +19,10 @@ import io.roadrunner.samplers.vm.VmSamplerPlugin;
 module io.roadrunner.samplers.vm {
     requires io.roadrunner.api;
     requires io.roadrunner.samplers.spi;
-    requires info.picocli;
 
     provides SamplerPlugin with
             VmSamplerPlugin;
 
     opens io.roadrunner.samplers.vm to
-            info.picocli;
+            io.roadrunner.cli;
 }

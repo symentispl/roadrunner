@@ -18,8 +18,18 @@ package io.roadrunner.samplers.spi;
 import io.roadrunner.api.samplers.SamplerProvider;
 
 /**
- * Marker interface for sampler options.
+ * Options of a sampler, filled in from the command line.
+ * <p>
+ * Options are declared with {@link io.roadrunner.samplers.spi.cli.SamplerOption},
+ * {@link io.roadrunner.samplers.spi.cli.SamplerParameter} and
+ * {@link io.roadrunner.samplers.spi.cli.SamplerOptionGroup} on the fields of the implementing class, which keeps
+ * samplers independent of the command line library used to parse them.
  */
 public interface SamplerOptions<T extends SamplerProvider> {
     T samplerProvider();
+
+    /** Description of the sampler shown in its usage. */
+    default String commandDescription() {
+        return "";
+    }
 }

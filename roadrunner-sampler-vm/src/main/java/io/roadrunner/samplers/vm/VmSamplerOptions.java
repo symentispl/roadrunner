@@ -15,15 +15,11 @@
  */
 package io.roadrunner.samplers.vm;
 
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
+import io.roadrunner.samplers.spi.cli.SamplerOption;
 
-@Command(
-        description = "Runs in-process with no real work per request; use it to measure roadrunner's own overhead",
-        mixinStandardHelpOptions = true)
 public class VmSamplerOptions implements io.roadrunner.samplers.spi.SamplerOptions<VmSamplerProvider> {
 
-    @Option(names = "--sleep-time", description = "Time to wait per request, in milliseconds", required = true)
+    @SamplerOption(names = "--sleep-time", description = "Time to wait per request, in milliseconds", required = true)
     long sleepTime;
 
     private final VmSamplerPlugin vmSamplerPlugin;
@@ -35,5 +31,10 @@ public class VmSamplerOptions implements io.roadrunner.samplers.spi.SamplerOptio
     @Override
     public VmSamplerProvider samplerProvider() {
         return vmSamplerPlugin.newSamplerProvider(this);
+    }
+
+    @Override
+    public String commandDescription() {
+        return "Runs in-process with no real work per request; use it to measure roadrunner's own overhead";
     }
 }

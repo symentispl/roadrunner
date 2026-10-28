@@ -20,7 +20,6 @@ module io.roadrunner.samplers.ab {
     requires java.net.http;
     requires io.roadrunner.api;
     requires io.roadrunner.samplers.spi;
-    requires info.picocli;
 
     exports io.roadrunner.samplers.ab;
 
@@ -28,5 +27,5 @@ module io.roadrunner.samplers.ab {
             AbSamplerPlugin;
 
     opens io.roadrunner.samplers.ab to
-            info.picocli;
+            io.roadrunner.cli;
 }
