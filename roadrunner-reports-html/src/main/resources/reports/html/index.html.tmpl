@@ -32,6 +32,10 @@ main { max-width:1100px; margin:0 auto; }
 h1 { font-size:20px; margin:0 0 4px; }
 h2 { font-size:14px; margin:0 0 8px; color:var(--muted); font-weight:600; }
 .meta { color:var(--muted); margin-bottom:16px; }
+.config { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px; margin-bottom:16px; }
+dl { margin:0; display:grid; grid-template-columns:max-content 1fr; gap:2px 12px; }
+dt { color:var(--muted); }
+dd { margin:0; overflow-wrap:anywhere; font-family:ui-monospace, monospace; font-size:13px; }
 .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; margin-bottom:16px; }
 .tile, .panel { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:12px; }
 .tile b { display:block; font-size:22px; }
@@ -47,7 +51,8 @@ td { padding:4px 8px; border-top:1px solid var(--line); }
 <body>
 <main>
 <h1>Roadrunner report</h1>
-<div class="meta">sampler <b>${sampler}</b> · load ${load} · started ${startedAt} · roadrunner ${version}</div>
+<div class="meta">sampler <b>${sampler}</b> · started ${startedAt} · roadrunner ${version}</div>
+${configuration}
 <section class="tiles">
 <div class="tile"><b>${requests}</b><span>requests</span></div>
 <div class="tile"><b>${errorRate}</b><span>error rate</span></div>

@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -81,7 +82,7 @@ public class HtmlReportGenerator implements ReportGenerator {
     private static Map<String, String> values(ReportModel model, RunManifest manifest) {
         var values = new HashMap<String, String>();
         values.put("sampler", escape(manifest == null ? UNKNOWN : manifest.sampler()));
-        values.put("load", escape(manifest == null ? UNKNOWN : load(manifest)));
+        values.put("configuration", manifest == null ? "" : configuration(manifest));
         values.put("startedAt", escape(manifest == null ? UNKNOWN : manifest.startedAt()));
         values.put("version", escape(manifest == null ? UNKNOWN : manifest.roadrunnerVersion()));
         values.put("requests", String.format(Locale.ROOT, "%,d", model.total()));
@@ -94,11 +95,41 @@ public class HtmlReportGenerator implements ReportGenerator {
         return values;
     }
 
-    private static String load(RunManifest manifest) {
-        return "closed".equals(manifest.loadModel())
-                ? "closed, %s users, %s requests".formatted(manifest.loadConcurrency(), manifest.loadRequests())
-                : "%s, rate %s, duration %s"
-                        .formatted(manifest.loadModel(), manifest.loadRate(), manifest.loadDuration());
+    /** What the run was: sampler and its options, load model, environment. Empty fields are left out. */
+    private static String configuration(RunManifest m) {
+        var sampler = new LinkedHashMap<String, String>();
+        sampler.put("sampler", m.sampler());
+        sampler.putAll(m.samplerOptions());
+        sampler.put("parameters source", m.parametersSource());
+
+        var load = new LinkedHashMap<String, String>();
+        load.put("model", m.loadModel());
+        load.put("concurrency", m.loadConcurrency());
+        load.put("requests", m.loadRequests());
+        load.put("rate", m.loadRate());
+        load.put("duration", m.loadDuration());
+        load.put("pause detectors", m.pauseDetectors());
+
+        var environment = new LinkedHashMap<String, String>();
+        environment.put("java", m.jvmVersion());
+        environment.put("jvm args", m.jvmArgs());
+        environment.put("os", "%s %s (%s)".formatted(m.osName(), m.osVersion(), m.osArch()));
+        environment.put("cpus", m.hardwareCpus());
+        environment.put("memory", m.hardwareMemory());
+
+        return "<section class=\"config\">"
+                + panel("Sampler", sampler)
+                + panel("Load model", load)
+                + panel("Environment", environment)
+                + "</section>";
+    }
+
+    private static String panel(String title, Map<String, String> fields) {
+        var rows = fields.entrySet().stream()
+                .filter(e -> e.getValue() != null && !e.getValue().isBlank())
+                .map(e -> "<dt>%s</dt><dd>%s</dd>".formatted(escape(e.getKey()), escape(e.getValue())))
+                .collect(Collectors.joining());
+        return "<div class=\"panel\"><h2>%s</h2><dl>%s</dl></div>".formatted(escape(title), rows);
     }
 
     private static String statusRows(ReportModel model) {

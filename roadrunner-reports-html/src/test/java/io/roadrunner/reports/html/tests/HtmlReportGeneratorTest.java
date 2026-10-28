@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.roadrunner.output.csv.CsvOutputEventReader;
 import io.roadrunner.reports.LatencyOverTime;
 import io.roadrunner.reports.ReportModel;
+import io.roadrunner.reports.RunManifest;
 import io.roadrunner.reports.html.HtmlReportGenerator;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -87,6 +88,40 @@ class HtmlReportGeneratorTest {
             assertThat(data.getMember("p99").getArrayElement(slices - 1).asLong())
                     .isEqualTo(model.latencyOverTime().p99()[slices - 1]);
         }
+    }
+
+    @Test
+    void showsSamplerAndLoadModelConfigurationFromTheManifest(@TempDir Path tempDir) throws Exception {
+        new RunManifest(
+                        "1.2.3",
+                        "2026-10-28T10:00:00Z",
+                        "http",
+                        Map.of("--timeout", "5s", "request", "GET(\"https://example.com/?a=1&b=<2>\")"),
+                        "closed",
+                        "5",
+                        "100",
+                        "",
+                        "",
+                        "vt,jvm",
+                        "",
+                        "27",
+                        "-Xmx1g",
+                        "Linux",
+                        "6.17",
+                        "amd64",
+                        "8",
+                        "1024")
+                .writeTo(tempDir);
+
+        var html = generate(tempDir, modelFromFixture());
+
+        assertThat(html)
+                .contains("<h2>Sampler</h2>", "<h2>Load model</h2>", "<h2>Environment</h2>")
+                .contains("<dt>--timeout</dt><dd>5s</dd>")
+                .contains("GET(&quot;https://example.com/?a=1&amp;b=&lt;2&gt;&quot;)")
+                .contains("<dt>concurrency</dt><dd>5</dd>", "<dt>requests</dt><dd>100</dd>")
+                .contains("<dt>pause detectors</dt><dd>vt,jvm</dd>")
+                .doesNotContain("<dt>rate</dt>");
     }
 
     @Test
