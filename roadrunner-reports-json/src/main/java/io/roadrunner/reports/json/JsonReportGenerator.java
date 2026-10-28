@@ -95,9 +95,9 @@ public class JsonReportGenerator implements ReportGenerator {
         var j = new Json();
         j.object();
         j.field("schemaVersion").number(SCHEMA_VERSION);
-        j.field("sampler").string(m == null ? null : m.sampler());
-        j.field("startedAt").string(m == null ? null : m.startedAt());
-        j.field("roadrunnerVersion").string(m == null ? null : m.roadrunnerVersion());
+        j.field("sampler").string(m == null ? null : text(m.sampler()));
+        j.field("startedAt").string(m == null ? null : text(m.startedAt()));
+        j.field("roadrunnerVersion").string(m == null ? null : text(m.roadrunnerVersion()));
         j.field("configuration");
         if (m == null) {
             j.nul();
