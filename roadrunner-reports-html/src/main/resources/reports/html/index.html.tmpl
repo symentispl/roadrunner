@@ -14,97 +14,85 @@
     limitations under the License.
 -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Roadrunner Performance Results</title>
-    <script src="data.js"/></script>
-    <script src="users.js"/></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadrunner report</title>
+<style>
+:root { --bg:#fff; --fg:#1f2328; --muted:#656d76; --card:#f6f8fa; --line:#d0d7de;
+        --c1:#2f6fdb; --c2:#e68a00; --c3:#d1344b; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#0d1117; --fg:#e6edf3; --muted:#8d96a0; --card:#161b22; --line:#30363d;
+          --c1:#58a6ff; --c2:#f0a030; --c3:#ff7b8a; }
+}
+body { margin:0; padding:16px; background:var(--bg); color:var(--fg);
+       font:14px/1.45 system-ui, sans-serif; }
+main { max-width:1100px; margin:0 auto; }
+h1 { font-size:20px; margin:0 0 4px; }
+h2 { font-size:14px; margin:0 0 8px; color:var(--muted); font-weight:600; }
+.meta { color:var(--muted); margin-bottom:16px; }
+.config { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px; margin-bottom:16px; }
+dl { margin:0; display:grid; grid-template-columns:max-content 1fr; gap:2px 12px; }
+dt { color:var(--muted); }
+dd { margin:0; overflow-wrap:anywhere; font-family:ui-monospace, monospace; font-size:13px; }
+.tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; margin-bottom:16px; }
+.tile, .panel { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:12px; }
+.tile b { display:block; font-size:22px; }
+.tile span { color:var(--muted); font-size:12px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:12px; margin-bottom:12px; }
+@media (max-width:480px) { .grid { grid-template-columns:1fr; } }
+.chart { position:relative; height:260px; }
+table { border-collapse:collapse; width:100%; }
+td { padding:4px 8px; border-top:1px solid var(--line); }
+.num { text-align:right; font-variant-numeric:tabular-nums; }
+</style>
 </head>
 <body>
-<div style="border: 1px solid #ccc; padding: 20px; margin: 20px auto; width: 80%; font-family: 'Arial', sans-serif; background-color: #f9f9f9; border-radius: 4px;">
-    <h2>Summary</h2>
-    <table style="width: 15%; border-collapse: collapse;">
-        <tr>
-            <td style="padding: 8px; font-weight: bold;">Max:</td>
-            <td style="padding: 8px;">${max}ms</td>
-        </tr>
-        <tr>
-            <td style="padding: 8px; font-weight: bold;">Min:</td>
-            <td style="padding: 8px;">${min}ms</td>
-        </tr>
-        <tr>
-            <td style="padding: 8px; font-weight: bold;">Mean:</td>
-            <td style="padding: 8px;">${mean}ms</td>
-        </tr>
-    </table>
-</div>
-<div style="width: 80%; margin: auto;">
-    <canvas id="performanceChart"></canvas>
-</div>
+<main>
+<h1>Roadrunner report</h1>
+<div class="meta">sampler <b>${sampler}</b> · started ${startedAt} · roadrunner ${version}</div>
+${configuration}
+<section class="tiles">
+<div class="tile"><b>${requests}</b><span>requests</span></div>
+<div class="tile"><b>${errorRate}</b><span>error rate</span></div>
+<div class="tile"><b>${throughput}</b><span>throughput</span></div>
+<div class="tile"><b>${p50}</b><span>p50</span></div>
+<div class="tile"><b>${p99}</b><span>p99</span></div>
+<div class="tile"><b>${duration}</b><span>duration</span></div>
+</section>
+<section class="grid">
+<div class="panel"><h2>Latency by percentile</h2><div class="chart"><canvas id="percentiles"></canvas></div></div>
+<div class="panel"><h2>Latency over time</h2><div class="chart"><canvas id="latency"></canvas></div></div>
+<div class="panel"><h2>Throughput over time</h2><div class="chart"><canvas id="throughput"></canvas></div></div>
+<div class="panel"><h2>Status</h2><table>${statusRows}</table></div>
+</section>
+</main>
+<script>${chartjs}</script>
 <script>
+const data = ${data};
+const css = getComputedStyle(document.documentElement);
+const color = n => css.getPropertyValue(n).trim();
+Chart.defaults.color = color('--muted');
+Chart.defaults.borderColor = color('--line');
+const axis = (type, text) => ({ type, title: { display: true, text } });
+const opts = (x, y) => ({ responsive: true, maintainAspectRatio: false, animation: false,
+                          scales: { x, y }, elements: { point: { radius: 0 } } });
+const series = (label, values, c) => ({ label, borderColor: color(c), backgroundColor: color(c), borderWidth: 2,
+    data: values.map((y, i) => ({ x: data.seconds[i], y })) });
 
-    const ctx = document.getElementById('performanceChart');
-
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            datasets: [{
-                label: 'p50',
-                data: datapoints.p50,
-                borderColor: 'rgba(54, 162, 235, 1)',
-                yAxisID: 'y'
-            }, {
-                label: 'p90',
-                data: datapoints.p90,
-                borderColor: 'rgba(255, 159, 64, 1)',
-                yAxisID: 'y'
-            }, {
-                label: 'p99',
-                data: datapoints.p99,
-                borderColor: 'rgba(255, 99, 132, 1)',
-                yAxisID: 'y'
-            }, {
-                label: 'Number of Users',
-                data: users,
-                borderColor: 'rgba(75, 192, 192, 1)',
-                yAxisID: 'y1'
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                x: {
-                    type: 'linear',
-                    position: 'bottom',
-                    title: {
-                        display: true,
-                        text: 'Elapsed time (s)'
-                    }
-                },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Execution Time (ms)'
-                    }
-                },
-                y1: {
-                    position: 'right',
-                    title: {
-                        display: true,
-                        text: 'Number of Users'
-                    }
-                }
-            },
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Latency Percentiles and User Count Over Time'
-                }
-            }
-        }
-    });
-
+new Chart('percentiles', { type: 'line',
+  data: { datasets: [{ label: 'latency', borderColor: color('--c1'), backgroundColor: color('--c1'),
+                       data: data.percentiles, pointRadius: 4 }] },
+  options: opts({ ...axis('logarithmic', 'percentile (1/(1-p))'),
+                  ticks: { callback: v => ({2:'50%',10:'90%',100:'99%',1000:'99.9%'})[v] || null } },
+                axis('linear', 'latency (ms)')) });
+new Chart('latency', { type: 'line',
+  data: { datasets: [series('p50', data.p50, '--c1'), series('p90', data.p90, '--c2'), series('p99', data.p99, '--c3')] },
+  options: opts(axis('linear', 'seconds from start'), axis('linear', 'latency (ms)')) });
+new Chart('throughput', { type: 'line',
+  data: { datasets: [series('requests/s', data.rate, '--c1')] },
+  options: opts(axis('linear', 'seconds from start'), axis('linear', 'requests/s')) });
 </script>
 </body>
 </html>

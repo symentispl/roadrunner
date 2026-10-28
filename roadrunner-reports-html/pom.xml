@@ -10,11 +10,44 @@
     <artifactId>roadrunner-reports-html</artifactId>
 
     <properties>
+        <chartjs.version>4.6.1</chartjs.version>
         <graaljs.version>25.4.4.1.1</graaljs.version>
     </properties>
 
     <build>
         <plugins>
+            <plugin>
+                <!-- Chart.js is inlined into index.html at report time. It is unpacked from its
+                     webjar into target/classes instead of being a dependency, so it never reaches
+                     the module path (an automatic module would break jlink) and the report never
+                     references the network. -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.11.0</version>
+                <executions>
+                    <execution>
+                        <id>unpack-chartjs</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.webjars.npm</groupId>
+                                    <artifactId>chart.js</artifactId>
+                                    <version>${chartjs.version}</version>
+                                    <outputDirectory>${project.build.outputDirectory}/reports/html/chartjs</outputDirectory>
+                                    <includes>**/dist/chart.umd.min.js,**/LICENSE.md</includes>
+                                    <fileMappers>
+                                        <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.FlattenFileMapper"/>
+                                    </fileMappers>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -36,10 +69,6 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
         </dependency>
 
         <dependency>

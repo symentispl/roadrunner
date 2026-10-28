@@ -19,7 +19,6 @@ import io.roadrunner.reports.html.HtmlReportGeneratorProvider;
 module io.roadrunner.reports.html {
     requires io.roadrunner.reports;
     requires org.apache.commons.text;
-    requires org.apache.commons.io;
 
     exports io.roadrunner.reports.html;
 
