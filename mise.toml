@@ -130,8 +130,8 @@ run = "antora antora-playbook.yml"
 description = "Runs roadrunner latest build command"
 depends = ["default"]
 run = """
-# the work dir name carries the project version, so find it instead of hardcoding it
-cd roadrunner-app/target/jreleaser/assemble/roadrunner-jars/java-archive/work/roadrunner-jars-*/bin
+# the work dir name carries the project version; take the newest, as older versions may linger in target
+cd "$(ls -dt roadrunner-app/target/jreleaser/assemble/roadrunner-jars/java-archive/work/roadrunner-jars-*/bin | head -1)"
 ./roadrunner
 """
 dir = "{{config_root}}"

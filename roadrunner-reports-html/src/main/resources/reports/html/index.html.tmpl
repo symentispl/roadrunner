@@ -68,9 +68,9 @@ ${configuration}
 <div class="panel"><h2>Status</h2><table>${statusRows}</table></div>
 </section>
 </main>
-<script>/*CHARTJS*/</script>
+<script>${chartjs}</script>
 <script>
-const data = /*DATA*/;
+const data = ${data};
 const css = getComputedStyle(document.documentElement);
 const color = n => css.getPropertyValue(n).trim();
 Chart.defaults.color = color('--muted');
