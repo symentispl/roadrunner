@@ -18,18 +18,17 @@ package io.roadrunner.reports.html.tests;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.roadrunner.output.csv.CsvOutputEventReader;
+import io.roadrunner.reports.LatencyOverTime;
 import io.roadrunner.reports.ReportModel;
 import io.roadrunner.reports.html.HtmlReportGenerator;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.graalvm.polyglot.Context;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -37,89 +36,83 @@ import org.junit.jupiter.api.io.TempDir;
 class HtmlReportGeneratorTest {
 
     @Test
-    void generateCreatesOutputDirectoryIfMissing(@TempDir Path tempDir) throws Exception {
-        // given — outputDir does not exist yet; generate must create it
+    void writesASingleIndexHtmlCreatingTheOutputDirectory(@TempDir Path tempDir) throws Exception {
         var reportDir = tempDir.resolve("report");
-        var properties = new HashMap<String, String>();
-        properties.put("outputDir", reportDir.toString());
-        var reportGenerator = new HtmlReportGenerator(properties);
-        var model = modelFromFixture();
-        // when
         var out = new StringWriter();
-        reportGenerator.generate(model, new PrintWriter(out));
-        // then
+
+        new HtmlReportGenerator(Map.of("outputDir", reportDir.toString()))
+                .generate(modelFromFixture(), new PrintWriter(out));
+
         assertThat(out.toString()).contains("Roadrunner HTML report at " + reportDir.resolve("index.html"));
-        assertThat(reportDir.resolve("index.html")).isNotEmptyFile();
-        assertThat(reportDir.resolve("data.js")).isNotEmptyFile();
-        assertThat(reportDir.resolve("users.js")).isNotEmptyFile();
+        try (var files = Files.list(reportDir)) {
+            assertThat(files).containsExactly(reportDir.resolve("index.html"));
+        }
     }
 
     @Test
-    void generateWritesLatencyAndUserSeriesFromTheModel(@TempDir Path tempDir) throws Exception {
-        // given
-        var reportDir = Files.createDirectory(tempDir.resolve("report"));
-        var properties = new HashMap<String, String>();
-        properties.put("outputDir", reportDir.toString());
-        var reportGenerator = new HtmlReportGenerator(properties);
+    void referencesNothingOutsideTheFile(@TempDir Path tempDir) throws Exception {
+        var html = generate(tempDir, modelFromFixture());
+
+        // Licence banners (ours and Chart.js's) legitimately mention URLs; they are comments, not references.
+        var code = html.replaceAll("(?s)<!--.*?-->", "").replaceAll("(?s)/\\*.*?\\*/", "");
+        assertThat(code).doesNotContain("http://").doesNotContain("https://");
+        assertThat(html).doesNotContainPattern("<script[^>]*\\ssrc=").doesNotContainPattern("<link[^>]*\\shref=");
+        assertThat(html).contains("Chart.js");
+    }
+
+    @Test
+    void hasEveryPanelAndStatTile(@TempDir Path tempDir) throws Exception {
+        var html = generate(tempDir, modelFromFixture());
+
+        assertThat(html)
+                .contains("id=\"percentiles\"", "id=\"latency\"", "id=\"throughput\"", "<h2>Status</h2>")
+                .contains(">requests<", ">error rate<", ">throughput<", ">p50<", ">p99<", ">duration<");
+        assertThat(Pattern.compile("class=\"tile\"").matcher(html).results().count())
+                .isEqualTo(6);
+    }
+
+    @Test
+    void embeddedSeriesMatchTheModel(@TempDir Path tempDir) throws Exception {
         var model = modelFromFixture();
-        // when
-        reportGenerator.generate(model, new PrintWriter(new StringWriter()));
-        // then
-        assertThat(reportDir.resolve("index.html")).isNotEmptyFile();
+        var html = generate(tempDir, model);
 
-        var dataJs = reportDir.resolve("data.js");
-        assertThat(dataJs).isNotEmptyFile();
-        var datapoints = evalDatapoints(dataJs);
-        assertThat(datapoints.get("p50"))
-                .isEqualTo(toList(model.latencyOverTime().p50()));
-        assertThat(datapoints.get("p90"))
-                .isEqualTo(toList(model.latencyOverTime().p90()));
-        assertThat(datapoints.get("p99"))
-                .isEqualTo(toList(model.latencyOverTime().p99()));
+        var json = html.substring(html.indexOf("const data = ") + 13, html.indexOf(";\nconst css"));
+        try (var context = Context.create()) {
+            var data = context.eval("js", "(" + json + ")");
+            var slices = model.throughputSeries().length;
+            for (var key : List.of("seconds", "p50", "p90", "p99", "rate")) {
+                assertThat(data.getMember(key).getArraySize()).as(key).isEqualTo(slices);
+            }
+            assertThat(data.getMember("percentiles").getArraySize()).isEqualTo(4);
+            assertThat(data.getMember("p99").getArrayElement(slices - 1).asLong())
+                    .isEqualTo(model.latencyOverTime().p99()[slices - 1]);
+        }
+    }
 
-        var usersJs = reportDir.resolve("users.js");
-        assertThat(usersJs).isNotEmptyFile();
-        assertThat(evalSeries(usersJs, "users")).isEqualTo(toList(model.usersOverTime()));
+    @Test
+    void sizeDoesNotDependOnTheNumberOfRequests(@TempDir Path tempDir) throws Exception {
+        var small = generate(tempDir.resolve("small"), synthetic(2_000));
+        var huge = generate(tempDir.resolve("huge"), synthetic(1_000_000));
+
+        assertThat(huge.length()).isLessThan(small.length() + 2_000);
+        assertThat(huge.length()).isLessThan(400_000);
+    }
+
+    private static String generate(Path dir, ReportModel model) throws Exception {
+        new HtmlReportGenerator(Map.of("outputDir", dir.toString())).generate(model, new PrintWriter(new StringWriter()));
+        return Files.readString(dir.resolve("index.html"));
+    }
+
+    private static ReportModel synthetic(long total) {
+        var slices = 30;
+        var flat = new long[slices];
+        java.util.Arrays.fill(flat, total / slices);
+        return new ReportModel(
+                total, total, 0, 60, total / 60.0, 0, 1, 5, 900, 5, 20, 80, 400,
+                new long[20], flat, flat, Map.of("200", total), new LatencyOverTime(flat, flat, flat));
     }
 
     private static ReportModel modelFromFixture() {
         return ReportModel.from(new CsvOutputEventReader(Paths.get("src/test/resources/output.csv")));
-    }
-
-    private static List<Long> toList(long[] values) {
-        var list = new ArrayList<Long>(values.length);
-        for (var value : values) {
-            list.add(value);
-        }
-        return list;
-    }
-
-    private static Map<String, List<Long>> evalDatapoints(Path dataJs) throws IOException {
-        try (var context = Context.create()) {
-            var source = " () => {\n" + Files.readString(dataJs) + "\nreturn datapoints;\n}";
-            var value = context.eval("js", source).execute();
-            var result = new HashMap<String, List<Long>>();
-            for (var key : List.of("p50", "p90", "p99")) {
-                result.put(key, seriesYValues(value.getMember(key)));
-            }
-            return result;
-        }
-    }
-
-    private static List<Long> evalSeries(Path js, String variableName) throws IOException {
-        try (var context = Context.create()) {
-            var source = " () => {\n" + Files.readString(js) + "\nreturn " + variableName + ";\n}";
-            var value = context.eval("js", source).execute();
-            return seriesYValues(value);
-        }
-    }
-
-    private static List<Long> seriesYValues(org.graalvm.polyglot.Value series) {
-        var values = new ArrayList<Long>();
-        var iterator = series.getIterator();
-        while (iterator.hasIteratorNextElement()) {
-            values.add(iterator.getIteratorNextElement().getMember("y").asLong());
-        }
-        return values;
     }
 }
