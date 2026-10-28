@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.roadrunner</groupId>
         <artifactId>roadrunner</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>0.4.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>roadrunner-logging</artifactId>
