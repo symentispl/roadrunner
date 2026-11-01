@@ -23,6 +23,8 @@ import io.roadrunner.api.events.SamplerResponse;
 import io.roadrunner.api.events.UserEvent;
 import io.roadrunner.api.metrics.MetricRegistry;
 import io.roadrunner.api.metrics.MetricUnit;
+import io.roadrunner.api.samplers.DefaultSamplerResponseBuilder;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -107,6 +109,47 @@ class CsvOutputRoundTripTest {
         assertThat(events.get(3))
                 .isInstanceOfSatisfying(
                         UserEvent.Exit.class, e -> assertThat(e.timestamp()).isEqualTo(160L));
+    }
+
+    @Test
+    void roundTripsPerSampleJdbcTimings() throws Exception {
+        var metrics = new MetricRegistry();
+        var acquireKey = metrics.register("jdbc.acquire_ns", MetricUnit.NANOSECONDS);
+        var queryKey = metrics.register("jdbc.query_ns", MetricUnit.NANOSECONDS);
+        var attachments = new AttachmentRegistry();
+        var builder = new DefaultSamplerResponseBuilder(metrics.size(), attachments.size());
+        var first = builder.response(100L, 1000L, sink -> {
+            sink.add(acquireKey, 400.0);
+            sink.add(queryKey, 500.0);
+        }).withScheduledStartTime(100L).withLatency(900L);
+        var second = builder.response(2000L, 3000L, sink -> {
+            sink.add(acquireKey, 100.0);
+            sink.add(queryKey, 900.0);
+        }).withScheduledStartTime(2000L).withLatency(1000L);
+        var output = tempDir.resolve("jdbc-timings.csv");
+        var listener = new CsvOutputEventListener(output, metrics, attachments);
+
+        listener.onStart();
+        listener.onEvent(List.of(first, second));
+        listener.onStop();
+
+        assertThat(Files.readAllLines(output)).containsExactly(
+                "type,scheduledStartTime,timestamp,stopTime,latency,status,"
+                        + "metric:jdbc.acquire_ns:NANOSECONDS,metric:jdbc.query_ns:NANOSECONDS,"
+                        + "attachment:errorMessage",
+                "REQ,100,100,1000,900,OK,400.0,500.0,",
+                "REQ,2000,2000,3000,1000,OK,100.0,900.0,");
+        var reader = listener.samplesReader();
+        assertThat(reader.metricKeys()).containsExactlyElementsOf(metrics.registeredKeys());
+        var events = new ArrayList<Event>();
+        reader.forEach(events::add);
+        assertThat(events).hasSize(2);
+        var firstRead = (SamplerResponse<?>) events.getFirst();
+        var secondRead = (SamplerResponse<?>) events.getLast();
+        assertThat(firstRead.metricValueAt(acquireKey)).isEqualTo(400.0);
+        assertThat(firstRead.metricValueAt(queryKey)).isEqualTo(500.0);
+        assertThat(secondRead.metricValueAt(acquireKey)).isEqualTo(100.0);
+        assertThat(secondRead.metricValueAt(queryKey)).isEqualTo(900.0);
     }
 
     @Test

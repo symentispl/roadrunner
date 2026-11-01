@@ -16,9 +16,12 @@
 package io.roadrunner.samplers.jdbc.tests;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 
 import io.roadrunner.api.events.SamplerResponse;
+import io.roadrunner.api.metrics.MetricKey;
+import io.roadrunner.api.metrics.MetricUnit;
 import io.roadrunner.api.parameters.SamplerParameters;
 import io.roadrunner.parameters.csv.CsvParameterSource;
 import io.roadrunner.samplers.jdbc.JDBCSamplerOptions;
@@ -35,10 +38,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 
 class JDBCSamplerProviderIT {
@@ -51,9 +57,11 @@ class JDBCSamplerProviderIT {
             var options = defaultSamplerOptions(plugin, "jdbc:hsqldb:mem:testdb",
                     "SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
             var ctx = SamplerContext.create(plugin, options);
-            var rowCountKey = ctx.metricRegistry().registeredKeys().stream()
-                    .filter(k -> "row_count".equals(k.name()))
-                    .findFirst().orElseThrow();
+            var rowCountKey = metricKey(ctx, "row_count");
+            var acquireKey = metricKey(ctx, "jdbc.acquire_ns");
+            var queryKey = metricKey(ctx, "jdbc.query_ns");
+            assertThat(acquireKey.unit()).isEqualTo(MetricUnit.NANOSECONDS);
+            assertThat(queryKey.unit()).isEqualTo(MetricUnit.NANOSECONDS);
             try (var sampler = ctx.newSampler()) {
                 var response = sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
                 assertThat(response)
@@ -62,6 +70,11 @@ class JDBCSamplerProviderIT {
                             assertThat(r.timestamp()).isGreaterThan(0);
                             assertThat(r.stopTime()).isGreaterThan(r.timestamp());
                             assertThat(r.metricValueAt(rowCountKey)).isGreaterThanOrEqualTo(1.0);
+                            var acquire = r.metricValueAt(acquireKey);
+                            var query = r.metricValueAt(queryKey);
+                            assertThat(acquire).isNotNegative();
+                            assertThat(query).isNotNegative();
+                            assertThat(acquire + query).isEqualTo((double) (r.stopTime() - r.timestamp()));
                         });
             }
         }
@@ -105,7 +118,7 @@ class JDBCSamplerProviderIT {
     }
 
     @Test
-    void poolSaturationVisibleInCounters() throws Exception {
+    void poolSaturationVisibleInPerSampleTimingsAndCounters() throws Exception {
         int callCount = 50;
         try (var plugin = new JDBCSamplerPlugin()) {
             var options = defaultSamplerOptions(plugin, "jdbc:hsqldb:mem:saturation",
@@ -114,22 +127,42 @@ class JDBCSamplerProviderIT {
             // Use of() to retain a typed provider reference for stats inspection
             var provider = plugin.newSamplerProvider(options);
             var ctx = SamplerContext.of(provider);
+            var acquireKey = metricKey(ctx, "jdbc.acquire_ns");
+            var queryKey = metricKey(ctx, "jdbc.query_ns");
+            var responses = new ArrayList<SamplerResponse<?>>();
             try (var executor = Executors.newVirtualThreadPerTaskExecutor();
                  var sampler = ctx.newSampler()) {
-                var done = new CountDownLatch(callCount);
-                for (int i = 0; i < callCount; i++) {
-                    executor.submit(() -> {
-                        try {
-                            sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
-                        } finally {
-                            done.countDown();
-                        }
-                    });
+                var started = new CountDownLatch(callCount);
+                var futures = new ArrayList<Future<SamplerResponse<?>>>();
+                try (var heldConnection = provider.getConnection()) {
+                    for (int i = 0; i < callCount; i++) {
+                        futures.add(executor.submit(() -> {
+                            started.countDown();
+                            return sampler.execute(SamplerParameters.NONE, ctx.newResponseBuilder());
+                        }));
+                    }
+                    assertThat(started.await(30, TimeUnit.SECONDS))
+                            .as("all sample tasks should start within 30 seconds")
+                            .isTrue();
+                    assertThatThrownBy(() -> futures.getFirst().get(100, TimeUnit.MILLISECONDS))
+                            .as("a sample must wait while the only connection is held")
+                            .isInstanceOf(TimeoutException.class);
                 }
-                assertThat(done.await(30, TimeUnit.SECONDS))
-                        .as("all samples should complete within 30 seconds")
-                        .isTrue();
+                for (var future : futures) {
+                    responses.add(future.get(30, TimeUnit.SECONDS));
+                }
             }
+
+            assertThat(responses).hasSize(callCount).allSatisfy(response -> {
+                assertThat(response).isInstanceOf(SamplerResponse.Response.class);
+                var acquire = response.metricValueAt(acquireKey);
+                var query = response.metricValueAt(queryKey);
+                assertThat(acquire).isNotNegative();
+                assertThat(query).isNotNegative();
+                assertThat(acquire + query).isEqualTo((double) (response.stopTime() - response.timestamp()));
+            });
+            assertThat(responses).anySatisfy(response ->
+                    assertThat(response.metricValueAt(acquireKey)).isGreaterThan(response.metricValueAt(queryKey)));
 
             long samples = provider.sampleCount();
             long acquire = provider.totalAcquireNanos();
@@ -137,6 +170,10 @@ class JDBCSamplerProviderIT {
             double ratio = (double) acquire / (double) (acquire + query);
 
             assertThat(samples).isEqualTo(callCount);
+            assertThat(responses.stream().mapToDouble(r -> r.metricValueAt(acquireKey)).sum())
+                    .isEqualTo((double) acquire);
+            assertThat(responses.stream().mapToDouble(r -> r.metricValueAt(queryKey)).sum())
+                    .isEqualTo((double) query);
             assertThat(ratio)
                     .as("acquire ratio should exceed 20%% under saturation, was %.3f", ratio)
                     .isGreaterThan(0.20);
@@ -246,6 +283,13 @@ class JDBCSamplerProviderIT {
         public Logger getParentLogger() {
             throw new UnsupportedOperationException();
         }
+    }
+
+    private static MetricKey metricKey(SamplerContext context, String name) {
+        return context.metricRegistry().registeredKeys().stream()
+                .filter(key -> name.equals(key.name()))
+                .findFirst()
+                .orElseThrow();
     }
 
     private static JDBCSamplerOptions defaultSamplerOptions(JDBCSamplerPlugin plugin, String url, String query) {
