@@ -51,6 +51,8 @@ public class JDBCSampler implements SamplerSinkRegistrar {
     private final LongAdder acquireNanos = new LongAdder();
     private final LongAdder queryNanos = new LongAdder();
     private MetricKey rowCountKey;
+    private MetricKey acquireKey;
+    private MetricKey queryKey;
 
     public JDBCSampler(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -59,6 +61,8 @@ public class JDBCSampler implements SamplerSinkRegistrar {
     @Override
     public void registerMetrics(MetricRegistry registry) {
         this.rowCountKey = registry.register("row_count", MetricUnit.COUNT);
+        this.acquireKey = registry.register("jdbc.acquire_ns", MetricUnit.NANOSECONDS);
+        this.queryKey = registry.register("jdbc.query_ns", MetricUnit.NANOSECONDS);
     }
 
     public Sampler query(String sql) {
@@ -84,7 +88,11 @@ public class JDBCSampler implements SamplerSinkRegistrar {
                     var tDone = System.nanoTime();
                     recordTimestamps(tStarted, tAcquired, tDone);
                     var rows = rowCount;
-                    return builder.response(tStarted, tDone, samplerSink -> samplerSink.add(rowCountKey, rows));
+                    return builder.response(tStarted, tDone, samplerSink -> {
+                        samplerSink.add(rowCountKey, rows);
+                        samplerSink.add(acquireKey, tAcquired - tStarted);
+                        samplerSink.add(queryKey, tDone - tAcquired);
+                    });
                 } catch (Exception e) {
                     var tDone = System.nanoTime();
                     recordTimestamps(tStarted, tAcquired, tDone);
