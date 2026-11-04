@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import io.roadrunner.api.parameters.ParameterSourceProvider;
-import io.roadrunner.reports.ReportGeneratorProvider;
+import io.roadrunner.reports.spi.ReportPlugin;
 import io.roadrunner.samplers.spi.SamplerPlugin;
 
 module io.roadrunner.cli {
@@ -24,6 +24,7 @@ module io.roadrunner.cli {
     requires io.roadrunner.latency.recording;
     requires io.roadrunner.console;
     requires io.roadrunner.reports;
+    requires io.roadrunner.reports.spi;
     requires org.slf4j;
     requires io.roadrunner.logging;
     requires org.apache.commons.io;
@@ -33,7 +34,7 @@ module io.roadrunner.cli {
     requires jdk.management;
 
     uses SamplerPlugin;
-    uses ReportGeneratorProvider;
+    uses ReportPlugin;
     uses ParameterSourceProvider;
 
     opens io.roadrunner.cli to

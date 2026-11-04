@@ -16,11 +16,11 @@
 package io.roadrunner.reports.console;
 
 import io.roadrunner.console.ConsoleTheme;
-import io.roadrunner.reports.ReportGenerator;
 import io.roadrunner.reports.ReportModel;
-import io.roadrunner.reports.console.render.ReportRenderer;
 import io.roadrunner.reports.RunDirectory;
 import io.roadrunner.reports.RunManifest;
+import io.roadrunner.reports.console.render.ReportRenderer;
+import io.roadrunner.reports.spi.ReportGenerator;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;

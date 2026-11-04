@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.reports.ReportGeneratorProvider;
-import io.roadrunner.reports.json.JsonReportGeneratorProvider;
+import io.roadrunner.reports.json.JsonReportPlugin;
+import io.roadrunner.reports.spi.ReportPlugin;
 
 module io.roadrunner.reports.json {
     requires io.roadrunner.reports;
+    requires io.roadrunner.reports.spi;
 
     exports io.roadrunner.reports.json;
 
-    provides ReportGeneratorProvider with
-            JsonReportGeneratorProvider;
+    provides ReportPlugin with
+            JsonReportPlugin;
 }

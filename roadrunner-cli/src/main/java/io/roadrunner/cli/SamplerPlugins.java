@@ -55,11 +55,12 @@ public final class SamplerPlugins implements AutoCloseable {
                         loadPluginSubdirectoryProviders(preferences))
                 .flatMap(Function.identity())
                 .collect(toMap(SamplerPlugin::name, Function.identity(), (first, second) -> {
-                    // When duplicate sampler providers are found, the first provider is prioritized.
-                    // This ensures that runtime providers take precedence over plugin-based providers,
-                    // as runtime providers are considered more stable and reliable.
-                    LOG.debug("found duplicate sampler provider {} in runtime and plugin directories", second.name());
-                    return first;
+                    throw new IllegalStateException(
+                            "duplicate sampler plugin name '%s': found %s and %s"
+                                    .formatted(
+                                            first.name(),
+                                            first.getClass().getName(),
+                                            second.getClass().getName()));
                 }));
         return new SamplerPlugins(samplers);
     }

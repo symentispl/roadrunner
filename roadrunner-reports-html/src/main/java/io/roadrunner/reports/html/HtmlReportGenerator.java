@@ -17,10 +17,10 @@ package io.roadrunner.reports.html;
 
 import static java.util.Objects.requireNonNull;
 
-import io.roadrunner.reports.ReportGenerator;
 import io.roadrunner.reports.ReportModel;
 import io.roadrunner.reports.RunDirectory;
 import io.roadrunner.reports.RunManifest;
+import io.roadrunner.reports.spi.ReportGenerator;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
