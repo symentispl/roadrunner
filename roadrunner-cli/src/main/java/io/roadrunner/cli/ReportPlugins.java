@@ -39,7 +39,14 @@ public final class ReportPlugins implements AutoCloseable {
         var plugins = ServiceLoader.load(ReportPlugin.class).stream()
                 .map(ServiceLoader.Provider::get)
                 .peek(plugin -> LOG.info("found report plugin {}", plugin.name()))
-                .collect(toMap(ReportPlugin::name, identity(), (first, second) -> first));
+                .collect(toMap(ReportPlugin::name, identity(), (first, second) -> {
+                    throw new IllegalStateException(
+                            "duplicate report plugin name '%s': found %s and %s"
+                                    .formatted(
+                                            first.name(),
+                                            first.getClass().getName(),
+                                            second.getClass().getName()));
+                }));
         return new ReportPlugins(plugins);
     }
 
