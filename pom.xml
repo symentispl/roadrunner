@@ -202,7 +202,7 @@
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
-                <version>3.10.4</version>
+                <version>3.11.0</version>
                 <configuration>
                     <java>
                         <!-- These are the defaults, you can override if you want -->
@@ -399,6 +399,7 @@
         <module>roadrunner-csv-output</module>
         <module>roadrunner-parameter-source-csv</module>
         <module>roadrunner-reports</module>
+        <module>roadrunner-reports-spi</module>
         <module>roadrunner-logging</module>
         <module>roadrunner-site-tests</module>
     </modules>

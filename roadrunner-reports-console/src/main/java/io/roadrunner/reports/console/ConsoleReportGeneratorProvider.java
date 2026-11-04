@@ -15,16 +15,11 @@
  */
 package io.roadrunner.reports.console;
 
-import io.roadrunner.reports.ReportGenerator;
-import io.roadrunner.reports.ReportGeneratorProvider;
+import io.roadrunner.reports.spi.ReportGenerator;
+import io.roadrunner.reports.spi.ReportGeneratorProvider;
 import java.util.Map;
 
 public class ConsoleReportGeneratorProvider implements ReportGeneratorProvider {
-    @Override
-    public String name() {
-        return "console";
-    }
-
     @Override
     public ReportGenerator create(Map<String, String> properties) {
         return new ConsoleReportGenerator(properties);

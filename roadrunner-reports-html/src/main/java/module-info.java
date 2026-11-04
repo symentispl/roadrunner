@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import io.roadrunner.reports.ReportGeneratorProvider;
-import io.roadrunner.reports.html.HtmlReportGeneratorProvider;
+import io.roadrunner.reports.html.HtmlReportPlugin;
+import io.roadrunner.reports.spi.ReportPlugin;
 
 module io.roadrunner.reports.html {
     requires io.roadrunner.reports;
+    requires io.roadrunner.reports.spi;
     requires org.apache.commons.text;
 
     exports io.roadrunner.reports.html;
 
-    provides ReportGeneratorProvider with
-            HtmlReportGeneratorProvider;
+    provides ReportPlugin with
+            HtmlReportPlugin;
 }

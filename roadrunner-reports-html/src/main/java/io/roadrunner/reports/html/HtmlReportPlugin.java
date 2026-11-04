@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.reports;
+package io.roadrunner.reports.html;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import io.roadrunner.reports.spi.ReportGeneratorProvider;
+import io.roadrunner.reports.spi.ReportPlugin;
 
-public interface ReportGenerator {
-    /**
-     * Generates the report; {@code out} receives format-specific details, e.g. where the report was written.
-     */
-    void generate(ReportModel model, PrintWriter out) throws IOException;
+public class HtmlReportPlugin implements ReportPlugin {
+    @Override
+    public String name() {
+        return "html";
+    }
+
+    @Override
+    public ReportGeneratorProvider reportGeneratorProvider() {
+        return new HtmlReportGeneratorProvider();
+    }
 }

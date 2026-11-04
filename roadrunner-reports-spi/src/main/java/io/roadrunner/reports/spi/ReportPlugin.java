@@ -13,13 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.roadrunner.reports;
+package io.roadrunner.reports.spi;
 
-import java.util.Map;
+import java.util.Optional;
 
-public interface ReportGeneratorProvider {
-
+public interface ReportPlugin extends AutoCloseable {
     String name();
 
-    ReportGenerator create(Map<String, String> properties);
+    ReportGeneratorProvider reportGeneratorProvider();
+
+    default Optional<ReportComparisonProvider> reportComparisonProvider() {
+        return Optional.empty();
+    }
+
+    @Override
+    default void close() {}
 }

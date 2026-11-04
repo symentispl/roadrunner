@@ -26,6 +26,7 @@ import io.roadrunner.reports.RunDirectory;
 import io.roadrunner.reports.RunManifest;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.EnumSet;
@@ -118,23 +119,22 @@ class RunCommand {
 
         var progress = buildMeasurementProgress(bootstrap);
 
-        try (var roadrunner = bootstrap.build()) {
+        try (var roadrunner = bootstrap.build();
+                var reportPlugins = ReportPlugins.load(new Preferences(Paths.get(System.getProperty("user.home"))))) {
             var runManifest = buildManifest(samplerCommandSpec, startedAt, Version.full());
             runManifest.writeTo(bootstrap.outputDir());
 
-            LOG.debug("loading report generators");
-            var reportGeneratorProviders = ReportGeneratorProviders.load();
-            var reportGeneratorProvider = reportGeneratorProviders.get(report.prefix());
-            if (reportGeneratorProvider == null) {
+            var reportPlugin = reportPlugins.get(report.prefix());
+            if (reportPlugin == null) {
                 throw new IllegalArgumentException("report generator %s unknown, supported report formats %s"
-                        .formatted(report.prefix(), reportGeneratorProviders.supportedReportFormats()));
+                        .formatted(report.prefix(), reportPlugins.supportedReportFormats()));
             }
 
             var reportConfiguration = report.parameters();
             var reportConfig = new HashMap<>(reportConfiguration);
             reportConfig.put("outputDir", bootstrap.outputDir().toString());
 
-            var reportGenerator = reportGeneratorProvider.create(reportConfig);
+            var reportGenerator = reportPlugin.reportGeneratorProvider().create(reportConfig);
             var measurements = roadrunner.execute(samplerProvider);
             // Release the progress bar's terminal before the report renders, otherwise the
             // report can't open its own system terminal and falls back to a dumb (ASCII) one.
