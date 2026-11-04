@@ -43,7 +43,13 @@ public class Main {
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> handleException(throwable, retainThrowables));
 
         try {
-            execute(args);
+            var exitCode = execute(args);
+            if (exitCode != 0) {
+                System.exit(exitCode);
+            }
+        } catch (CommandLine.ParameterException e) {
+            handleException(e, retainThrowables);
+            System.exit(2);
         } catch (Exception e) {
             handleException(e, retainThrowables);
             System.exit(1);
@@ -66,12 +72,17 @@ public class Main {
         System.err.println("run with -X to see the full stack trace");
     }
 
-    private static void execute(String[] args) throws Exception {
+    private static int execute(String[] args) throws Exception {
         try (var samplerProviders = SamplerPlugins.load(new Preferences(Paths.get(System.getProperty("user.home"))))) {
 
             var commandSpec = createCommandSpec(samplerProviders);
 
             var commandLine = new CommandLine(commandSpec);
+            if (args.length == 0) {
+                commandLine.usage(System.out);
+                return 2;
+            }
+
             // required options are validated per-command as soon as that command's own args are parsed,
             // regardless of --help further down the subcommand chain (picocli only skips validation for the
             // command level --help was passed to). Collecting errors instead of throwing lets parsing finish
@@ -89,18 +100,18 @@ public class Main {
 
             if (parseResult.isUsageHelpRequested()) {
                 commandLine.usage(System.out);
-                return;
+                return 0;
             }
 
             if (parseResult.isVersionHelpRequested()) {
                 commandLine.printVersionHelp(System.out);
-                return;
+                return 0;
             }
 
             var subcommand = parseResult.subcommand();
             if (subcommand != null && subcommand.isUsageHelpRequested()) {
                 subcommand.commandSpec().commandLine().usage(System.out);
-                return;
+                return 0;
             }
 
             var samplerSubCmd = subcommand != null ? subcommand.subcommand() : null;
@@ -108,10 +119,18 @@ public class Main {
                 printSamplerUsage(
                         subcommand.commandSpec().commandLine(),
                         samplerSubCmd.commandSpec().commandLine());
-                return;
+                return 0;
             }
 
             var errors = collectErrors(parseResult);
+            if (subcommand != null
+                    && subcommand.commandSpec().userObject() instanceof RunCommand
+                    && samplerSubCmd == null
+                    && errors.stream().allMatch(CommandLine.MissingParameterException.class::isInstance)) {
+                subcommand.commandSpec().commandLine().usage(System.out);
+                return 2;
+            }
+
             if (!errors.isEmpty()) {
                 throw errors.getFirst();
             }
@@ -128,6 +147,7 @@ public class Main {
                     throw SamplerExtensionPointsUsage.wrapSamplerExpressionError(e, samplerName, extensionPoints);
                 }
             }
+            return 0;
         }
     }
 
