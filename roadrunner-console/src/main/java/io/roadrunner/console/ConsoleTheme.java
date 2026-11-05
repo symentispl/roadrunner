@@ -179,9 +179,9 @@ public final class ConsoleTheme {
                 .append('\n');
         var wrapped = new java.util.ArrayList<String>();
         for (var line : lines) {
-            // a line too wide for the frame is wrapped; lines with colour escapes are left to their producer
-            if (line.length() > inner - 2 && visibleLength(line) == line.length()) {
-                wrapped.addAll(wrap(line, inner - 2));
+            // a line too wide for the frame is wrapped by visible width; colour is dropped from wrapped lines
+            if (visibleLength(line) > inner - 2) {
+                wrapped.addAll(wrap(ANSI.matcher(line).replaceAll(""), inner - 2));
             } else {
                 wrapped.add(line);
             }

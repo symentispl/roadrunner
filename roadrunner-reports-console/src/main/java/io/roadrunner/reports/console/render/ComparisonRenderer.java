@@ -145,10 +145,13 @@ public final class ComparisonRenderer {
                 : String.format(Locale.ROOT, "%+.1f%%", delta);
     }
 
+    // the sign is the bound's direction, so it survives a zero limit ("-0%" bounds decreases)
     private static String limit(Tolerance tolerance, boolean errors) {
+        var sign = tolerance.direction() == Tolerance.Direction.UPPER ? "+" : "-";
+        var magnitude = Math.abs(tolerance.limit());
         return errors
-                ? String.format(Locale.ROOT, "%+.2f pp", tolerance.limit())
-                : String.format(Locale.ROOT, "%+.1f%%", tolerance.limit());
+                ? String.format(Locale.ROOT, "%s%.2f pp", sign, magnitude)
+                : String.format(Locale.ROOT, "%s%.1f%%", sign, magnitude);
     }
 
     private static String verdict(Verdict verdict, ConsoleTheme theme) {
