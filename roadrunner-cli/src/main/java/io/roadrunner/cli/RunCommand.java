@@ -131,6 +131,7 @@ class RunCommand {
         var tolerances = ComparisonReports.parseTolerances(tolerance);
         if (baseline != null) {
             ComparisonReports.requireRunDirectory(baseline, "baseline");
+            ComparisonReports.requireDistinct(baseline, outputDir);
         }
 
         var startedAt = Instant.now();

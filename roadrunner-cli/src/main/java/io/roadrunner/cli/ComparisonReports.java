@@ -48,6 +48,18 @@ final class ComparisonReports {
         }
     }
 
+    /** The new run must not write into the baseline: that would overwrite what it is compared against. */
+    static void requireDistinct(Path baseline, Path outputDir) throws IOException {
+        if (outputDir == null || !Files.exists(outputDir)) {
+            return; // a fresh directory cannot be the baseline
+        }
+        if (Files.isSameFile(baseline, outputDir)) {
+            throw new IllegalArgumentException(
+                    "output directory %s is the baseline directory: the run would overwrite the baseline"
+                            .formatted(outputDir));
+        }
+    }
+
     static ReportModel load(Path dir, boolean rawLatency) throws IOException {
         var runDirectory = RunDirectory.of(dir);
         return ReportModel.from(new CsvOutputEventReader(runDirectory.outputCsv()), runDirectory, rawLatency);
