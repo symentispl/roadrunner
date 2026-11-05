@@ -22,14 +22,12 @@ import io.roadrunner.reports.LatencyOverTime;
 import io.roadrunner.reports.ReportModel;
 import io.roadrunner.reports.RunManifest;
 import java.util.Map;
-import org.jline.terminal.TerminalBuilder;
 import org.junit.jupiter.api.Test;
 
 class ReportRendererTest {
 
-    private static ConsoleTheme dumbTheme() throws Exception {
-        var terminal = TerminalBuilder.builder().dumb(true).build();
-        return ConsoleTheme.of(terminal);
+    private static ConsoleTheme dumbTheme() {
+        return ConsoleTheme.of(false, false, 78);
     }
 
     private static ReportModel sampleModel() {
@@ -106,7 +104,7 @@ class ReportRendererTest {
     @Test
     void rendersConfigurationFromManifestOmittingEmptyFields() throws Exception {
         var out = ReportRenderer.render(sampleModel(), manifest(), dumbTheme());
-        assertThat(out).contains("sampler http | started 2024-05-01T10:00:00Z | roadrunner 1.2.3");
+        assertThat(out).contains("sampler http | started 2024-05-01T10:00:00Z").contains("roadrunner 1.2.3");
         assertThat(out).contains("Sampler").contains("Load model").contains("Environment");
         assertThat(out).containsPattern("url +http://x/\\$\\{y\\}");
         assertThat(out).containsPattern("method +GET");
@@ -124,7 +122,7 @@ class ReportRendererTest {
     @Test
     void withoutManifestHeaderIsUnknownAndThereIsNoConfiguration() throws Exception {
         var out = ReportRenderer.render(sampleModel(), null, dumbTheme());
-        assertThat(out).contains("sampler unknown | started unknown | roadrunner unknown");
+        assertThat(out).contains("sampler unknown | started unknown").contains("roadrunner unknown");
         assertThat(out).doesNotContain("Load model").doesNotContain("Environment");
     }
 
@@ -147,5 +145,28 @@ class ReportRendererTest {
         assertThat(out).contains("requests    0").contains("duration    0.0 s");
         assertThat(out).containsPattern("0\\.0 +0\\.0 ");
         assertThat(out).contains("no status recorded");
+    }
+
+    @Test
+    void framesEverySectionAndColoursOnlyWhenAsked() {
+        var plain = ReportRenderer.render(sampleModel(), ConsoleTheme.of(false, false, 78));
+        var fancy = ReportRenderer.render(sampleModel(), ConsoleTheme.of(true, true, 78));
+
+        assertThat(plain).doesNotContain("\u001b").doesNotContain("╔");
+        assertThat(plain.lines().map(String::length).distinct()).containsExactly(78);
+        assertThat(fancy).contains("\u001b[").contains("╔").contains("╚");
+        assertThat(fancy.lines().map(ConsoleTheme::visibleLength).distinct()).containsExactly(78);
+    }
+
+    @Test
+    void longConfigurationValuesWrapInsideTheFrame() {
+        var m = manifest();
+        var long_ = new RunManifest(
+                m.roadrunnerVersion(), m.startedAt(), m.sampler(), m.samplerOptions(), m.loadModel(),
+                m.loadConcurrency(), m.loadRequests(), m.loadRate(), m.loadDuration(), m.pauseDetectors(),
+                m.parametersSource(), m.jvmVersion(), "-Dfoo=" + "/some/long/path".repeat(20), m.osName(),
+                m.osVersion(), m.osArch(), m.hardwareCpus(), m.hardwareMemory());
+        var out = ReportRenderer.render(sampleModel(), long_, ConsoleTheme.of(false, true, 78));
+        assertThat(out.lines().map(String::length).distinct()).containsExactly(78);
     }
 }
