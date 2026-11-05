@@ -15,8 +15,10 @@
  */
 package io.roadrunner.reports.console;
 
+import io.roadrunner.reports.spi.ReportComparisonProvider;
 import io.roadrunner.reports.spi.ReportGeneratorProvider;
 import io.roadrunner.reports.spi.ReportPlugin;
+import java.util.Optional;
 
 public class ConsoleReportPlugin implements ReportPlugin {
     @Override
@@ -27,5 +29,10 @@ public class ConsoleReportPlugin implements ReportPlugin {
     @Override
     public ReportGeneratorProvider reportGeneratorProvider() {
         return new ConsoleReportGeneratorProvider();
+    }
+
+    @Override
+    public Optional<ReportComparisonProvider> reportComparisonProvider() {
+        return Optional.of(new ConsoleReportComparisonProvider());
     }
 }
