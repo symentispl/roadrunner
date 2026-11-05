@@ -62,4 +62,6 @@ The HTML report includes:
 * HDR histogram chart
 * Coordinated-omission-corrected latency (when pause detectors are enabled)
 
+To compare a run against an earlier one, see xref:comparison-reports.adoc[Comparison reports].
+
 See xref:configuration.adoc[Configuration] for all available options.
