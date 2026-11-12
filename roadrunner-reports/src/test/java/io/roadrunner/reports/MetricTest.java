@@ -23,7 +23,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-class ComparisonMetricTest {
+class MetricTest {
 
     @ParameterizedTest
     @CsvSource({
@@ -37,8 +37,8 @@ class ComparisonMetricTest {
         "throughput, THROUGHPUT",
         "errors, ERRORS"
     })
-    void parsesValidLabels(String label, ComparisonMetric expected) {
-        var metric = ComparisonMetric.fromLabel(label);
+    void parsesValidLabels(String label, Metric expected) {
+        var metric = Metric.fromLabel(label);
         assertThat(metric).isEqualTo(expected);
         assertThat(metric.label()).isEqualTo(label);
     }
@@ -46,7 +46,7 @@ class ComparisonMetricTest {
     @ParameterizedTest
     @ValueSource(strings = {"", "unknown", "p95", "latency", "MIN", "Throughput", "error"})
     void rejectsUnknownLabels(String invalidLabel) {
-        assertThatThrownBy(() -> ComparisonMetric.fromLabel(invalidLabel))
+        assertThatThrownBy(() -> Metric.fromLabel(invalidLabel))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(
                         "unknown comparison metric '%s', expected one of: min, mean, max, p50, p90, p99, p999, throughput, errors",
@@ -55,13 +55,13 @@ class ComparisonMetricTest {
 
     @Test
     void rejectsNullLabel() {
-        assertThatThrownBy(() -> ComparisonMetric.fromLabel(null))
+        assertThatThrownBy(() -> Metric.fromLabel(null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("metric label cannot be null");
     }
 
     @Test
     void hasExactlyNineMetrics() {
-        assertThat(ComparisonMetric.values()).hasSize(9);
+        assertThat(Metric.values()).hasSize(9);
     }
 }

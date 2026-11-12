@@ -18,12 +18,8 @@ package io.roadrunner.reports.console.render;
 import static java.util.Objects.requireNonNull;
 
 import io.roadrunner.console.ConsoleTheme;
-import io.roadrunner.reports.ComparisonMetric;
-import io.roadrunner.reports.ComparisonModel;
-import io.roadrunner.reports.MetricComparison;
-import io.roadrunner.reports.ReportModel;
-import io.roadrunner.reports.Tolerance;
-import io.roadrunner.reports.Verdict;
+import io.roadrunner.reports.*;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -47,7 +43,6 @@ public final class ComparisonRenderer {
     private ComparisonRenderer() {}
 
     public static String render(ComparisonModel model, ConsoleTheme theme) {
-        var width = theme.width();
         var runs = List.of(
                 String.format(
                         Locale.ROOT, "%-10s %10s %10s %14s %12s", "run", "requests", "duration", "throughput", "error rate"),
@@ -57,16 +52,16 @@ public final class ComparisonRenderer {
         var rows = new ArrayList<String>();
         rows.add(String.format(
                 Locale.ROOT, "%-11s %12s %12s %10s %10s  %s", "metric", "baseline", "current", "change", "tolerance", "verdict"));
-        Arrays.stream(ComparisonMetric.values())
+        Arrays.stream(Metric.values())
                 .map(metric -> metricRow(model.metric(metric), theme))
                 .forEach(rows::add);
         rows.add("");
         rows.add("overall     " + verdict(model.verdict(), theme));
 
         var values = new HashMap<String, String>();
-        values.put("runs", theme.box("Roadrunner comparison", runs, width));
+        values.put("runs", theme.box("Roadrunner comparison", runs));
         values.put("warning", warning(model, theme));
-        values.put("metrics", theme.box("Metrics", rows, width));
+        values.put("metrics", theme.box("Metrics", rows));
 
         // No substitution inside values: mismatch descriptions may contain "${...}".
         var substitutor = new StringSubstitutor(values);
@@ -82,7 +77,7 @@ public final class ComparisonRenderer {
         lines.add(theme.coloredIcon(ConsoleTheme.Icon.WARN)
                 + theme.paint(" these runs may not be comparable", ConsoleTheme.YELLOW));
         model.comparability().mismatches().forEach(mismatch -> lines.add("  - " + mismatch));
-        return theme.box("Warning", lines, theme.width()) + "\n";
+        return theme.box("Warning", lines) + "\n";
     }
 
     private static String template() {
@@ -104,8 +99,8 @@ public final class ComparisonRenderer {
                 m.errorPercentage());
     }
 
-    private static String metricRow(MetricComparison c, ConsoleTheme theme) {
-        var errors = c.metric() == ComparisonMetric.ERRORS;
+    private static String metricRow(ComparisonOutcome c, ConsoleTheme theme) {
+        var errors = c.metric() == Metric.ERRORS;
         return String.format(
                 Locale.ROOT,
                 "%-11s %12s %12s %s %10s  %s",
@@ -118,16 +113,15 @@ public final class ComparisonRenderer {
     }
 
     /** Padded first, coloured second: escape codes must not count towards the column width. */
-    private static String coloredChange(MetricComparison c, boolean errors, ConsoleTheme theme) {
+    private static String coloredChange(ComparisonOutcome c, boolean errors, ConsoleTheme theme) {
         var text = String.format(Locale.ROOT, "%10s", change(c.delta(), errors));
         if (Double.isInfinite(c.delta()) || c.delta() == 0) {
             return text;
         }
-        var better = c.metric() == ComparisonMetric.THROUGHPUT ? c.delta() > 0 : c.delta() < 0;
-        return theme.paint(text, better ? ConsoleTheme.GREEN : ConsoleTheme.RED);
+        return theme.paint(text, c.metric().isImprovement(c.delta()) ? ConsoleTheme.GREEN : ConsoleTheme.RED);
     }
 
-    private static String value(ComparisonMetric metric, double value) {
+    private static String value(Metric metric, double value) {
         return switch (metric) {
             case THROUGHPUT -> String.format(Locale.ROOT, "%.1f req/s", value);
             case ERRORS -> String.format(Locale.ROOT, "%.2f%%", value);
@@ -145,13 +139,11 @@ public final class ComparisonRenderer {
                 : String.format(Locale.ROOT, "%+.1f%%", delta);
     }
 
-    // the sign is the bound's direction, so it survives a zero limit ("-0%" bounds decreases)
+    // the largest tolerated regression; which way that is depends on the metric, so no sign
     private static String limit(Tolerance tolerance, boolean errors) {
-        var sign = tolerance.direction() == Tolerance.Direction.UPPER ? "+" : "-";
-        var magnitude = Math.abs(tolerance.limit());
         return errors
-                ? String.format(Locale.ROOT, "%s%.2f pp", sign, magnitude)
-                : String.format(Locale.ROOT, "%s%.1f%%", sign, magnitude);
+                ? String.format(Locale.ROOT, "%.2f pp", tolerance.limit())
+                : String.format(Locale.ROOT, "%.1f%%", tolerance.limit());
     }
 
     private static String verdict(Verdict verdict, ConsoleTheme theme) {

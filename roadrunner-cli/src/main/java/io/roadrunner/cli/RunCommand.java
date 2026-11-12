@@ -102,7 +102,7 @@ class RunCommand {
     @Option(
             names = "--tolerance",
             description =
-                    "With --baseline, bound the change of metrics, e.g. 'p99:+10%,throughput:-5%,errors:+0.5%'. Exits with code 3 when a bound is exceeded.")
+                    "With --baseline, bound the change of metrics, e.g. 'p99:10%,throughput:5%,errors:0.5%'. Exits with code 3 when a bound is exceeded.")
     String tolerance;
 
     @Option(
@@ -134,6 +134,8 @@ class RunCommand {
             ComparisonReports.requireDistinct(baseline, outputDir);
         }
 
+        LOG.info("Starting roadrunner...");
+
         var startedAt = Instant.now();
 
         var bootstrap = new Bootstrap().withOutputDir(outputDir).withPauseDetectorKinds(pauseDetectors);
@@ -147,11 +149,7 @@ class RunCommand {
             var runManifest = buildManifest(samplerCommandSpec, startedAt, Version.full());
             runManifest.writeTo(bootstrap.outputDir());
 
-            var reportPlugin = reportPlugins.get(report.prefix());
-            if (reportPlugin == null) {
-                throw new IllegalArgumentException("report generator %s unknown, supported report formats %s"
-                        .formatted(report.prefix(), reportPlugins.supportedReportFormats()));
-            }
+            var reportPlugin = reportPlugins.require(report.prefix());
 
             var reportConfiguration = report.parameters();
             var reportConfig = new HashMap<>(reportConfiguration);

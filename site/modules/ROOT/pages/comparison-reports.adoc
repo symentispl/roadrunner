@@ -36,8 +36,8 @@ include::example$generic/comparison-2/snippet.sh[]
 ╚════════════════════════════════════════════════════════════════════════════╝
 ╔═ Metrics ══════════════════════════════════════════════════════════════════╗
 ║ metric          baseline      current     change  tolerance  verdict       ║
-║ p99               100 ms       125 ms     +25.0%    +10.0%  FAILED ✘       ║
-║ throughput   100.0 req/s   97.0 req/s      -3.0%     -5.0%  PASSED ✔       ║
+║ p99               100 ms       125 ms     +25.0%      10.0%  FAILED ✘      ║
+║ throughput   100.0 req/s   97.0 req/s      -3.0%       5.0%  PASSED ✔      ║
 ║ errors             0.00%        0.00%   +0.00 pp          -  -             ║
 ║                                                                            ║
 ║ overall     FAILED ✘                                                       ║
@@ -84,13 +84,14 @@ In this example the current run is five times slower, so the limits on `p99` and
 include::example$generic/comparison-3/snippet.sh[]
 ----
 
-The limits are written as `metric:<sign><number>%`, separated by commas.
-The sign says which direction is bounded:
+The limits are written as `metric:<number>%`, separated by commas, and each one is the largest regression you accept.
+The metric knows which way is worse, so there is no sign to get wrong:
 
-* `+` is an upper bound: the change must not exceed the limit. `p99:+10%` fails when p99 grew by more than 10%.
-* `-` is a lower bound: the change must not fall below the limit. `throughput:-5%` fails when throughput dropped by more than 5%.
+* for latency metrics and `errors`, a regression is a rise. `p99:10%` fails when p99 grew by more than 10%.
+* for `throughput`, a regression is a drop. `throughput:5%` fails when throughput dropped by more than 5%.
 
-For `errors` the limit is in percentage points, for example `errors:+0.5%` allows the error rate to rise by at most half a point.
+An improvement never breaches a limit, however large. `p99:0%` accepts no regression at all.
+For `errors` the limit is in percentage points, for example `errors:0.5%` allows the error rate to rise by at most half a point.
 
 Roadrunner exits with code *3* when a tolerance is breached, so a CI step fails on it. The example captures the exit code to check it; in CI, run the `diff` on its own.
 A malformed tolerance, or a baseline directory that is not a finished run, is rejected before a load test starts.

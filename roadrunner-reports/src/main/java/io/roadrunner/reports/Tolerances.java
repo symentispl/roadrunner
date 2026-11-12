@@ -22,13 +22,12 @@ import java.util.Optional;
 /**
  * An immutable collection of metric tolerance limits parsed from configuration (e.g. {@code --tolerance}).
  *
- * <p>Negative zero (e.g. {@code throughput:-0%} or {@code errors:-0.0%}) is accepted and treated as a lower-bound
- * limit of 0.0%. Because the sign declares the direction bounded, '-' designates a lower bound (failing if delta < 0.0),
- * while the numeric limit is normalized to 0.0 to prevent IEEE 754 negative-zero comparison anomalies.
+ * <p>Each limit is the largest tolerated regression. Which direction is a regression depends on the metric
+ * (latency and errors rising, throughput falling), so limits carry no sign.
  *
  * @param entries the immutable map of metric tolerances
  */
-public record Tolerances(Map<ComparisonMetric, Tolerance> entries) {
+public record Tolerances(Map<Metric, Tolerance> entries) {
 
     private static final Tolerances EMPTY = new Tolerances(Map.of());
 
@@ -40,11 +39,11 @@ public record Tolerances(Map<ComparisonMetric, Tolerance> entries) {
         return EMPTY;
     }
 
-    public Optional<Tolerance> get(ComparisonMetric metric) {
+    public Optional<Tolerance> get(Metric metric) {
         return Optional.ofNullable(entries.get(metric));
     }
 
-    public boolean contains(ComparisonMetric metric) {
+    public boolean contains(Metric metric) {
         return entries.containsKey(metric);
     }
 
@@ -59,21 +58,21 @@ public record Tolerances(Map<ComparisonMetric, Tolerance> entries) {
     /**
      * Parses a tolerance specification string into a {@link Tolerances} instance.
      *
-     * <p>Expected format: {@code "<metric>:<sign><number>%,..."} (e.g. {@code "p99:+10%,throughput:-5%,errors:+0.5%"}).
+     * <p>Expected format: {@code "<metric>:<number>%,..."} (e.g. {@code "p99:10%,throughput:5%,errors:0.5%"}).
      * Surrounding whitespace around entries, metric names, colons, and values is ignored.
      * Null or blank input returns {@link #empty()}.
      *
      * @param input the tolerance configuration string
      * @return the parsed immutable Tolerances configuration
      * @throws IllegalArgumentException if the configuration is malformed, contains duplicate or unknown metrics,
-     *                                  is missing signs, percent suffixes, or valid numeric values
+     *                                  has signs, is missing percent suffixes, or valid numeric values
      */
     public static Tolerances parse(String input) {
         if (input == null || input.isBlank()) {
             return empty();
         }
 
-        var map = new LinkedHashMap<ComparisonMetric, Tolerance>();
+        var map = new LinkedHashMap<Metric, Tolerance>();
         var tokens = input.split(",", -1);
 
         for (var rawToken : tokens) {
@@ -99,7 +98,7 @@ public record Tolerances(Map<ComparisonMetric, Tolerance> entries) {
                         "malformed tolerance entry '%s': missing metric name".formatted(token));
             }
 
-            var metric = ComparisonMetric.fromLabel(metricLabel);
+            var metric = Metric.fromLabel(metricLabel);
             if (map.containsKey(metric)) {
                 throw new IllegalArgumentException(
                         "duplicate tolerance configuration for metric '%s'".formatted(metric.label()));
@@ -121,10 +120,10 @@ public record Tolerances(Map<ComparisonMetric, Tolerance> entries) {
                         "malformed tolerance value '%s': empty numeric part".formatted(valueStr));
             }
 
-            var sign = numericStr.charAt(0);
-            if (sign != '+' && sign != '-') {
+            if (numericStr.charAt(0) == '+' || numericStr.charAt(0) == '-') {
                 throw new IllegalArgumentException(
-                        "malformed tolerance value '%s': missing sign (+ or -)".formatted(valueStr));
+                        "malformed tolerance value '%s': drop the sign, the metric decides which direction is a regression"
+                                .formatted(valueStr));
             }
 
             double numericValue;
@@ -140,8 +139,7 @@ public record Tolerances(Map<ComparisonMetric, Tolerance> entries) {
                         "malformed tolerance value '%s': NaN and Infinity are not allowed".formatted(valueStr));
             }
 
-            var direction = sign == '+' ? Tolerance.Direction.UPPER : Tolerance.Direction.LOWER;
-            map.put(metric, new Tolerance(numericValue, direction));
+            map.put(metric, new Tolerance(numericValue));
         }
 
         return new Tolerances(map);

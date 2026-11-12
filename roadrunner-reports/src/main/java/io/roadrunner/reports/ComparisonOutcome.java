@@ -20,14 +20,14 @@ import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 
 /**
- * The comparison result for a single {@link ComparisonMetric} between a baseline and a current benchmark run.
+ * The comparison result for a single {@link Metric} between a baseline and a current benchmark run.
  *
  * <p>For standard metrics (latency metrics and throughput), the delta represents the relative percentage change:
  * {@code ((current - baseline) / baseline) * 100}. If the baseline is zero, a zero current value yields a delta of
  * {@code 0.0}, whereas a positive current value yields {@link Double#POSITIVE_INFINITY} so that any positive
- * upper-bound tolerance fails without producing {@link Double#NaN}.
+ * tolerance fails without producing {@link Double#NaN}.
  *
- * <p>For the {@link ComparisonMetric#ERRORS} metric, the delta represents the difference in error percentage
+ * <p>For the {@link Metric#ERRORS} metric, the delta represents the difference in error percentage
  * ({@link ReportModel#errorPercentage()}) measured in percentage points: {@code current - baseline}.
  *
  * <p>If a {@link Tolerance} is present, the verdict is determined by evaluating the delta against that tolerance.
@@ -40,15 +40,15 @@ import java.util.Optional;
  * @param tolerance the optional tolerance limit applied to this metric
  * @param verdict the evaluation verdict (PASSED, FAILED, or UNCHECKED)
  */
-public record MetricComparison(
-        ComparisonMetric metric,
+public record ComparisonOutcome(
+        Metric metric,
         double baselineValue,
         double currentValue,
         double delta,
         Optional<Tolerance> tolerance,
         Verdict verdict) {
 
-    public MetricComparison {
+    public ComparisonOutcome {
         requireNonNull(metric, "metric cannot be null");
         requireNonNull(verdict, "verdict cannot be null");
         tolerance = tolerance != null ? tolerance : Optional.empty();
@@ -85,9 +85,9 @@ public record MetricComparison(
      * @param current the current numeric value
      * @return the calculated delta (relative % for standard metrics, percentage points for errors)
      */
-    public static double calculateDelta(ComparisonMetric metric, double baseline, double current) {
+    public static double calculateDelta(Metric metric, double baseline, double current) {
         requireNonNull(metric, "metric cannot be null");
-        if (metric == ComparisonMetric.ERRORS) {
+        if (metric == Metric.ERRORS) {
             var diff = current - baseline;
             return diff == 0.0 ? 0.0 : diff;
         }
@@ -108,7 +108,7 @@ public record MetricComparison(
      * @param report the report model
      * @return the numeric value of the metric
      */
-    public static double valueOf(ComparisonMetric metric, ReportModel report) {
+    public static double valueOf(Metric metric, ReportModel report) {
         requireNonNull(metric, "metric cannot be null");
         requireNonNull(report, "report cannot be null");
         return switch (metric) {
@@ -125,29 +125,29 @@ public record MetricComparison(
     }
 
     /**
-     * Creates a {@link MetricComparison} from raw numeric values and an optional tolerance.
+     * Creates a {@link ComparisonOutcome} from raw numeric values and an optional tolerance.
      */
-    public static MetricComparison of(
-            ComparisonMetric metric, double baselineValue, double currentValue, Optional<Tolerance> tolerance) {
+    public static ComparisonOutcome of(
+            Metric metric, double baselineValue, double currentValue, Optional<Tolerance> tolerance) {
         requireNonNull(metric, "metric cannot be null");
         var tol = tolerance != null ? tolerance : Optional.<Tolerance>empty();
         var delta = calculateDelta(metric, baselineValue, currentValue);
-        var verdict = tol.map(t -> t.verdict(delta)).orElse(Verdict.UNCHECKED);
-        return new MetricComparison(metric, baselineValue, currentValue, delta, tol, verdict);
+        var verdict = tol.map(t -> t.verdict(metric, delta)).orElse(Verdict.UNCHECKED);
+        return new ComparisonOutcome(metric, baselineValue, currentValue, delta, tol, verdict);
     }
 
     /**
-     * Creates a {@link MetricComparison} from raw numeric values and a tolerance (which may be null).
+     * Creates a {@link ComparisonOutcome} from raw numeric values and a tolerance (which may be null).
      */
-    public static MetricComparison of(
-            ComparisonMetric metric, double baselineValue, double currentValue, Tolerance tolerance) {
+    public static ComparisonOutcome of(
+            Metric metric, double baselineValue, double currentValue, Tolerance tolerance) {
         return of(metric, baselineValue, currentValue, Optional.ofNullable(tolerance));
     }
 
     /**
-     * Creates an unchecked {@link MetricComparison} from raw numeric values without a tolerance.
+     * Creates an unchecked {@link ComparisonOutcome} from raw numeric values without a tolerance.
      */
-    public static MetricComparison of(ComparisonMetric metric, double baselineValue, double currentValue) {
+    public static ComparisonOutcome of(Metric metric, double baselineValue, double currentValue) {
         return of(metric, baselineValue, currentValue, Optional.empty());
     }
 
@@ -160,8 +160,8 @@ public record MetricComparison(
      * @param tolerances the tolerances configuration (or null for empty tolerances)
      * @return the comparison result
      */
-    public static MetricComparison from(
-            ComparisonMetric metric, ReportModel baseline, ReportModel current, Tolerances tolerances) {
+    public static ComparisonOutcome from(
+            Metric metric, ReportModel baseline, ReportModel current, Tolerances tolerances) {
         requireNonNull(metric, "metric cannot be null");
         requireNonNull(baseline, "baseline report cannot be null");
         requireNonNull(current, "current report cannot be null");
@@ -172,8 +172,8 @@ public record MetricComparison(
     /**
      * Compares a single metric between two report models with an explicit optional tolerance.
      */
-    public static MetricComparison from(
-            ComparisonMetric metric, ReportModel baseline, ReportModel current, Optional<Tolerance> tolerance) {
+    public static ComparisonOutcome from(
+            Metric metric, ReportModel baseline, ReportModel current, Optional<Tolerance> tolerance) {
         requireNonNull(metric, "metric cannot be null");
         requireNonNull(baseline, "baseline report cannot be null");
         requireNonNull(current, "current report cannot be null");

@@ -86,7 +86,7 @@ class ComparisonReportsTest {
         var comparison = ComparisonModel.of(
                 ComparisonReports.load(runDirectory(baseline, 10), true),
                 ComparisonReports.load(runDirectory(current, 10), true),
-                Tolerances.parse("p99:+10%"));
+                Tolerances.parse("p99:10%"));
         var out = new StringWriter();
 
         assertThatCode(() -> ComparisonReports.report(comparison, recording(), new PrintWriter(out)))
@@ -99,7 +99,7 @@ class ComparisonReportsTest {
         var comparison = ComparisonModel.of(
                 ComparisonReports.load(runDirectory(baseline, 10), true),
                 ComparisonReports.load(runDirectory(current, 20), true),
-                Tolerances.parse("p99:+10%"));
+                Tolerances.parse("p99:10%"));
         var out = new StringWriter();
 
         assertThatThrownBy(() -> ComparisonReports.report(comparison, recording(), new PrintWriter(out)))

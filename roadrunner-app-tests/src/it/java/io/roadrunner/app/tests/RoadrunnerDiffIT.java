@@ -83,7 +83,7 @@ public class RoadrunnerDiffIT {
     @Test
     void diffWithinToleranceSucceeds(@TempDir Path baseline, @TempDir Path current) throws Exception {
         var result = roadrunner(
-                "diff", "--tolerance", "p99:+10%", run(baseline, 10).toString(), run(current, 10).toString());
+                "diff", "--tolerance", "p99:10%", run(baseline, 10).toString(), run(current, 10).toString());
 
         assertThat(result.exitCode()).as(result.output()).isZero();
         assertThat(result.output()).containsPattern("overall +PASSED");
@@ -92,7 +92,7 @@ public class RoadrunnerDiffIT {
     @Test
     void diffBeyondToleranceExitsWithBreachCode(@TempDir Path baseline, @TempDir Path current) throws Exception {
         var result = roadrunner(
-                "diff", "--tolerance", "p99:+10%", run(baseline, 10).toString(), run(current, 20).toString());
+                "diff", "--tolerance", "p99:10%", run(baseline, 10).toString(), run(current, 20).toString());
 
         assertThat(result.exitCode()).as(result.output()).isEqualTo(TOLERANCE_BREACH);
         assertThat(result.output()).containsPattern("p99 .* FAILED").containsPattern("overall +FAILED");
@@ -131,7 +131,7 @@ public class RoadrunnerDiffIT {
                 "--baseline",
                 run(baseline, 1).toString(),
                 "--tolerance",
-                "p99:+10%",
+                "p99:10%",
                 "vm",
                 "--sleep-time",
                 "50");
@@ -144,7 +144,7 @@ public class RoadrunnerDiffIT {
     @Test
     void toleranceWithoutBaselineIsRejectedBeforeTheRun(@TempDir Path output) throws Exception {
         var result = roadrunner(
-                "run", "-n", "5", "-c", "1", "-s", output.toString(), "--tolerance", "p99:+10%", "vm", "--sleep-time", "1");
+                "run", "-n", "5", "-c", "1", "-s", output.toString(), "--tolerance", "p99:10%", "vm", "--sleep-time", "1");
 
         assertThat(result.exitCode()).as(result.output()).isEqualTo(1);
         assertThat(result.output()).contains("--tolerance needs --baseline");

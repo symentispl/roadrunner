@@ -26,7 +26,7 @@ import java.util.Map;
 /**
  * Result of comparing a baseline {@link ReportModel} against a current {@link ReportModel}.
  *
- * <p>Contains comparisons for all nine {@link ComparisonMetric} values, evaluated against the configured
+ * <p>Contains comparisons for all nine {@link Metric} values, evaluated against the configured
  * {@link Tolerances}. The overall {@link Verdict} is {@link Verdict#FAILED} if any individual metric comparison
  * fails; otherwise it is {@link Verdict#PASSED} (including when metrics are {@link Verdict#UNCHECKED}).
  *
@@ -45,7 +45,7 @@ public record ComparisonModel(
         ReportModel current,
         Tolerances tolerances,
         Comparability comparability,
-        Map<ComparisonMetric, MetricComparison> metrics,
+        Map<Metric, ComparisonOutcome> metrics,
         Verdict verdict) {
 
     public ComparisonModel {
@@ -57,7 +57,7 @@ public record ComparisonModel(
         requireNonNull(verdict, "verdict cannot be null");
 
         var hasFailure = false;
-        for (var metric : ComparisonMetric.values()) {
+        for (var metric : Metric.values()) {
             if (!metrics.containsKey(metric)) {
                 throw new IllegalArgumentException("missing comparison for metric: " + metric);
             }
@@ -80,7 +80,7 @@ public record ComparisonModel(
      * @param metric the metric to look up
      * @return the comparison for that metric
      */
-    public MetricComparison metric(ComparisonMetric metric) {
+    public ComparisonOutcome metric(Metric metric) {
         requireNonNull(metric, "metric cannot be null");
         return metrics.get(metric);
     }
@@ -103,10 +103,10 @@ public record ComparisonModel(
         requireNonNull(tolerances, "tolerances cannot be null");
         requireNonNull(comparability, "comparability cannot be null");
 
-        var metricsMap = new LinkedHashMap<ComparisonMetric, MetricComparison>();
+        var metricsMap = new LinkedHashMap<Metric, ComparisonOutcome>();
         var hasFailure = false;
-        for (var metric : ComparisonMetric.values()) {
-            var comparison = MetricComparison.from(metric, baseline, current, tolerances);
+        for (var metric : Metric.values()) {
+            var comparison = ComparisonOutcome.from(metric, baseline, current, tolerances);
             metricsMap.put(metric, comparison);
             if (comparison.verdict() == Verdict.FAILED) {
                 hasFailure = true;

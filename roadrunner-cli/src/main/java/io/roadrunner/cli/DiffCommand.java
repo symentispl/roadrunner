@@ -17,6 +17,7 @@ package io.roadrunner.cli;
 
 import io.roadrunner.reports.ComparisonModel;
 import io.roadrunner.reports.RunDirectory;
+import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -37,7 +38,7 @@ class DiffCommand {
     @Option(
             names = "--tolerance",
             description =
-                    "Bound the change of metrics, e.g. 'p99:+10%,throughput:-5%,errors:+0.5%'. Metrics not listed are reported but not checked. Exits with code 3 when a bound is exceeded.")
+                    "Bound the change of metrics, e.g. 'p99:10%,throughput:5%,errors:0.5%'. Metrics not listed are reported but not checked. Exits with code 3 when a bound is exceeded.")
     String tolerance;
 
     @Option(
@@ -52,17 +53,13 @@ class DiffCommand {
                     "Always build reports from raw per-request latencies, even when pause-corrected data is available.")
     boolean rawLatency;
 
-    public void run(java.io.PrintWriter out) throws Exception {
+    public void run(PrintWriter out) throws Exception {
         var tolerances = ComparisonReports.parseTolerances(tolerance);
         ComparisonReports.requireRunDirectory(baseline, "baseline");
         ComparisonReports.requireRunDirectory(current, "current");
 
         try (var reportPlugins = ReportPlugins.load(new Preferences(Paths.get(System.getProperty("user.home"))))) {
-            var reportPlugin = reportPlugins.get(report.prefix());
-            if (reportPlugin == null) {
-                throw new IllegalArgumentException("report generator %s unknown, supported report formats %s"
-                        .formatted(report.prefix(), reportPlugins.supportedReportFormats()));
-            }
+            var reportPlugin = reportPlugins.require(report.prefix());
             var config = new HashMap<>(report.parameters());
             config.put("outputDir", current.toString());
             var generator = ComparisonReports.generator(reportPlugin, config);

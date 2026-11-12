@@ -15,27 +15,21 @@
  */
 package io.roadrunner.console;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
-import org.jline.terminal.Terminal;
-import org.jline.utils.AttributedStringBuilder;
-import org.jline.utils.AttributedStyle;
 
 public final class ConsoleTheme {
-    public static final int GREEN = AttributedStyle.GREEN;
-    public static final int YELLOW = AttributedStyle.YELLOW;
-    public static final int RED = AttributedStyle.RED;
-    public static final int CYAN = AttributedStyle.CYAN;
-    public static final int BLUE = AttributedStyle.BLUE;
-    public static final int MAGENTA = AttributedStyle.MAGENTA;
-    public static final int WHITE = AttributedStyle.WHITE;
+    public static final int GREEN = 2;
+    public static final int YELLOW = 3;
+    public static final int RED = 1;
+    public static final int CYAN = 6;
 
     /** Status glyphs; plain ASCII stand-ins when the theme is not unicode. */
     public enum Icon {
         OK("✔", "+"),
         FAIL("✘", "x"),
-        WARN("⚠", "!"),
-        INFO("ℹ", "i");
+        WARN("⚠", "!");
 
         private final String unicode;
         private final String ascii;
@@ -48,36 +42,19 @@ public final class ConsoleTheme {
 
     private static final Pattern ANSI = Pattern.compile("\u001b\\[[0-9;]*m");
 
-    private final Terminal terminal; // null: emit plain ANSI escapes
     private final boolean color;
     private final boolean unicode;
     private final int width;
 
-    private ConsoleTheme(Terminal terminal, boolean color, boolean unicode, int width) {
-        this.terminal = terminal;
+    private ConsoleTheme(boolean color, boolean unicode, int width) {
         this.color = color;
         this.unicode = unicode;
         this.width = width;
     }
 
-    public static ConsoleTheme of(Terminal terminal) {
-        var noColor = System.getenv("NO_COLOR") != null;
-        var type = terminal.getType() == null ? "" : terminal.getType();
-        var dumb = type.contains("dumb");
-        var color = !noColor && !dumb;
-        var unicode = !dumb;
-        var w = terminal.getWidth();
-        var width = w <= 0 ? 80 : Math.max(40, Math.min(120, w));
-        return new ConsoleTheme(terminal, color, unicode, width);
-    }
-
-    /** A theme that needs no terminal: colour and charset are chosen by the caller, width is fixed. */
+    /** Colour and charset are chosen by the caller, width is fixed: output never depends on a terminal. */
     public static ConsoleTheme of(boolean color, boolean unicode, int width) {
-        return new ConsoleTheme(null, color, unicode, width);
-    }
-
-    public boolean color() {
-        return color;
+        return new ConsoleTheme(color, unicode, width);
     }
 
     public boolean unicode() {
@@ -92,13 +69,7 @@ public final class ConsoleTheme {
         if (!color) {
             return text;
         }
-        if (terminal == null) {
-            return "\u001b[3" + ansiColor + "m" + text + "\u001b[0m";
-        }
-        return new AttributedStringBuilder()
-                .style(AttributedStyle.DEFAULT.foreground(ansiColor))
-                .append(text)
-                .toAnsi(terminal);
+        return "\u001b[3" + ansiColor + "m" + text + "\u001b[0m";
     }
 
     public String bold(String text) {
@@ -109,14 +80,13 @@ public final class ConsoleTheme {
         return unicode ? icon.unicode : icon.ascii;
     }
 
-    /** A coloured status glyph: green OK, red FAIL, yellow WARN, cyan INFO. */
+    /** A coloured status glyph: green OK, red FAIL and yellow WARN. */
     public String coloredIcon(Icon icon) {
         var c =
                 switch (icon) {
                     case OK -> GREEN;
                     case FAIL -> RED;
                     case WARN -> YELLOW;
-                    case INFO -> CYAN;
                 };
         return paint(icon(icon), c);
     }
@@ -126,7 +96,7 @@ public final class ConsoleTheme {
      * {@code ,} or {@code =} when one is near) when a single word is wider than a line.
      */
     public static List<String> wrap(String text, int width) {
-        var lines = new java.util.ArrayList<String>();
+        var lines = new ArrayList<String>();
         var line = new StringBuilder();
         for (var word : text.split(" +")) {
             while (word.length() > width) {
@@ -156,14 +126,18 @@ public final class ConsoleTheme {
 
     /** Length as seen on screen: ANSI colour escapes take no room. */
     public static int visibleLength(String text) {
-        return ANSI.matcher(text).replaceAll("").length();
+        return stripAnsi(text).length();
+    }
+
+    public static String stripAnsi(String text) {
+        return ANSI.matcher(text).replaceAll("");
     }
 
     /**
      * A Turbo Vision style frame: double-line border (plain {@code + = | } characters when not unicode), the title
-     * set into the top edge, every line padded to {@code width} columns.
+     * set into the top edge, every line padded to the theme's width.
      */
-    public String box(String title, List<String> lines, int width) {
+    public String box(String title, List<String> lines) {
         var h = unicode ? "═" : "=";
         var v = unicode ? "║" : "|";
         var inner = width - 2;
@@ -177,11 +151,11 @@ public final class ConsoleTheme {
                 .append(h.repeat(fill))
                 .append(unicode ? "╗" : "+")
                 .append('\n');
-        var wrapped = new java.util.ArrayList<String>();
+        var wrapped = new ArrayList<String>();
         for (var line : lines) {
             // a line too wide for the frame is wrapped by visible width; colour is dropped from wrapped lines
             if (visibleLength(line) > inner - 2) {
-                wrapped.addAll(wrap(ANSI.matcher(line).replaceAll(""), inner - 2));
+                wrapped.addAll(wrap(stripAnsi(line), inner - 2));
             } else {
                 wrapped.add(line);
             }

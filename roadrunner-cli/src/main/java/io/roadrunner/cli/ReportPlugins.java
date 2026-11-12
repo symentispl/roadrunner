@@ -54,6 +54,16 @@ public final class ReportPlugins implements AutoCloseable {
         return reportPlugins.get(reportPluginName);
     }
 
+    /** Like {@link #get}, but an unknown name is a usage error listing the supported formats. */
+    public ReportPlugin require(String reportPluginName) {
+        var plugin = get(reportPluginName);
+        if (plugin == null) {
+            throw new IllegalArgumentException("report generator %s unknown, supported report formats %s"
+                    .formatted(reportPluginName, supportedReportFormats()));
+        }
+        return plugin;
+    }
+
     public Set<String> supportedReportFormats() {
         return reportPlugins.keySet();
     }

@@ -61,7 +61,6 @@ public final class ReportRenderer {
                 : (m.errorPercentage() < 1.0 ? ConsoleTheme.Icon.WARN : ConsoleTheme.Icon.FAIL);
         var slices = m.throughputSeries().length;
         var sliceSeconds = slices == 0 ? 0 : m.durationSeconds() / slices;
-        var width = t.width();
 
         var header = List.of(
                 "sampler %s | started %s"
@@ -80,16 +79,16 @@ public final class ReportRenderer {
                 "duration    " + String.format(Locale.ROOT, "%.1f s", m.durationSeconds()));
 
         var values = new HashMap<String, String>();
-        values.put("banner", t.box("Roadrunner report", header, width));
+        values.put("banner", t.box("Roadrunner report", header));
         values.put("configuration", manifest == null ? "" : configuration(manifest, t));
-        values.put("summary", t.box("Summary", summary, width));
-        values.put("percentiles", t.box("Latency by percentile", percentileRows(m, t), width));
+        values.put("summary", t.box("Summary", summary));
+        values.put("percentiles", t.box("Latency by percentile", percentileRows(m, t)));
         values.put(
-                "latency", t.box("Latency over time (ms; bar is p99)", latencyRows(m, sliceSeconds, t), width));
+                "latency", t.box("Latency over time (ms; bar is p99)", latencyRows(m, sliceSeconds, t)));
         values.put(
                 "throughput",
-                t.box("Throughput over time (requests/s)", throughputRows(m, slices, sliceSeconds, t), width));
-        values.put("status", t.box("Status", statusRows(m, t), width));
+                t.box("Throughput over time (requests/s)", throughputRows(m, slices, sliceSeconds, t)));
+        values.put("status", t.box("Status", statusRows(m, t)));
 
         // No substitution inside values: sampler options and status codes may contain "${...}".
         var substitutor = new StringSubstitutor(values);
@@ -226,7 +225,7 @@ public final class ReportRenderer {
             rows.add(String.format("%-18s %s", e.getKey(), wrapped.get(0)));
             wrapped.stream().skip(1).forEach(l -> rows.add(" ".repeat(keyWidth) + l));
         }
-        return t.box(title, rows, t.width()) + "\n";
+        return t.box(title, rows) + "\n";
     }
 
     private static String template() {
