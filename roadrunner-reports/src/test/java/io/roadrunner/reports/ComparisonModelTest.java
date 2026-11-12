@@ -90,7 +90,7 @@ class ComparisonModelTest {
         var model = ComparisonModel.of(baseline, current);
 
         assertThat(model.metrics()).hasSize(9);
-        for (var metric : ComparisonMetric.values()) {
+        for (var metric : Metric.values()) {
             assertThat(model.metrics()).containsKey(metric);
             assertThat(model.metric(metric)).isNotNull();
             assertThat(model.metric(metric).metric()).isEqualTo(metric);
@@ -104,32 +104,32 @@ class ComparisonModelTest {
 
         var model = ComparisonModel.of(baseline, current);
 
-        assertThat(model.metric(ComparisonMetric.MIN).baselineValue()).isEqualTo(10.0);
-        assertThat(model.metric(ComparisonMetric.MIN).currentValue()).isEqualTo(12.0);
+        assertThat(model.metric(Metric.MIN).baselineValue()).isEqualTo(10.0);
+        assertThat(model.metric(Metric.MIN).currentValue()).isEqualTo(12.0);
 
-        assertThat(model.metric(ComparisonMetric.MEAN).baselineValue()).isEqualTo(20.0);
-        assertThat(model.metric(ComparisonMetric.MEAN).currentValue()).isEqualTo(22.0);
+        assertThat(model.metric(Metric.MEAN).baselineValue()).isEqualTo(20.0);
+        assertThat(model.metric(Metric.MEAN).currentValue()).isEqualTo(22.0);
 
-        assertThat(model.metric(ComparisonMetric.MAX).baselineValue()).isEqualTo(100.0);
-        assertThat(model.metric(ComparisonMetric.MAX).currentValue()).isEqualTo(105.0);
+        assertThat(model.metric(Metric.MAX).baselineValue()).isEqualTo(100.0);
+        assertThat(model.metric(Metric.MAX).currentValue()).isEqualTo(105.0);
 
-        assertThat(model.metric(ComparisonMetric.P50).baselineValue()).isEqualTo(18.0);
-        assertThat(model.metric(ComparisonMetric.P50).currentValue()).isEqualTo(20.0);
+        assertThat(model.metric(Metric.P50).baselineValue()).isEqualTo(18.0);
+        assertThat(model.metric(Metric.P50).currentValue()).isEqualTo(20.0);
 
-        assertThat(model.metric(ComparisonMetric.P90).baselineValue()).isEqualTo(40.0);
-        assertThat(model.metric(ComparisonMetric.P90).currentValue()).isEqualTo(42.0);
+        assertThat(model.metric(Metric.P90).baselineValue()).isEqualTo(40.0);
+        assertThat(model.metric(Metric.P90).currentValue()).isEqualTo(42.0);
 
-        assertThat(model.metric(ComparisonMetric.P99).baselineValue()).isEqualTo(80.0);
-        assertThat(model.metric(ComparisonMetric.P99).currentValue()).isEqualTo(85.0);
+        assertThat(model.metric(Metric.P99).baselineValue()).isEqualTo(80.0);
+        assertThat(model.metric(Metric.P99).currentValue()).isEqualTo(85.0);
 
-        assertThat(model.metric(ComparisonMetric.P999).baselineValue()).isEqualTo(95.0);
-        assertThat(model.metric(ComparisonMetric.P999).currentValue()).isEqualTo(98.0);
+        assertThat(model.metric(Metric.P999).baselineValue()).isEqualTo(95.0);
+        assertThat(model.metric(Metric.P999).currentValue()).isEqualTo(98.0);
 
-        assertThat(model.metric(ComparisonMetric.THROUGHPUT).baselineValue()).isEqualTo(1000.0);
-        assertThat(model.metric(ComparisonMetric.THROUGHPUT).currentValue()).isEqualTo(980.0);
+        assertThat(model.metric(Metric.THROUGHPUT).baselineValue()).isEqualTo(1000.0);
+        assertThat(model.metric(Metric.THROUGHPUT).currentValue()).isEqualTo(980.0);
 
-        assertThat(model.metric(ComparisonMetric.ERRORS).baselineValue()).isEqualTo(2.5);
-        assertThat(model.metric(ComparisonMetric.ERRORS).currentValue()).isEqualTo(1.5);
+        assertThat(model.metric(Metric.ERRORS).baselineValue()).isEqualTo(2.5);
+        assertThat(model.metric(Metric.ERRORS).currentValue()).isEqualTo(1.5);
     }
 
     @Test
@@ -139,7 +139,7 @@ class ComparisonModelTest {
 
         var model = ComparisonModel.of(baseline, current);
 
-        for (var metric : ComparisonMetric.values()) {
+        for (var metric : Metric.values()) {
             assertThat(model.metric(metric)).isSameAs(model.metrics().get(metric));
         }
     }
@@ -162,7 +162,7 @@ class ComparisonModelTest {
         // Even with huge regressions, report-only mode (no tolerances) has UNCHECKED metrics and overall PASSED
         var model = ComparisonModel.of(baseline, current);
 
-        for (var metric : ComparisonMetric.values()) {
+        for (var metric : Metric.values()) {
             assertThat(model.metric(metric).verdict()).isEqualTo(Verdict.UNCHECKED);
         }
         assertThat(model.verdict()).isEqualTo(Verdict.PASSED);
@@ -176,13 +176,13 @@ class ComparisonModelTest {
         var current = createReport(10, 20, 100, 18, 40, 85, 95, 960.0, 1.3);
 
         // p99: 80 -> 85 (+6.25% <= +10%), throughput: 1000 -> 960 (-4.0% >= -5%), errors: 1.0% -> 1.3% (+0.3 <= +0.5)
-        var tolerances = Tolerances.parse("p99:+10%,throughput:-5%,errors:+0.5%");
+        var tolerances = Tolerances.parse("p99:10%,throughput:5%,errors:0.5%");
         var model = ComparisonModel.of(baseline, current, tolerances);
 
-        assertThat(model.metric(ComparisonMetric.P99).verdict()).isEqualTo(Verdict.PASSED);
-        assertThat(model.metric(ComparisonMetric.THROUGHPUT).verdict()).isEqualTo(Verdict.PASSED);
-        assertThat(model.metric(ComparisonMetric.ERRORS).verdict()).isEqualTo(Verdict.PASSED);
-        assertThat(model.metric(ComparisonMetric.MEAN).verdict()).isEqualTo(Verdict.UNCHECKED);
+        assertThat(model.metric(Metric.P99).verdict()).isEqualTo(Verdict.PASSED);
+        assertThat(model.metric(Metric.THROUGHPUT).verdict()).isEqualTo(Verdict.PASSED);
+        assertThat(model.metric(Metric.ERRORS).verdict()).isEqualTo(Verdict.PASSED);
+        assertThat(model.metric(Metric.MEAN).verdict()).isEqualTo(Verdict.UNCHECKED);
 
         assertThat(model.verdict()).isEqualTo(Verdict.PASSED);
         assertThat(model.isPassed()).isTrue();
@@ -195,11 +195,11 @@ class ComparisonModelTest {
         // p99 degrades by +25% (80 -> 100)
         var current = createReport(10, 20, 100, 18, 40, 100, 95, 980.0, 1.0);
 
-        var tolerances = Tolerances.parse("p99:+10%,throughput:-5%");
+        var tolerances = Tolerances.parse("p99:10%,throughput:5%");
         var model = ComparisonModel.of(baseline, current, tolerances);
 
-        assertThat(model.metric(ComparisonMetric.P99).verdict()).isEqualTo(Verdict.FAILED);
-        assertThat(model.metric(ComparisonMetric.THROUGHPUT).verdict()).isEqualTo(Verdict.PASSED);
+        assertThat(model.metric(Metric.P99).verdict()).isEqualTo(Verdict.FAILED);
+        assertThat(model.metric(Metric.THROUGHPUT).verdict()).isEqualTo(Verdict.PASSED);
         assertThat(model.verdict()).isEqualTo(Verdict.FAILED);
         assertThat(model.isPassed()).isFalse();
         assertThat(model.isFailed()).isTrue();
@@ -211,24 +211,24 @@ class ComparisonModelTest {
         // p99 degrades by +25% (80 -> 100) and throughput drops by -20% (1000 -> 800)
         var current = createReport(10, 20, 100, 18, 40, 100, 95, 800.0, 1.0);
 
-        var tolerances = Tolerances.parse("p99:+10%,throughput:-5%");
+        var tolerances = Tolerances.parse("p99:10%,throughput:5%");
         var model = ComparisonModel.of(baseline, current, tolerances);
 
-        assertThat(model.metric(ComparisonMetric.P99).verdict()).isEqualTo(Verdict.FAILED);
-        assertThat(model.metric(ComparisonMetric.THROUGHPUT).verdict()).isEqualTo(Verdict.FAILED);
+        assertThat(model.metric(Metric.P99).verdict()).isEqualTo(Verdict.FAILED);
+        assertThat(model.metric(Metric.THROUGHPUT).verdict()).isEqualTo(Verdict.FAILED);
         assertThat(model.verdict()).isEqualTo(Verdict.FAILED);
         assertThat(model.isFailed()).isTrue();
     }
 
     @Test
-    void manifestMismatchesDoNotPreventMetricComparison() {
+    void manifestMismatchesDoNotPreventMetricResult() {
         var baseline = createReport(10, 20, 100, 18, 40, 80, 95, 1000.0, 1.0);
         var current = createReport(10, 20, 100, 18, 40, 85, 95, 960.0, 1.0);
 
         var baselineManifest = createManifest("http", "closed", "10");
         var currentManifest = createManifest("grpc", "closed", "10"); // Sampler mismatch
 
-        var tolerances = Tolerances.parse("p99:+10%");
+        var tolerances = Tolerances.parse("p99:10%");
         var model = ComparisonModel.of(baseline, current, tolerances, baselineManifest, currentManifest);
 
         // Comparability reports mismatch
@@ -238,7 +238,7 @@ class ComparisonModelTest {
 
         // Metric comparison still computes normally and passes
         assertThat(model.metrics()).hasSize(9);
-        assertThat(model.metric(ComparisonMetric.P99).verdict()).isEqualTo(Verdict.PASSED);
+        assertThat(model.metric(Metric.P99).verdict()).isEqualTo(Verdict.PASSED);
         assertThat(model.verdict()).isEqualTo(Verdict.PASSED);
     }
 
@@ -330,8 +330,8 @@ class ComparisonModelTest {
     @Test
     void canonicalConstructorRequiresAllNineMetrics() {
         var report = createReport(10, 20, 100, 18, 40, 80, 95, 1000.0, 1.0);
-        var partialMap = new EnumMap<ComparisonMetric, MetricComparison>(ComparisonMetric.class);
-        partialMap.put(ComparisonMetric.P99, MetricComparison.of(ComparisonMetric.P99, 10.0, 10.0));
+        var partialMap = new EnumMap<Metric, ComparisonOutcome>(Metric.class);
+        partialMap.put(Metric.P99, ComparisonOutcome.of(Metric.P99, 10.0, 10.0));
 
         assertThatThrownBy(() -> new ComparisonModel(
                         report, report, Tolerances.empty(), Comparability.compatible(), partialMap, Verdict.PASSED))
@@ -345,7 +345,7 @@ class ComparisonModelTest {
         var metricsWithFailure =
                 new LinkedHashMap<>(ComparisonModel.of(report, report).metrics());
         metricsWithFailure.put(
-                ComparisonMetric.P99, MetricComparison.of(ComparisonMetric.P99, 100.0, 150.0, Tolerance.upper(10.0)));
+                Metric.P99, ComparisonOutcome.of(Metric.P99, 100.0, 150.0, new Tolerance(10.0)));
 
         assertThatThrownBy(() -> new ComparisonModel(
                         report,
@@ -386,7 +386,7 @@ class ComparisonModelTest {
 
         var metricsWithFailure = new LinkedHashMap<>(uncheckedMetrics);
         metricsWithFailure.put(
-                ComparisonMetric.P99, MetricComparison.of(ComparisonMetric.P99, 100.0, 150.0, Tolerance.upper(10.0)));
+                Metric.P99, ComparisonOutcome.of(Metric.P99, 100.0, 150.0, new Tolerance(10.0)));
 
         var failedModel = new ComparisonModel(
                 report, report, Tolerances.empty(), Comparability.compatible(), metricsWithFailure, Verdict.FAILED);
@@ -395,11 +395,11 @@ class ComparisonModelTest {
     }
 
     @Test
-    void canonicalConstructorRejectsNullMetricComparison() {
+    void canonicalConstructorRejectsNullMetricResult() {
         var report = createReport(10, 20, 100, 18, 40, 80, 95, 1000.0, 1.0);
         var metricsWithNull =
                 new LinkedHashMap<>(ComparisonModel.of(report, report).metrics());
-        metricsWithNull.put(ComparisonMetric.P99, null);
+        metricsWithNull.put(Metric.P99, null);
 
         assertThatThrownBy(() -> new ComparisonModel(
                         report,

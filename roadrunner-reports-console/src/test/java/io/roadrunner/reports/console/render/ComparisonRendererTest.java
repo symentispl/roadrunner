@@ -70,13 +70,13 @@ class ComparisonRendererTest {
 
     @Test
     void marksTolerancesAndOverallVerdict() throws Exception {
-        var tolerances = Tolerances.parse("p99:+10%,throughput:-5%");
+        var tolerances = Tolerances.parse("p99:10%,throughput:5%");
         var model = ComparisonModel.of(run(100, 100.0, 0.0), run(125, 100.0, 0.0), tolerances);
 
         var out = ComparisonRenderer.render(model, dumbTheme());
 
-        assertThat(out).containsPattern("p99 +100 ms +125 ms +\\+25\\.0% +\\+10\\.0% +FAILED x");
-        assertThat(out).containsPattern("throughput .* -5\\.0% +PASSED \\+");
+        assertThat(out).containsPattern("p99 +100 ms +125 ms +\\+25\\.0% +10\\.0% +FAILED x");
+        assertThat(out).containsPattern("throughput .* 5\\.0% +PASSED \\+");
         assertThat(out).containsPattern("overall +FAILED x");
     }
 
@@ -110,7 +110,7 @@ class ComparisonRendererTest {
 
     @Test
     void colourAndUnicodeAreOptIn() {
-        var model = ComparisonModel.of(run(100, 100.0, 0.0), run(125, 100.0, 0.0), Tolerances.parse("p99:+10%"));
+        var model = ComparisonModel.of(run(100, 100.0, 0.0), run(125, 100.0, 0.0), Tolerances.parse("p99:10%"));
 
         var fancy = ComparisonRenderer.render(model, ConsoleTheme.of(true, true, 78));
         var plain = ComparisonRenderer.render(model, ConsoleTheme.of(false, false, 78));

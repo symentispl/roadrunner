@@ -37,14 +37,14 @@ class ConsoleThemeTest {
     void boxIsAlignedInUnicodeAndAscii() {
         for (var unicode : new boolean[] {true, false}) {
             var theme = ConsoleTheme.of(true, unicode, 30);
-            var box = theme.box("Title", List.of("one", theme.paint("two", ConsoleTheme.GREEN)), 30);
+            var box = theme.box("Title", List.of("one", theme.paint("two", ConsoleTheme.GREEN)));
             assertThat(box.lines().map(ConsoleTheme::visibleLength).distinct()).containsExactly(30);
         }
     }
 
     @Test
     void asciiBoxUsesPlainCharacters() {
-        var box = ConsoleTheme.of(false, false, 20).box("T", List.of("x"), 20);
+        var box = ConsoleTheme.of(false, false, 20).box("T", List.of("x"));
         assertThat(box).startsWith("+= T =").contains("| x").endsWith("+");
     }
 
@@ -64,7 +64,7 @@ class ConsoleThemeTest {
 
     @Test
     void boxWrapsLinesThatAreTooWide() {
-        var box = ConsoleTheme.of(false, true, 20).box("T", List.of("one two three four five six"), 20);
+        var box = ConsoleTheme.of(false, true, 20).box("T", List.of("one two three four five six"));
         assertThat(box.lines().map(String::length).distinct()).containsExactly(20);
     }
 }

@@ -26,8 +26,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /** What {@code diff} and {@code run --baseline} share: read the runs, compare them, render, and gate on the verdict. */
@@ -65,12 +65,11 @@ final class ComparisonReports {
         return ReportModel.from(new CsvOutputEventReader(runDirectory.outputCsv()), runDirectory, rawLatency);
     }
 
-    static ReportComparisonGenerator generator(ReportPlugin plugin, java.util.Map<String, String> configuration) {
-        var config = new HashMap<>(configuration);
+    static ReportComparisonGenerator generator(ReportPlugin plugin, Map<String, String> configuration) {
         return plugin.reportComparisonProvider()
                 .orElseThrow(() -> new IllegalArgumentException(
                         "report format %s does not support comparison".formatted(plugin.name())))
-                .create(config);
+                .create(configuration);
     }
 
     /** Renders the comparison, then throws {@link ToleranceBreachException} if any tolerance was breached. */
