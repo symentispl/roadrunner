@@ -60,6 +60,48 @@ public class RoadrunnerRunIT {
     }
 
     @Test
+    void noArgumentsPrintsUsageAndExitsTwo() throws Exception {
+        var result = runCli();
+
+        assertThat(result.exitCode()).isEqualTo(2);
+        assertThat(firstLine(result.stdout())).startsWith("Usage:");
+        assertThat(result.stderr()).isEmpty();
+    }
+
+    @Test
+    void runWithoutSamplerPrintsRunUsageAndExitsTwo() throws Exception {
+        for (var args : List.of(List.of("run"), List.of("run", "-c", "1", "-n", "1"))) {
+            var result = runCli(args.toArray(String[]::new));
+
+            assertThat(result.exitCode()).as("exit code for %s", args).isEqualTo(2);
+            assertThat(firstLine(result.stdout())).startsWith("Usage:").contains("run");
+            assertThat(result.stdout()).contains("zero");
+            assertThat(result.stderr()).isEmpty();
+        }
+    }
+
+    @Test
+    void helpAndVersionExitSuccessfully() throws Exception {
+        var help = runCli("-h");
+        assertThat(help.exitCode()).isZero();
+        assertThat(firstLine(help.stdout())).startsWith("Usage:");
+        assertThat(help.stderr()).isEmpty();
+
+        var version = runCli("-V");
+        assertThat(version.exitCode()).isZero();
+        assertThat(version.stdout()).isNotBlank();
+        assertThat(version.stderr()).isEmpty();
+    }
+
+    @Test
+    void unknownOptionExitsTwoAndReportsAnError() throws Exception {
+        var result = runCli("--unknown-option");
+
+        assertThat(result.exitCode()).isEqualTo(2);
+        assertThat(firstLine(result.stderr())).startsWith("error:");
+    }
+
+    @Test
     void helpRejectsInvalidDocumentedCommands() throws Exception {
         for (var args : List.of(
                 List.of("-c", "50", "-n", "500", "vm", "--sleep-time", "10"),
@@ -98,6 +140,22 @@ public class RoadrunnerRunIT {
             assertThat(stdout).contains("Usage:");
         }
     }
+
+    private ProcessResult runCli(String... args) throws Exception {
+        var command = new ArrayList<String>();
+        command.add(roadrunnerBin.toString());
+        command.addAll(List.of(args));
+        var process = new ProcessBuilder(command).start();
+        var stdout = new String(process.getInputStream().readAllBytes());
+        var stderr = new String(process.getErrorStream().readAllBytes());
+        return new ProcessResult(process.waitFor(), stdout, stderr);
+    }
+
+    private static String firstLine(String output) {
+        return output.lines().findFirst().orElse("");
+    }
+
+    private record ProcessResult(int exitCode, String stdout, String stderr) {}
 
     @Test
     void closedWorldRunWithoutPauseDetectors(@TempDir Path outputDir) throws Exception {
