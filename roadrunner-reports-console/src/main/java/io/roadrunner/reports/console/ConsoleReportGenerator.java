@@ -27,15 +27,16 @@ import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-import org.jline.terminal.TerminalBuilder;
 
 final class ConsoleReportGenerator implements ReportGenerator {
 
     private final Path outputDir;
+    private final ConsoleTheme theme;
 
     ConsoleReportGenerator(Map<String, String> configuration) {
         var dir = configuration.get("outputDir");
         outputDir = dir == null ? null : Paths.get(dir);
+        theme = ConsoleOptions.theme(configuration);
     }
 
     @Override
@@ -43,9 +44,7 @@ final class ConsoleReportGenerator implements ReportGenerator {
         // Ensure the progress bar line is terminated before the report starts
         out.println();
 
-        try (var terminal = TerminalBuilder.builder().dumb(true).build()) {
-            out.println(ReportRenderer.render(model, manifest(), ConsoleTheme.of(terminal)));
-        }
+        out.println(ReportRenderer.render(model, manifest(), theme));
     }
 
     private RunManifest manifest() throws IOException {

@@ -40,6 +40,11 @@
         </dependency>
         <dependency>
             <groupId>io.roadrunner</groupId>
+            <artifactId>roadrunner-csv-output</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.roadrunner</groupId>
             <artifactId>roadrunner-reports-spi</artifactId>
             <version>${project.version}</version>
         </dependency>

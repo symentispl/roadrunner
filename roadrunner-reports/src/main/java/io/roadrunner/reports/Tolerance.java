@@ -18,39 +18,25 @@ package io.roadrunner.reports;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A configured tolerance limit for a benchmark metric and the direction it bounds.
+ * The largest regression tolerated for a benchmark metric.
  *
- * <p>A positive limit represents an upper bound: a metric's delta must not exceed the limit.
- * A negative limit represents a lower bound: a metric's delta must not fall below the limit.
- * Zero can be configured with either '+' (upper bound, delta <= 0.0) or '-' (lower bound, delta >= 0.0).
+ * <p>Which way is a regression is a property of the metric (see {@link Metric#higherIsBetter()}), so the
+ * limit is a plain non-negative magnitude: latency or errors rising, or throughput falling, by more than the limit
+ * violates it. Improvements always satisfy it.
  *
- * @param limit the configured numeric limit threshold
- * @param direction the boundary direction (UPPER or LOWER)
+ * @param limit the largest tolerated regression, in percent (percentage points for errors)
  */
-public record Tolerance(double limit, Direction direction) {
-
-    public enum Direction {
-        UPPER,
-        LOWER
-    }
+public record Tolerance(double limit) {
 
     public Tolerance {
-        requireNonNull(direction, "direction cannot be null");
-        if (Double.isNaN(limit) || Double.isInfinite(limit)) {
-            throw new IllegalArgumentException("tolerance limit cannot be NaN or infinite: %s".formatted(limit));
+        if (Double.isNaN(limit) || Double.isInfinite(limit) || limit < 0) {
+            throw new IllegalArgumentException(
+                    "tolerance limit must be a finite non-negative number: %s".formatted(limit));
         }
         // Normalize -0.0 to 0.0 so that value equality and hashing behave consistently
         if (limit == 0.0) {
             limit = 0.0;
         }
-    }
-
-    public static Tolerance upper(double limit) {
-        return new Tolerance(limit, Direction.UPPER);
-    }
-
-    public static Tolerance lower(double limit) {
-        return new Tolerance(limit, Direction.LOWER);
     }
 
     /**
@@ -60,25 +46,23 @@ public record Tolerance(double limit, Direction direction) {
     public static final double EPSILON = 1e-9;
 
     /**
-     * Checks whether the measured delta satisfies this tolerance limit.
+     * Checks whether the measured delta of the metric stays within this tolerance.
      *
+     * @param metric the metric the delta was measured for
      * @param delta the measured change
      * @return true if within tolerance, false if violated
      */
-    public boolean isSatisfied(double delta) {
-        return switch (direction) {
-            case UPPER -> delta <= limit + EPSILON;
-            case LOWER -> delta >= limit - EPSILON;
-        };
+    public boolean isSatisfied(Metric metric, double delta) {
+        var regression = metric.higherIsBetter() ? -delta : delta;
+        return regression <= limit + EPSILON;
     }
 
     /**
      * Evaluates this tolerance against the measured delta and returns the corresponding verdict.
      *
-     * @param delta the measured change
      * @return {@link Verdict#PASSED} if satisfied, {@link Verdict#FAILED} if violated
      */
-    public Verdict verdict(double delta) {
-        return isSatisfied(delta) ? Verdict.PASSED : Verdict.FAILED;
+    public Verdict verdict(Metric metric, double delta) {
+        return isSatisfied(metric, delta) ? Verdict.PASSED : Verdict.FAILED;
     }
 }
