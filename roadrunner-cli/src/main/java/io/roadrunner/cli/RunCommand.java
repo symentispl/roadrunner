@@ -21,6 +21,7 @@ import io.roadrunner.api.samplers.SamplerProvider;
 import io.roadrunner.core.Bootstrap;
 import io.roadrunner.latency.recording.PauseDetectorKind;
 import io.roadrunner.logging.LoggingFacade;
+import io.roadrunner.reports.ComparisonModel;
 import io.roadrunner.reports.ReportModel;
 import io.roadrunner.reports.RunDirectory;
 import io.roadrunner.reports.RunManifest;
@@ -81,7 +82,7 @@ class RunCommand {
 
     @Option(
             names = "-r",
-            description = "Report format to generate: console (default) or html",
+            description = "Report format to generate: console (default) or html. Console options: -r console:nocolors=true for no colours, -r console:ascii=true for no box-drawing characters",
             converter = PrefixedMap.Converter.class)
     PrefixedMap report = new PrefixedMap("console", Map.of());
 
@@ -91,6 +92,18 @@ class RunCommand {
                     "Correct latency measurements for pauses that would otherwise distort them: vt (virtual-thread pauses), jvm (JVM garbage-collection pauses), or vt,jvm for both. Leave unset to record raw latencies only.",
             converter = SetOfPauseDetectorKindConverter.class)
     EnumSet<PauseDetectorKind> pauseDetectors = EnumSet.noneOf(PauseDetectorKind.class);
+
+    @Option(
+            names = "--baseline",
+            description =
+                    "Output directory of an earlier run to compare this run against. The comparison replaces the single-run report.")
+    Path baseline;
+
+    @Option(
+            names = "--tolerance",
+            description =
+                    "With --baseline, bound the change of metrics, e.g. 'p99:10%,throughput:5%,errors:0.5%'. Exits with code 3 when a bound is exceeded.")
+    String tolerance;
 
     @Option(
             names = "--raw-latency",
@@ -111,6 +124,18 @@ class RunCommand {
                     "--pause-detectors is only supported with the open-world load model (--rate/--duration)");
         }
 
+        if (baseline == null && tolerance != null) {
+            throw new IllegalArgumentException("--tolerance needs --baseline to compare against");
+        }
+        // fail before the load test runs, not after it
+        var tolerances = ComparisonReports.parseTolerances(tolerance);
+        if (baseline != null) {
+            ComparisonReports.requireRunDirectory(baseline, "baseline");
+            ComparisonReports.requireDistinct(baseline, outputDir);
+        }
+
+        LOG.info("Starting roadrunner...");
+
         var startedAt = Instant.now();
 
         var bootstrap = new Bootstrap().withOutputDir(outputDir).withPauseDetectorKinds(pauseDetectors);
@@ -124,17 +149,18 @@ class RunCommand {
             var runManifest = buildManifest(samplerCommandSpec, startedAt, Version.full());
             runManifest.writeTo(bootstrap.outputDir());
 
-            var reportPlugin = reportPlugins.get(report.prefix());
-            if (reportPlugin == null) {
-                throw new IllegalArgumentException("report generator %s unknown, supported report formats %s"
-                        .formatted(report.prefix(), reportPlugins.supportedReportFormats()));
-            }
+            var reportPlugin = reportPlugins.require(report.prefix());
 
             var reportConfiguration = report.parameters();
             var reportConfig = new HashMap<>(reportConfiguration);
             reportConfig.put("outputDir", bootstrap.outputDir().toString());
 
-            var reportGenerator = reportPlugin.reportGeneratorProvider().create(reportConfig);
+            var reportGenerator = baseline == null
+                    ? reportPlugin.reportGeneratorProvider().create(reportConfig)
+                    : null;
+            var comparisonGenerator =
+                    baseline == null ? null : ComparisonReports.generator(reportPlugin, reportConfig);
+            var baselineModel = baseline == null ? null : ComparisonReports.load(baseline, rawLatency);
             var measurements = roadrunner.execute(samplerProvider);
             // Release the progress bar's terminal before the report renders, otherwise the
             // report can't open its own system terminal and falls back to a dumb (ASCII) one.
@@ -148,9 +174,16 @@ class RunCommand {
             var model =
                     ReportModel.from(measurements.samplesReader(), RunDirectory.of(bootstrap.outputDir()), rawLatency);
             var out = samplerCommandSpec.commandLine().getOut();
-            reportGenerator.generate(model, out);
-            out.printf("Roadrunner results available at %s%n", bootstrap.outputDir());
-            out.flush();
+            if (comparisonGenerator == null) {
+                reportGenerator.generate(model, out);
+                out.printf("Roadrunner results available at %s%n", bootstrap.outputDir().toAbsolutePath());
+                out.flush();
+                return;
+            }
+            var comparison = ComparisonModel.of(
+                    baselineModel, model, tolerances, RunDirectory.of(baseline), RunDirectory.of(bootstrap.outputDir()));
+            out.printf("Roadrunner results available at %s%n", bootstrap.outputDir().toAbsolutePath());
+            ComparisonReports.report(comparison, comparisonGenerator, out);
         }
     }
 

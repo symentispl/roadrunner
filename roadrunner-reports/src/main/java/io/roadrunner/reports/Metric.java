@@ -20,7 +20,7 @@ import java.util.Arrays;
 /**
  * The canonical metrics eligible for baseline-versus-current comparison and tolerance verdicts.
  */
-public enum ComparisonMetric {
+public enum Metric {
     MIN("min"),
     MEAN("mean"),
     MAX("max"),
@@ -28,20 +28,36 @@ public enum ComparisonMetric {
     P90("p90"),
     P99("p99"),
     P999("p999"),
-    THROUGHPUT("throughput"),
+    THROUGHPUT("throughput", true),
     ERRORS("errors");
 
     private final String label;
+    private final boolean higherIsBetter;
 
-    ComparisonMetric(String label) {
+    Metric(String label) {
+        this(label, false);
+    }
+
+    Metric(String label, boolean higherIsBetter) {
         this.label = label;
+        this.higherIsBetter = higherIsBetter;
+    }
+
+    /** Whether a bigger value is an improvement (throughput) rather than a regression (latency, errors). */
+    public boolean higherIsBetter() {
+        return higherIsBetter;
+    }
+
+    /** Whether a change of the given delta is an improvement for this metric. */
+    public boolean isImprovement(double delta) {
+        return higherIsBetter ? delta > 0 : delta < 0;
     }
 
     public String label() {
         return label;
     }
 
-    public static ComparisonMetric fromLabel(String label) {
+    public static Metric fromLabel(String label) {
         if (label == null) {
             throw new IllegalArgumentException("metric label cannot be null");
         }

@@ -44,6 +44,10 @@ public class Main {
 
         try {
             execute(args);
+        } catch (ToleranceBreachException e) {
+            // the comparison report already said which metrics failed, this is for the CI log's last line
+            System.err.println(e.getMessage());
+            System.exit(ToleranceBreachException.EXIT_CODE);
         } catch (Exception e) {
             handleException(e, retainThrowables);
             System.exit(1);
@@ -114,6 +118,11 @@ public class Main {
             var errors = collectErrors(parseResult);
             if (!errors.isEmpty()) {
                 throw errors.getFirst();
+            }
+
+            if (subcommand != null && subcommand.commandSpec().userObject() instanceof DiffCommand diffCommand) {
+                diffCommand.run(subcommand.commandSpec().commandLine().getOut());
+                return;
             }
 
             if (subcommand != null
@@ -199,6 +208,7 @@ public class Main {
 
         commandSpec.mixinStandardHelpOptions(true);
         commandSpec.addSubcommand("run", runCommand);
+        commandSpec.addSubcommand("diff", forAnnotatedObject(new DiffCommand()).mixinStandardHelpOptions(true));
         return commandSpec;
     }
 }

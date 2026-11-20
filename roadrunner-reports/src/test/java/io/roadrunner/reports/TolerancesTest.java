@@ -27,89 +27,74 @@ class TolerancesTest {
 
     @Test
     void parsesCanonicalExampleString() {
-        var tolerances = Tolerances.parse("p99:+10%,throughput:-5%,errors:+0.5%");
+        var tolerances = Tolerances.parse("p99:10%,throughput:5%,errors:0.5%");
 
         assertThat(tolerances.size()).isEqualTo(3);
         assertThat(tolerances.isEmpty()).isFalse();
-
-        var p99 = tolerances.get(ComparisonMetric.P99).orElseThrow();
-        assertThat(p99.limit()).isEqualTo(10.0);
-        assertThat(p99.direction()).isEqualTo(Tolerance.Direction.UPPER);
-
-        var throughput = tolerances.get(ComparisonMetric.THROUGHPUT).orElseThrow();
-        assertThat(throughput.limit()).isEqualTo(-5.0);
-        assertThat(throughput.direction()).isEqualTo(Tolerance.Direction.LOWER);
-
-        var errors = tolerances.get(ComparisonMetric.ERRORS).orElseThrow();
-        assertThat(errors.limit()).isEqualTo(0.5);
-        assertThat(errors.direction()).isEqualTo(Tolerance.Direction.UPPER);
-
-        assertThat(tolerances.get(ComparisonMetric.MEAN)).isEmpty();
+        assertThat(tolerances.get(Metric.P99)).contains(new Tolerance(10.0));
+        assertThat(tolerances.get(Metric.THROUGHPUT)).contains(new Tolerance(5.0));
+        assertThat(tolerances.get(Metric.ERRORS)).contains(new Tolerance(0.5));
+        assertThat(tolerances.get(Metric.MEAN)).isEmpty();
     }
 
     @Test
-    void evaluatesUpperBoundTolerance() {
-        var tolerance = Tolerance.upper(10.0);
+    void latencyRegressesWhenItRises() {
+        var tolerance = new Tolerance(10.0);
+        var p99 = Metric.P99;
 
-        assertThat(tolerance.direction()).isEqualTo(Tolerance.Direction.UPPER);
-        assertThat(tolerance.limit()).isEqualTo(10.0);
-
-        assertThat(tolerance.isSatisfied(9.9)).isTrue();
-        assertThat(tolerance.isSatisfied(10.0)).isTrue();
-        assertThat(tolerance.isSatisfied(10.1)).isFalse();
-
-        assertThat(tolerance.verdict(10.0)).isEqualTo(Verdict.PASSED);
-        assertThat(tolerance.verdict(10.1)).isEqualTo(Verdict.FAILED);
+        assertThat(tolerance.isSatisfied(p99, 10.0)).isTrue();
+        assertThat(tolerance.isSatisfied(p99, -50.0)).isTrue();
+        assertThat(tolerance.isSatisfied(p99, 10.1)).isFalse();
+        assertThat(tolerance.verdict(p99, 10.0)).isEqualTo(Verdict.PASSED);
+        assertThat(tolerance.verdict(p99, 10.1)).isEqualTo(Verdict.FAILED);
     }
 
     @Test
-    void evaluatesLowerBoundTolerance() {
-        var tolerance = Tolerance.lower(-5.0);
+    void throughputRegressesWhenItDrops() {
+        var tolerance = new Tolerance(5.0);
+        var throughput = Metric.THROUGHPUT;
 
-        assertThat(tolerance.direction()).isEqualTo(Tolerance.Direction.LOWER);
-        assertThat(tolerance.limit()).isEqualTo(-5.0);
+        assertThat(tolerance.isSatisfied(throughput, -5.0)).isTrue();
+        assertThat(tolerance.isSatisfied(throughput, 80.0)).isTrue();
+        assertThat(tolerance.isSatisfied(throughput, -5.1)).isFalse();
+        assertThat(tolerance.verdict(throughput, -5.1)).isEqualTo(Verdict.FAILED);
+    }
 
-        assertThat(tolerance.isSatisfied(-4.9)).isTrue();
-        assertThat(tolerance.isSatisfied(-5.0)).isTrue();
-        assertThat(tolerance.isSatisfied(-5.1)).isFalse();
+    @Test
+    void zeroLimitAcceptsNoRegression() {
+        var tolerance = new Tolerance(0.0);
 
-        assertThat(tolerance.verdict(-5.0)).isEqualTo(Verdict.PASSED);
-        assertThat(tolerance.verdict(-5.1)).isEqualTo(Verdict.FAILED);
+        assertThat(tolerance.isSatisfied(Metric.P99, 0.0)).isTrue();
+        assertThat(tolerance.isSatisfied(Metric.P99, 0.01)).isFalse();
+        assertThat(tolerance.isSatisfied(Metric.THROUGHPUT, 1.5)).isTrue();
+        assertThat(tolerance.isSatisfied(Metric.THROUGHPUT, -0.01)).isFalse();
     }
 
     @Test
     void toleratesFloatingPointRoundingAtBoundariesWithoutHidingViolations() {
-        var upper = Tolerance.upper(0.2);
+        var tolerance = new Tolerance(0.2);
         // 0.9 - 0.7 = 0.20000000000000007 in double arithmetic
-        assertThat(upper.isSatisfied(0.9 - 0.7)).isTrue();
-        assertThat(upper.verdict(0.9 - 0.7)).isEqualTo(Verdict.PASSED);
-        // Genuine violation
-        assertThat(upper.isSatisfied(0.2001)).isFalse();
-        assertThat(upper.verdict(0.2001)).isEqualTo(Verdict.FAILED);
-
-        var lower = Tolerance.lower(-0.2);
-        // 0.7 - 0.9 = -0.20000000000000007 in double arithmetic
-        assertThat(lower.isSatisfied(0.7 - 0.9)).isTrue();
-        assertThat(lower.verdict(0.7 - 0.9)).isEqualTo(Verdict.PASSED);
-        // Genuine violation
-        assertThat(lower.isSatisfied(-0.2001)).isFalse();
-        assertThat(lower.verdict(-0.2001)).isEqualTo(Verdict.FAILED);
+        assertThat(tolerance.isSatisfied(Metric.ERRORS, 0.9 - 0.7)).isTrue();
+        assertThat(tolerance.isSatisfied(Metric.ERRORS, 0.2001)).isFalse();
+        // and the same for a drop in throughput
+        assertThat(tolerance.isSatisfied(Metric.THROUGHPUT, 0.7 - 0.9)).isTrue();
+        assertThat(tolerance.isSatisfied(Metric.THROUGHPUT, -0.2001)).isFalse();
     }
 
     @Test
     void allowsSurroundingWhitespace() {
-        var tolerances = Tolerances.parse("  p99  :  +10%  ,  throughput  :  -5%  ,  errors  :  +0.5%  ");
+        var tolerances = Tolerances.parse("  p99  :  10%  ,  throughput  :  5%  ,  errors  :  0.5%  ");
 
         assertThat(tolerances.size()).isEqualTo(3);
-        assertThat(tolerances.get(ComparisonMetric.P99)).contains(Tolerance.upper(10.0));
-        assertThat(tolerances.get(ComparisonMetric.THROUGHPUT)).contains(Tolerance.lower(-5.0));
-        assertThat(tolerances.get(ComparisonMetric.ERRORS)).contains(Tolerance.upper(0.5));
+        assertThat(tolerances.get(Metric.P99)).contains(new Tolerance(10.0));
+        assertThat(tolerances.get(Metric.THROUGHPUT)).contains(new Tolerance(5.0));
+        assertThat(tolerances.get(Metric.ERRORS)).contains(new Tolerance(0.5));
     }
 
     @Test
     void allowsWhitespaceBeforePercentSuffix() {
-        var tolerances = Tolerances.parse("p99: +10 %");
-        assertThat(tolerances.get(ComparisonMetric.P99)).contains(Tolerance.upper(10.0));
+        var tolerances = Tolerances.parse("p99: 10 %");
+        assertThat(tolerances.get(Metric.P99)).contains(new Tolerance(10.0));
     }
 
     @ParameterizedTest
@@ -120,32 +105,33 @@ class TolerancesTest {
 
         assertThat(tolerances.isEmpty()).isTrue();
         assertThat(tolerances.size()).isZero();
-        assertThat(tolerances.get(ComparisonMetric.P99)).isEmpty();
+        assertThat(tolerances.get(Metric.P99)).isEmpty();
     }
 
     @Test
     void rejectsUnknownMetric() {
-        assertThatThrownBy(() -> Tolerances.parse("unknown:+10%"))
+        assertThatThrownBy(() -> Tolerances.parse("unknown:10%"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("unknown comparison metric 'unknown'");
     }
 
-    @Test
-    void rejectsMissingSign() {
-        assertThatThrownBy(() -> Tolerances.parse("p99:10%"))
+    @ParameterizedTest
+    @ValueSource(strings = {"p99:+10%", "p99:-10%", "throughput:-5%", "throughput:+0%", "p99:-0%"})
+    void rejectsSignedLimits(String input) {
+        assertThatThrownBy(() -> Tolerances.parse(input))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("malformed tolerance value '10%': missing sign (+ or -)");
+                .hasMessageContaining("drop the sign");
     }
 
     @Test
     void rejectsMissingPercentSuffix() {
-        assertThatThrownBy(() -> Tolerances.parse("p99:+10"))
+        assertThatThrownBy(() -> Tolerances.parse("p99:10"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("malformed tolerance value '+10': missing '%' suffix");
+                .hasMessage("malformed tolerance value '10': missing '%' suffix");
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"p99:+abc%", "p99:+%", "p99:-%", "p99:+1.2.3%"})
+    @ValueSource(strings = {"p99:abc%", "p99:1.2.3%"})
     void rejectsInvalidNumericValue(String input) {
         assertThatThrownBy(() -> Tolerances.parse(input))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -153,7 +139,7 @@ class TolerancesTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"p99:+10%,,throughput:-5%", ",p99:+10%", "p99:+10%,", ",", "p99:+10%,   ,throughput:-5%"})
+    @ValueSource(strings = {"p99:10%,,throughput:5%", ",p99:10%", "p99:10%,", ",", "p99:10%,   ,throughput:5%"})
     void rejectsEmptyEntries(String input) {
         assertThatThrownBy(() -> Tolerances.parse(input))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -162,13 +148,13 @@ class TolerancesTest {
 
     @Test
     void rejectsDuplicateMetrics() {
-        assertThatThrownBy(() -> Tolerances.parse("p99:+10%,p99:+5%"))
+        assertThatThrownBy(() -> Tolerances.parse("p99:10%,p99:5%"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("duplicate tolerance configuration for metric 'p99'");
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"p99:+NaN%", "p99:-NaN%", "p99:+Infinity%", "p99:-Infinity%"})
+    @ValueSource(strings = {"p99:NaN%", "p99:Infinity%"})
     void rejectsNanAndInfinityInParser(String input) {
         assertThatThrownBy(() -> Tolerances.parse(input))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -176,59 +162,23 @@ class TolerancesTest {
     }
 
     @Test
-    void rejectsNanAndInfinityInToleranceConstructor() {
-        assertThatThrownBy(() -> new Tolerance(Double.NaN, Tolerance.Direction.UPPER))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("NaN or infinite");
-
-        assertThatThrownBy(() -> new Tolerance(Double.POSITIVE_INFINITY, Tolerance.Direction.LOWER))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("NaN or infinite");
-    }
-
-    @Test
-    void acceptsNegativeZeroAsLowerBoundAtZero() {
-        var tolerances = Tolerances.parse("throughput:-0%");
-        var tolerance = tolerances.get(ComparisonMetric.THROUGHPUT).orElseThrow();
-
-        assertThat(tolerance.direction()).isEqualTo(Tolerance.Direction.LOWER);
-        assertThat(tolerance.limit()).isEqualTo(0.0);
-
-        // Lower bound at 0: must not decrease (delta < 0 is failure)
-        assertThat(tolerance.isSatisfied(0.0)).isTrue();
-        assertThat(tolerance.isSatisfied(1.5)).isTrue();
-        assertThat(tolerance.isSatisfied(-0.01)).isFalse();
-        assertThat(tolerance.verdict(-0.01)).isEqualTo(Verdict.FAILED);
-        assertThat(tolerance.verdict(0.0)).isEqualTo(Verdict.PASSED);
-    }
-
-    @Test
-    void acceptsPositiveZeroAsUpperBoundAtZero() {
-        var tolerances = Tolerances.parse("p99:+0.0%");
-        var tolerance = tolerances.get(ComparisonMetric.P99).orElseThrow();
-
-        assertThat(tolerance.direction()).isEqualTo(Tolerance.Direction.UPPER);
-        assertThat(tolerance.limit()).isEqualTo(0.0);
-
-        // Upper bound at 0: must not increase (delta > 0 is failure)
-        assertThat(tolerance.isSatisfied(0.0)).isTrue();
-        assertThat(tolerance.isSatisfied(-1.5)).isTrue();
-        assertThat(tolerance.isSatisfied(0.01)).isFalse();
-        assertThat(tolerance.verdict(0.01)).isEqualTo(Verdict.FAILED);
-        assertThat(tolerance.verdict(0.0)).isEqualTo(Verdict.PASSED);
+    void rejectsInvalidLimitsInToleranceConstructor() {
+        assertThatThrownBy(() -> new Tolerance(Double.NaN)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new Tolerance(Double.POSITIVE_INFINITY)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new Tolerance(-1.0)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void returnsImmutableEntriesMap() {
-        var tolerances = Tolerances.parse("p99:+10%");
+        var tolerances = Tolerances.parse("p99:10%");
         var entries = tolerances.entries();
 
-        assertThatThrownBy(() -> entries.put(ComparisonMetric.THROUGHPUT, Tolerance.lower(-5.0)))
+        assertThatThrownBy(() -> entries.put(Metric.THROUGHPUT, new Tolerance(5.0)))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"p99+10%", "p99", ":+10%"})
+    @ValueSource(strings = {"p9910%", "p99", ":10%"})
     void rejectsMissingOrMalformedDelimiters(String input) {
         assertThatThrownBy(() -> Tolerances.parse(input)).isInstanceOf(IllegalArgumentException.class);
     }

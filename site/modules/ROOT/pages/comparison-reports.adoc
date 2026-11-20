@@ -1,0 +1,144 @@
+= Comparison reports
+
+A comparison report puts two runs side by side: a *baseline* (an earlier run) and the *current* run.
+Use it to see what a change did to latency, throughput and errors, and, with tolerances, to fail a CI job when it made things worse.
+
+Both runs are identified by their output directory (see the `-s` option), so the baseline has to be kept from the earlier run.
+
+== Comparing two finished runs
+
+`diff` compares two output directories without running anything.
+The example first makes two runs with the `vm` sampler, which sleeps for a fixed time per request, and keeps each in its own directory with `-s`:
+
+[source,bash]
+----
+include::example$generic/comparison-1/snippet.sh[]
+----
+
+== Comparing while you run
+
+Alternatively, `--baseline` makes `run` compare the new run against an earlier one.
+The comparison *replaces* the single-run report for that run.
+
+[source,bash]
+----
+include::example$generic/comparison-2/snippet.sh[]
+----
+
+== What the report shows
+
+[source]
+----
+╔═ Roadrunner comparison ════════════════════════════════════════════════════╗
+║ run          requests   duration     throughput   error rate               ║
+║ baseline        1,000      10.0s      100.0 r/s        0.00%               ║
+║ current         1,000      10.0s       97.0 r/s        0.00%               ║
+╚════════════════════════════════════════════════════════════════════════════╝
+╔═ Metrics ══════════════════════════════════════════════════════════════════╗
+║ metric          baseline      current     change  tolerance  verdict       ║
+║ p99               100 ms       125 ms     +25.0%      10.0%  FAILED ✘      ║
+║ throughput   100.0 req/s   97.0 req/s      -3.0%       5.0%  PASSED ✔      ║
+║ errors             0.00%        0.00%   +0.00 pp          -  -             ║
+║                                                                            ║
+║ overall     FAILED ✘                                                       ║
+╚════════════════════════════════════════════════════════════════════════════╝
+----
+
+(Abridged: the real table lists every metric.)
+
+The *change* column is the relative change from baseline to current in percent.
+For `errors` it is the difference of the error rate in percentage points (`pp`), because a relative change of a rate near zero says little.
+When the baseline value is zero, the change is shown as `n/a`.
+
+On a terminal, a change that is an improvement is green and a regression is red.
+More throughput is an improvement; more latency or more errors is a regression.
+
+=== Metrics
+
+[cols="1,3"]
+|===
+|Name |Meaning
+
+|`min`, `mean`, `max`
+|Latency in milliseconds
+
+|`p50`, `p90`, `p99`, `p999`
+|Latency percentiles in milliseconds
+
+|`throughput`
+|Requests per second
+
+|`errors`
+|Error rate in percent
+|===
+
+== Failing a build: tolerances
+
+By default a comparison only reports.
+`--tolerance` adds limits, and the report then marks each limited metric `PASSED` or `FAILED` and gives an overall verdict.
+Metrics you do not list are shown but not checked (verdict `-`).
+In this example the current run is five times slower, so the limits on `p99` and `throughput` are breached:
+
+[source,bash]
+----
+include::example$generic/comparison-3/snippet.sh[]
+----
+
+The limits are written as `metric:<number>%`, separated by commas, and each one is the largest regression you accept.
+The metric knows which way is worse, so there is no sign to get wrong:
+
+* for latency metrics and `errors`, a regression is a rise. `p99:10%` fails when p99 grew by more than 10%.
+* for `throughput`, a regression is a drop. `throughput:5%` fails when throughput dropped by more than 5%.
+
+An improvement never breaches a limit, however large. `p99:0%` accepts no regression at all.
+For `errors` the limit is in percentage points, for example `errors:0.5%` allows the error rate to rise by at most half a point.
+
+Roadrunner exits with code *3* when a tolerance is breached, so a CI step fails on it. The example captures the exit code to check it; in CI, run the `diff` on its own.
+A malformed tolerance, or a baseline directory that is not a finished run, is rejected before a load test starts.
+`--tolerance` works with both `diff` and `run --baseline`.
+
+== Are the runs comparable?
+
+Two runs are only meaningfully comparable when they measured the same thing.
+Roadrunner checks the run configuration it recorded (the sampler and its options, the load model and its parameters, and the pause detectors).
+If they differ, or a run has no recorded configuration, the report shows a warning listing each mismatch:
+
+[source]
+----
+╔═ Warning ══════════════════════════════════════════════════════════════════╗
+║ ⚠ these runs may not be comparable                                         ║
+║   - load model differs: closed vs open                                     ║
+╚════════════════════════════════════════════════════════════════════════════╝
+----
+
+The warning does not stop the comparison or change the exit code.
+Read it before trusting the numbers.
+
+== Pause-corrected latency
+
+Like the single-run report, a comparison uses pause-corrected latencies when they are available.
+Pass `--raw-latency` to compare raw per-request latencies instead.
+
+== Appearance
+
+The console report is drawn with frames, icons and colour when the output is a terminal.
+Colour is off automatically when `NO_COLOR` is set or the output is redirected.
+Two report options (the `-r console:...` form, comma separated) change it explicitly:
+
+[cols="1,3"]
+|===
+|Option |Effect
+
+|`-r console:nocolors=true`
+|No colour
+
+|`-r console:ascii=true`
+|Plain `+ = \|` frames and ASCII icons instead of box-drawing characters
+|===
+
+[source,bash]
+----
+include::example$generic/comparison-4/snippet.sh[]
+----
+
+The example above turns off both. The same options apply to the single-run console report.
