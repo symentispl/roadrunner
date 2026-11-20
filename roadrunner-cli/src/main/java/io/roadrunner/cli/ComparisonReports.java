@@ -17,6 +17,8 @@ package io.roadrunner.cli;
 
 import io.roadrunner.output.csv.CsvOutputEventReader;
 import io.roadrunner.reports.ComparisonModel;
+import io.roadrunner.reports.ComparisonOutcome;
+import io.roadrunner.reports.Metric;
 import io.roadrunner.reports.ReportModel;
 import io.roadrunner.reports.RunDirectory;
 import io.roadrunner.reports.Tolerances;
@@ -86,7 +88,14 @@ final class ComparisonReports {
         return comparison.metrics().values().stream()
                 .filter(c -> c.isFailed())
                 .sorted(java.util.Comparator.comparing(c -> c.metric().ordinal()))
-                .map(c -> "%s %s".formatted(c.metric().label(), String.format(Locale.ROOT, "%+.2f", c.delta())))
+                .map(c -> "%s %s".formatted(c.metric().label(), change(c)))
                 .collect(Collectors.joining(", "));
+    }
+
+    // errors are percentage points of error rate, everything else is relative change
+    private static String change(ComparisonOutcome c) {
+        return c.metric() == Metric.ERRORS
+                ? String.format(Locale.ROOT, "%+.2f pp", c.delta())
+                : String.format(Locale.ROOT, "%+.1f%%", c.delta());
     }
 }
